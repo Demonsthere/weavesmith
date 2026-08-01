@@ -6,6 +6,9 @@ you work, and get the turning chart you follow at the loom.
 
 Nothing to install, nothing to sign up for, no server. Open a page and weave.
 
+It started as a present: I play guitar, my wife weaves, and this is her craft
+laid out the way I read music. More on that [below](#where-the-fretboard-came-from).
+
 > Status: **design complete, implementation not started.** See
 > [the spec](docs/superpowers/specs/2026-08-01-weavesmith-design.md) and the
 > [interactive board prototype](docs/mockups/board.html).
@@ -39,16 +42,21 @@ decades. You cannot run it on a Mac without Wine, and you certainly cannot open
 it on the phone sitting next to your loom.
 
 WeaveSmith rebuilds the part that matters most — designing threaded-in patterns
-and reading the turning sequence — as a web page that runs anywhere.
+and reading the turning sequence — as a web page that runs anywhere, including
+on the phone propped against the loom.
 
-## The idea: a fretboard for weaving
+## Where the fretboard came from
 
-The interface borrows from music games, because the analogy is unusually exact.
+I play guitar. My wife is learning tablet weaving. WeaveSmith is a gift for her,
+built out of the only visual language I had to offer — so the band is laid out
+the way I already know how to read one.
 
-- **[Guitar Hero](https://en.wikipedia.org/wiki/Guitar_Hero)** gave us the shape:
+That turned out to be less of a stretch than it sounds.
+
+- **[Guitar Hero](https://en.wikipedia.org/wiki/Guitar_Hero)** gave the shape:
   parallel lanes with notes running along them. Cards are the strings, picks are
   the frets.
-- **[Rocksmith](https://en.wikipedia.org/wiki/Rocksmith)** gave us the colour
+- **[Rocksmith](https://en.wikipedia.org/wiki/Rocksmith)** gave the colour
   language: each string carries its own identity colour across the whole
   interface, so you always know which one you are looking at.
 
