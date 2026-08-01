@@ -1706,13 +1706,25 @@ import { simulate, solveTurns } from '../src/index.js';
 import type { Card, Pattern, Threading, Turn } from '../src/index.js';
 import { PALETTE } from './helpers/build.js';
 
-/** Deterministic PRNG so a failure is reproducible from its seed. */
+/**
+ * Deterministic PRNG so a failure is reproducible from its seed.
+ *
+ * The discards matter. This LCG's multiplier is small against its 2^32
+ * modulus, so the first few outputs are near-affine in the seed and barely
+ * vary between consecutive seeds — a generator without a warm-up produced
+ * only three distinct card counts across 200 seeds. Five is not arbitrary:
+ * one discard leaves card count nearly constant, three fixes card count but
+ * collapses pick count to eight clustered values. If you change this number,
+ * measure both distributions rather than reasoning about it.
+ */
 function rng(seed: number): () => number {
   let state = seed >>> 0;
-  return () => {
+  const next = () => {
     state = (state * 1664525 + 1013904223) >>> 0;
     return state / 0x100000000;
   };
+  for (let i = 0; i < 5; i++) next();
+  return next;
 }
 
 function randomPattern(seed: number): Pattern {
