@@ -80,4 +80,39 @@ describe('validatePattern', () => {
     (pattern.cards[1] as { start: number }).start = 9;
     expect(validatePattern(pattern)).toHaveLength(2);
   });
+
+  // validatePattern's whole contract is "returns problems, never throws" —
+  // including on values whose own toString is hostile. Guard the five spots
+  // that render an unvalidated value into a message (version, colour,
+  // threading, start, turn) against exactly that.
+  describe('never throws, even when an offending value has a hostile toString', () => {
+    class Throws {
+      toString(): string {
+        throw new Error('boom');
+      }
+    }
+
+    it('for a bad version', () => {
+      const pattern: unknown = { ...valid(), version: new Throws() };
+      expect(() => validatePattern(pattern)).not.toThrow();
+      const problems = validatePattern(pattern);
+      expect(problems.some((p) => p.startsWith('unsupported version'))).toBe(true);
+    });
+
+    it('for a bad threading', () => {
+      const pattern = valid();
+      (pattern.cards[0] as { threading: unknown }).threading = new Throws();
+      expect(() => validatePattern(pattern)).not.toThrow();
+      const problems = validatePattern(pattern);
+      expect(problems.some((p) => p.includes('threading must be S or Z'))).toBe(true);
+    });
+
+    it('for a bad turn', () => {
+      const pattern = valid();
+      (pattern.picks[0] as unknown[])[0] = new Throws();
+      expect(() => validatePattern(pattern)).not.toThrow();
+      const problems = validatePattern(pattern);
+      expect(problems.some((p) => p.includes('turn must be 1 or -1'))).toBe(true);
+    });
+  });
 });

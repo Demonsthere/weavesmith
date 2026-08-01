@@ -1,6 +1,30 @@
 import { HOLE_COUNT, HOLE_LABELS, MAX_CARDS, MIN_CARDS } from './types.js';
 
 /**
+ * Render an untrusted value for an error message. Never throws, even if the
+ * value's `toString` or `Symbol.toPrimitive` does — validatePattern's whole
+ * contract is that it returns problems instead of throwing, and these values
+ * come straight from `JSON.parse` output or arbitrary in-memory objects, so
+ * none of them can be trusted to stringify cleanly.
+ */
+function describe(value: unknown): string {
+  if (typeof value === 'string') return JSON.stringify(value);
+  if (value === null || value === undefined) return String(value);
+  if (typeof value === 'object') {
+    try {
+      return JSON.stringify(value) ?? Object.prototype.toString.call(value);
+    } catch {
+      return Object.prototype.toString.call(value);
+    }
+  }
+  try {
+    return String(value);
+  } catch {
+    return Object.prototype.toString.call(value);
+  }
+}
+
+/**
  * Check a value against the Pattern format.
  *
  * Returns every problem found, phrased for a person: 1-based indices, the
@@ -15,7 +39,7 @@ export function validatePattern(value: unknown): string[] {
   const pattern = value as Record<string, unknown>;
 
   if (pattern.version !== 1) {
-    problems.push(`unsupported version ${String(pattern.version)}, expected 1`);
+    problems.push(`unsupported version ${describe(pattern.version)}, expected 1`);
   }
 
   const palette = Array.isArray(pattern.palette) ? (pattern.palette as unknown[]) : null;
@@ -49,17 +73,17 @@ export function validatePattern(value: unknown): string[] {
       colors.forEach((color, hole) => {
         if (typeof color !== 'number' || color < 0 || color >= palette.length) {
           problems.push(
-            `${label}, hole ${HOLE_LABELS[hole]}: colour ${String(color)} is not in the palette`,
+            `${label}, hole ${HOLE_LABELS[hole]}: colour ${describe(color)} is not in the palette`,
           );
         }
       });
     }
 
     if (card.threading !== 'S' && card.threading !== 'Z') {
-      problems.push(`${label}: threading must be S or Z, found "${String(card.threading)}"`);
+      problems.push(`${label}: threading must be S or Z, found ${describe(card.threading)}`);
     }
     if (typeof card.start !== 'number' || card.start < 0 || card.start > 3) {
-      problems.push(`${label}: start must be 0-3, found ${String(card.start)}`);
+      problems.push(`${label}: start must be 0-3, found ${describe(card.start)}`);
     }
   });
 
@@ -82,7 +106,7 @@ export function validatePattern(value: unknown): string[] {
     raw.forEach((turn, cardIndex) => {
       if (turn !== 1 && turn !== -1) {
         problems.push(
-          `pick ${pick + 1}, card ${cardIndex + 1}: turn must be 1 or -1, found ${String(turn)}`,
+          `pick ${pick + 1}, card ${cardIndex + 1}: turn must be 1 or -1, found ${describe(turn)}`,
         );
       }
     });
