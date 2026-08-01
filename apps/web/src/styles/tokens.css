@@ -1,0 +1,49 @@
+/*
+ * Design tokens copied verbatim from docs/mockups/board.html.
+ * Do not simplify into a single theme — the four pieces below exist
+ * because the viewer's theme toggle must beat the media query in
+ * both directions.
+ */
+:root {
+  --ground:  #14110E;
+  --panel:   #1D1915;
+  --line:    #2E2822;
+  --string:  #4A4038;
+  --text:    #EFE7DA;
+  --muted:   #9B8F84;
+  --accent:  #E0A03A;
+
+  --sz-s: hsl(172 58% 60%);
+  --sz-z: hsl(292 58% 60%);
+
+  --display: "Avenir Next Condensed", "Oswald", "Arial Narrow", system-ui, sans-serif;
+  --ui: "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, monospace;
+
+  --cell-w: 42px;
+  --cell-h: 34px;
+  --gutter: 40px;
+  --chip: 58px;
+
+  /* rotated by 90deg when the band runs horizontally */
+  --lean-base: 0deg;
+  --weave-angle: 58deg;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --ground: #F2EDE4; --panel: #E6DFD2; --line: #D3C9B9; --string: #B4A691;
+    --text: #241D17; --muted: #6C6155; --accent: #A9690F;
+    --sz-s: hsl(172 52% 38%); --sz-z: hsl(292 52% 38%);
+  }
+}
+:root[data-theme="dark"] {
+  --ground: #14110E; --panel: #1D1915; --line: #2E2822; --string: #4A4038;
+  --text: #EFE7DA; --muted: #9B8F84; --accent: #E0A03A;
+  --sz-s: hsl(172 58% 60%); --sz-z: hsl(292 58% 60%);
+}
+:root[data-theme="light"] {
+  --ground: #F2EDE4; --panel: #E6DFD2; --line: #D3C9B9; --string: #B4A691;
+  --text: #241D17; --muted: #6C6155; --accent: #A9690F;
+  --sz-s: hsl(172 52% 38%); --sz-z: hsl(292 52% 38%);
+}
