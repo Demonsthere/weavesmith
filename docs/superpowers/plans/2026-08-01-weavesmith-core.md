@@ -1667,6 +1667,8 @@ The invariant that catches solver bugs no example test will, plus making the pac
 
 Any band produced by `simulate` is by construction reachable, so `solveTurns` must reproduce it with nothing unreachable. This is the strongest single check on the solver.
 
+**Both tests must pass `{ previous: pattern.picks }`, and that is not optional.** A target grid encodes colour only, not lean. When a card carries the same colour in two holes, a different turn can put the same colour on the face with the opposite lean — so the band is reproduced but `Cell.lean` differs, and an equality assertion fails on some seeds and not others. Seeding `previous` makes the original turn sequence the unique zero-cost path (no mismatches, no tie-break penalties), which pins the solution exactly. Random cards draw four colours from a five-colour palette, so duplicates are common, not a rare edge case. If you remove `previous`, assert on colour alone.
+
 `packages/core/test/roundtrip.test.ts`:
 
 ```ts
