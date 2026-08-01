@@ -317,10 +317,13 @@ describe('holeAt', () => {
     }
   });
 
-  it('runs Z through the holes in the opposite order to S', () => {
-    const s = ROTATIONS.map((r) => holeAt(r, 'S'));
-    const z = ROTATIONS.map((r) => holeAt(r, 'Z'));
-    expect(z).toEqual([...s].reverse().map((h) => h));
+  it('runs Z through the holes in the opposite direction to S', () => {
+    // Z is S mirrored: turning a Z card forward walks the hole cycle the way
+    // turning an S card backward does, from the same start.
+    for (const rotation of ROTATIONS) {
+      const mirrored = ((4 - rotation) % 4) as Rotation;
+      expect(holeAt(rotation, 'Z')).toBe(holeAt(mirrored, 'S'));
+    }
   });
 
   it('starts both threadings on hole A at rotation 0', () => {
