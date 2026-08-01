@@ -640,6 +640,8 @@ Sources worth using:
 
 `packages/core/test/fixtures/chevron-8.json`. This one is self-evident: eight cards, the outer two solid walnut, the inner six alternating cream/madder with the first three threaded S and the last three Z. Every card turns forward for 8 picks.
 
+The inner cards must alternate colours **around** the card — `[2, 1, 2, 1]`, not `[2, 2, 1, 1]`. Mirror symmetry requires `colors[1] === colors[3]`, because an S card shows `colors[r]` while its mirrored Z partner shows `colors[(4 - r) % 4]`. Paired colours like `[2, 2, 1, 1]` show cream against madder at rotation 1 and cannot produce a mirrored band under any correct convention.
+
 ```json
 {
   "source": "derived — mirrored S/Z threading must produce a mirrored band",
@@ -649,12 +651,12 @@ Sources worth using:
     "palette": ["#4B3826", "#B4402C", "#EADCC0"],
     "cards": [
       { "colors": [0, 0, 0, 0], "threading": "S", "start": 0 },
-      { "colors": [2, 2, 1, 1], "threading": "S", "start": 0 },
-      { "colors": [2, 2, 1, 1], "threading": "S", "start": 0 },
-      { "colors": [2, 2, 1, 1], "threading": "S", "start": 0 },
-      { "colors": [2, 2, 1, 1], "threading": "Z", "start": 0 },
-      { "colors": [2, 2, 1, 1], "threading": "Z", "start": 0 },
-      { "colors": [2, 2, 1, 1], "threading": "Z", "start": 0 },
+      { "colors": [2, 1, 2, 1], "threading": "S", "start": 0 },
+      { "colors": [2, 1, 2, 1], "threading": "S", "start": 0 },
+      { "colors": [2, 1, 2, 1], "threading": "S", "start": 0 },
+      { "colors": [2, 1, 2, 1], "threading": "Z", "start": 0 },
+      { "colors": [2, 1, 2, 1], "threading": "Z", "start": 0 },
+      { "colors": [2, 1, 2, 1], "threading": "Z", "start": 0 },
       { "colors": [0, 0, 0, 0], "threading": "Z", "start": 0 }
     ],
     "picks": [
