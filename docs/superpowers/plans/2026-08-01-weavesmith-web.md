@@ -1461,13 +1461,28 @@ describe('keyboard binding', () => {
     expect(useStore.getState().selection.focus).toEqual({ pick: 1, card: 1 });
   });
 
-  it('swaps the arrow axes with orientation so Down is always the next pick', async () => {
+  // Arrows are spatial: they move the focus in the direction pressed, so they
+  // swap axes with the layout. In the horizontal band, cards run downward, so
+  // Down moves to the next card. Making Down always mean "next pick" would send
+  // the cursor sideways across the screen, which is disorienting and breaks the
+  // convention every grid sets.
+  it('swaps the arrow axes with orientation so Down moves the way it points', async () => {
     const user = userEvent.setup();
     useStore.getState().setOrientation('horizontal');
     render(<Board />);
     await focusBoard(user);
     await user.keyboard('{ArrowDown}');
-    expect(useStore.getState().selection.focus.pick).toBe(1);
+    expect(useStore.getState().selection.focus.card).toBe(1);
+    expect(useStore.getState().selection.focus.pick).toBe(0);
+  });
+
+  it('keeps the jump keys semantic — PageDown is five picks in either orientation', async () => {
+    const user = userEvent.setup();
+    useStore.getState().setOrientation('horizontal');
+    render(<Board />);
+    await focusBoard(user);
+    await user.keyboard('{PageDown}');
+    expect(useStore.getState().selection.focus.pick).toBe(5);
     expect(useStore.getState().selection.focus.card).toBe(0);
   });
 

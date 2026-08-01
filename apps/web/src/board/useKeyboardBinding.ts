@@ -27,25 +27,23 @@ function focusCell(container: HTMLElement, pick: number, card: number): void {
  * selection/direction/hole/threading to hand it, then surfaces the
  * command's `message` in the live region and moves DOM focus to match.
  *
- * Arrows are band-relative, not screen-relative: Up/Down always move to the
- * previous/next *pick*, and Left/Right always move to the previous/next
- * *card*, regardless of orientation. (The mockup's keydown handler swaps
- * dPick/dCard by orientation for the arrow keys — verified by running the
- * orientation test below with that swap ported verbatim, it fails: in
- * `horizontal` orientation ArrowDown moves the card index, not the pick
- * index, contradicting both the brief's own test and its prose claim that
- * "Down is always the next pick regardless of layout". PageUp/PageDown and
- * Home/End in the same reference are already orientation-independent this
- * way, so dropping the swap for the plain arrows too is the reading that
- * makes the whole keymap internally consistent, not just test-passing.)
+ * Arrows are spatial, not semantic: they move the focus in the direction
+ * pressed, so they swap axes with the layout — in `horizontal` orientation
+ * cards run downward, so ArrowDown moves to the next *card*, not the next
+ * pick (see the design spec's Orientation section). PageUp/PageDown (five
+ * picks) and Home/End (first/last card) are the semantic counterpart and do
+ * *not* swap — they mean the same thing in either orientation.
  */
 export function useKeyboardBinding(): KeyboardBinding {
   const [message, setMessage] = useState('');
 
   const onKeyDown = useCallback((event: ReactKeyboardEvent<HTMLDivElement>) => {
     const container = event.currentTarget;
-    const { selection, pattern, moveFocus, setSelection, apply, undo, redo } = useStore.getState();
+    const {
+      selection, pattern, orientation, moveFocus, setSelection, apply, undo, redo,
+    } = useStore.getState();
     const cardCount = pattern.cards.length;
+    const vertical = orientation === 'vertical';
 
     const refocus = () => {
       const { focus } = useStore.getState().selection;
@@ -86,19 +84,19 @@ export function useKeyboardBinding(): KeyboardBinding {
     switch (event.key) {
       case 'ArrowUp':
         event.preventDefault();
-        move(-1, 0, event.shiftKey);
+        vertical ? move(-1, 0, event.shiftKey) : move(0, -1, event.shiftKey);
         return;
       case 'ArrowDown':
         event.preventDefault();
-        move(1, 0, event.shiftKey);
+        vertical ? move(1, 0, event.shiftKey) : move(0, 1, event.shiftKey);
         return;
       case 'ArrowLeft':
         event.preventDefault();
-        move(0, -1, event.shiftKey);
+        vertical ? move(0, -1, event.shiftKey) : move(-1, 0, event.shiftKey);
         return;
       case 'ArrowRight':
         event.preventDefault();
-        move(0, 1, event.shiftKey);
+        vertical ? move(0, 1, event.shiftKey) : move(1, 0, event.shiftKey);
         return;
       case 'PageUp':
         event.preventDefault();
