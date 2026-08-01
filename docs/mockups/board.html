@@ -1,0 +1,1219 @@
+<title>WeaveSmith — Board mockup</title>
+
+<style>
+  :root {
+    --ground:  #14110E;
+    --panel:   #1D1915;
+    --line:    #2E2822;
+    --string:  #4A4038;
+    --text:    #EFE7DA;
+    --muted:   #9B8F84;
+    --accent:  #E0A03A;
+
+    --sz-s: hsl(172 58% 60%);
+    --sz-z: hsl(292 58% 60%);
+
+    --display: "Avenir Next Condensed", "Oswald", "Arial Narrow", system-ui, sans-serif;
+    --ui: "Avenir Next", "Segoe UI", system-ui, sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, monospace;
+
+    --cell-w: 42px;
+    --cell-h: 34px;
+    --gutter: 40px;
+    --chip: 58px;
+
+    /* rotated by 90deg when the band runs horizontally */
+    --lean-base: 0deg;
+    --weave-angle: 58deg;
+  }
+
+  @media (prefers-color-scheme: light) {
+    :root {
+      --ground: #F2EDE4; --panel: #E6DFD2; --line: #D3C9B9; --string: #B4A691;
+      --text: #241D17; --muted: #6C6155; --accent: #A9690F;
+      --sz-s: hsl(172 52% 38%); --sz-z: hsl(292 52% 38%);
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #14110E; --panel: #1D1915; --line: #2E2822; --string: #4A4038;
+    --text: #EFE7DA; --muted: #9B8F84; --accent: #E0A03A;
+    --sz-s: hsl(172 58% 60%); --sz-z: hsl(292 58% 60%);
+  }
+  :root[data-theme="light"] {
+    --ground: #F2EDE4; --panel: #E6DFD2; --line: #D3C9B9; --string: #B4A691;
+    --text: #241D17; --muted: #6C6155; --accent: #A9690F;
+    --sz-s: hsl(172 52% 38%); --sz-z: hsl(292 52% 38%);
+  }
+
+  body {
+    background: var(--ground);
+    color: var(--text);
+    font-family: var(--ui);
+    margin: 0;
+    padding: 0 0 4rem;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap { max-width: 940px; margin: 0 auto; padding: 0 1.25rem; }
+
+  /* ---------- top bar ---------- */
+
+  .topbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.6rem 0.9rem;
+    padding: 1.5rem 0 1.25rem;
+    border-bottom: 1px solid var(--line);
+  }
+  .brand {
+    font-family: var(--display);
+    font-size: 1.75rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    margin: 0;
+    font-weight: 600;
+  }
+  .brand em { font-style: normal; color: var(--accent); }
+  .brand-sub { font-size: 0.8125rem; color: var(--muted); margin: 0.15rem 0 0; }
+  .spacer { flex: 1 1 auto; }
+
+  .segmented, .stepper {
+    display: inline-flex;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    overflow: hidden;
+    background: var(--panel);
+  }
+  .segmented button {
+    appearance: none; border: 0; background: transparent;
+    color: var(--muted);
+    font-family: var(--ui); font-size: 0.75rem;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    padding: 0.4rem 0.8rem; cursor: pointer;
+  }
+  .segmented button[aria-pressed="true"] {
+    background: var(--accent); color: var(--ground); font-weight: 600;
+  }
+  .segmented button:focus-visible,
+  .stepper button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+  .stepper button {
+    appearance: none; border: 0; background: transparent;
+    color: var(--text); font-family: var(--ui);
+    font-size: 1rem; line-height: 1; width: 2rem; cursor: pointer;
+  }
+  .stepper button.add-s, .stepper button.add-z {
+    width: auto; padding: 0 0.6rem;
+    font-family: var(--display); font-size: 0.875rem; font-weight: 700;
+  }
+  .stepper button.add-s:not(:disabled) { color: var(--sz-s); }
+  .stepper button.add-z:not(:disabled) { color: var(--sz-z); }
+  .stepper button.add-z { border-left: 1px solid var(--line); }
+  .stepper button:hover:not(:disabled) { background: color-mix(in srgb, currentColor 14%, transparent); }
+  .stepper button:disabled { color: var(--line); cursor: not-allowed; }
+  .stepper .count {
+    display: flex; align-items: baseline; gap: 0.35rem;
+    padding: 0.4rem 0.5rem;
+    border-left: 1px solid var(--line); border-right: 1px solid var(--line);
+    font-family: var(--mono); font-size: 0.8125rem;
+    font-variant-numeric: tabular-nums;
+  }
+  .stepper .count small {
+    font-family: var(--ui); font-size: 0.625rem;
+    letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted);
+  }
+
+  /* ---------- the board ---------- */
+
+  .board-scroll { overflow: auto; padding: 1.5rem 0 0.5rem; }
+
+  /* DOM is row-major (a group per pick) so screen readers read the band
+     correctly; `display: contents` lets the cells be grid items regardless,
+     and orientation is a matter of where each cell is placed. */
+  .board { display: grid; width: max-content; margin: 0 auto; }
+  .row { display: contents; }
+
+  .tick {
+    display: flex; align-items: center; gap: 0.3rem;
+    font-family: var(--mono); font-size: 0.6875rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--muted); opacity: 0.55;
+  }
+  .tick.marked { opacity: 1; }
+  .tick .inlay { width: 5px; height: 5px; border-radius: 50%; background: var(--string); }
+  .v .tick { justify-content: flex-end; padding-right: 0.4rem; }
+  .h .tick { justify-content: center; padding-bottom: 0.3rem; }
+
+  .chip {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: var(--ui);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 0;
+    overflow: hidden;
+  }
+  .v .chip { flex-direction: column; margin: 0 1px 8px; border-bottom: 3px solid var(--id); }
+  .h .chip { flex-direction: row; margin: 1px 8px 1px 0; border-right: 3px solid var(--id); padding: 0 4px; }
+  .chip:hover { border-top-color: var(--id); border-left-color: var(--id); }
+  .chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .chip .id {
+    font-family: var(--mono); font-size: 0.75rem; font-weight: 600;
+    font-variant-numeric: tabular-nums; color: var(--id); line-height: 1;
+  }
+  .chip .sz {
+    font-family: var(--display); font-size: 0.8125rem; font-weight: 700;
+    line-height: 1; color: var(--muted);
+  }
+  .chip .holes { display: flex; gap: 2px; }
+  .h .chip .holes { flex-direction: column; }
+  .chip .holes i {
+    width: min(6px, calc((var(--cell-w) - 14px) / 4));
+    height: 6px; border-radius: 1px; display: block;
+  }
+  .h .chip .holes i { width: 6px; height: min(5px, calc((var(--cell-h) - 8px) / 4)); }
+  .landmark .chip { background: color-mix(in srgb, var(--id) 12%, var(--panel)); }
+  .landmark .chip .id { font-size: 0.8125rem; font-weight: 700; }
+
+  .string { background: var(--id); opacity: 0.85; border-radius: 2px; align-self: center; justify-self: center; }
+  .v .string { width: 3px; height: 100%; }
+  .h .string { height: 3px; width: 100%; }
+  .mode-woven .string { opacity: 0; }
+
+  .rail { background: var(--id); opacity: 0.55; border-radius: 2px; align-self: center; justify-self: center; }
+  .v .rail { height: 3px; width: 100%; margin-top: 4px; }
+  .h .rail { width: 3px; height: 100%; margin-left: 4px; }
+  .landmark .rail { opacity: 1; }
+  .v .landmark .rail { height: 6px; }
+  .h .landmark .rail { width: 6px; }
+
+  .cell {
+    position: relative;
+    border: 0;
+    background: transparent;
+    padding: 0;
+    cursor: pointer;
+    touch-action: none;
+  }
+  .v .cell { border-top: 1px solid var(--line); }
+  .h .cell { border-left: 1px solid var(--line); }
+
+  .note {
+    position: absolute; top: 50%; left: 50%;
+    width: 16px; height: 26px;
+    margin: -13px 0 0 -8px;
+    border-radius: 8px;
+    z-index: 2;
+    transition: transform 140ms ease, background-color 140ms ease;
+  }
+  .lean-s .note { transform: rotate(calc(var(--lean-base) + 28deg)); }
+  .lean-z .note { transform: rotate(calc(var(--lean-base) - 28deg)); }
+  .cell:hover .note { box-shadow: 0 0 0 2px var(--accent); }
+
+  .mode-woven .cell { border-color: transparent; }
+  .mode-woven .note {
+    width: 100%; height: 100%; margin: 0; top: 0; left: 0;
+    border-radius: 2px;
+  }
+  .mode-woven .lean-s .note {
+    transform: none;
+    background-image: repeating-linear-gradient(var(--weave-angle),
+      rgba(255,255,255,0.13) 0 3px, rgba(0,0,0,0.16) 3px 7px);
+  }
+  .mode-woven .lean-z .note {
+    transform: none;
+    background-image: repeating-linear-gradient(calc(180deg - var(--weave-angle)),
+      rgba(255,255,255,0.13) 0 3px, rgba(0,0,0,0.16) 3px 7px);
+  }
+
+  .cell.selected { background: color-mix(in srgb, var(--accent) 14%, transparent); z-index: 2; }
+  .cell.focused { outline: 2px solid var(--accent); outline-offset: -2px; z-index: 5; }
+  .cell:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; z-index: 5; }
+  .cell.ghost .note { opacity: 0.5; }
+  .cell.willchange::after {
+    content: ""; position: absolute; inset: 2px;
+    border: 1px dashed color-mix(in srgb, var(--accent) 70%, transparent);
+    border-radius: 3px; pointer-events: none; z-index: 4;
+  }
+  .cell.current {
+    background: color-mix(in srgb, var(--accent) 16%, transparent);
+    z-index: 3;
+  }
+  .v .cell.current { box-shadow: inset 0 1px 0 var(--accent), inset 0 -1px 0 var(--accent); }
+  .h .cell.current { box-shadow: inset 1px 0 0 var(--accent), inset -1px 0 0 var(--accent); }
+  .cell.current .note { box-shadow: 0 0 12px 2px color-mix(in srgb, var(--accent) 55%, transparent); }
+  .cell.past .note { opacity: 0.32; }
+
+  @keyframes pulse {
+    0% { transform: scale(1); } 45% { transform: scale(1.3); } 100% { transform: scale(1); }
+  }
+  .rippling .note { animation: pulse 260ms ease; }
+  @media (prefers-reduced-motion: reduce) {
+    .rippling .note { animation: none; }
+    .note { transition: none; }
+  }
+
+  /* ---------- weave bar ---------- */
+
+  .weavebar {
+    display: none; align-items: center; gap: 1rem;
+    margin: 0.5rem 0 0; padding: 0.85rem 1rem;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+  }
+  .weavebar.on { display: flex; }
+  .weavebar .pick {
+    font-family: var(--display); font-size: 1.5rem;
+    font-variant-numeric: tabular-nums;
+  }
+  .weavebar .pick small {
+    display: block; font-family: var(--ui); font-size: 0.625rem;
+    letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted);
+  }
+  .weavebar .turns { flex: 1 1 auto; display: flex; gap: 4px; overflow-x: auto; }
+  .weavebar .turns span {
+    flex: 0 0 auto; width: 26px; height: 30px;
+    display: grid; place-items: center; border-radius: 6px;
+    background: var(--ground); border: 1px solid var(--line);
+    border-bottom: 3px solid var(--id, var(--line));
+    font-size: 0.9rem; line-height: 1;
+  }
+  .weavebar .turns span.fwd { color: var(--text); }
+  .weavebar .turns span.bwd { color: var(--muted); }
+
+  .btn {
+    appearance: none; border: 1px solid var(--accent);
+    background: var(--accent); color: var(--ground);
+    font-family: var(--ui); font-weight: 600; font-size: 0.8125rem;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    padding: 0.6rem 1.1rem; border-radius: 999px; cursor: pointer;
+  }
+  .btn.ghost { background: transparent; color: var(--text); border-color: var(--line); }
+  .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* ---------- card editor dialog ---------- */
+
+  dialog {
+    background: var(--panel);
+    color: var(--text);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 1.25rem;
+    max-width: 340px;
+    width: calc(100vw - 2rem);
+  }
+  dialog::backdrop { background: rgba(0,0,0,0.55); }
+  dialog h2 {
+    font-family: var(--display); text-transform: uppercase; letter-spacing: 0.08em;
+    font-size: 0.875rem; margin: 0 0 0.15rem; color: var(--accent);
+  }
+  dialog .dsub { font-size: 0.75rem; color: var(--muted); margin: 0 0 1rem; }
+
+  .holes-edit { display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 1rem; }
+  .hole-row {
+    display: flex; align-items: center; gap: 0.6rem;
+    background: var(--ground); border: 1px solid var(--line);
+    border-radius: 8px; padding: 0.35rem 0.5rem;
+    cursor: pointer;
+  }
+  .hole-row[aria-selected="true"] { border-color: var(--accent); }
+  .hole-row .label {
+    font-family: var(--mono); font-size: 0.75rem; color: var(--muted); width: 1rem;
+  }
+  .hole-row .swatch {
+    width: 26px; height: 20px; border-radius: 4px; border: 1px solid rgba(0,0,0,0.35);
+  }
+  .hole-row .hex { font-family: var(--mono); font-size: 0.6875rem; color: var(--muted); }
+
+  .swatches { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 0.75rem; }
+  .swatches button {
+    width: 28px; height: 28px; border-radius: 6px;
+    border: 1px solid rgba(0,0,0,0.35); cursor: pointer; padding: 0;
+  }
+  .swatches button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .wheel-row { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 1rem; }
+  .wheel-row input[type="color"] {
+    width: 44px; height: 32px; padding: 0; border: 1px solid var(--line);
+    border-radius: 6px; background: var(--ground); cursor: pointer;
+  }
+  .wheel-row label { font-size: 0.75rem; color: var(--muted); }
+
+  .dialog-actions { display: flex; gap: 0.5rem; justify-content: space-between; align-items: center; }
+
+  h3.dlabel {
+    font-size: 0.625rem; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--muted); margin: 0 0 0.4rem; font-weight: 600;
+  }
+
+  /* ---------- notes ---------- */
+
+  .notes {
+    margin-top: 2.5rem; padding-top: 1.5rem; border-top: 1px solid var(--line);
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1.5rem 2rem;
+  }
+  .notes h2 {
+    font-family: var(--display); text-transform: uppercase; letter-spacing: 0.1em;
+    font-size: 0.75rem; color: var(--accent); margin: 0 0 0.5rem;
+  }
+  .notes p, .notes li {
+    font-size: 0.875rem; line-height: 1.55; color: var(--muted);
+    margin: 0 0 0.5rem; max-width: 62ch;
+  }
+  .notes ul { margin: 0; padding-left: 1.1rem; }
+  .notes strong { color: var(--text); font-weight: 600; }
+  kbd {
+    font-family: var(--mono); font-size: 0.75rem; background: var(--panel);
+    border: 1px solid var(--line); border-radius: 4px; padding: 0.05em 0.35em; color: var(--text);
+  }
+  .hint { font-size: 0.8125rem; color: var(--muted); text-align: center; margin: 0.25rem 0 0; }
+  #live { color: var(--accent); min-height: 1.2em; }
+</style>
+
+<div class="wrap">
+  <div class="topbar">
+    <div>
+      <h1 class="brand">Weave<em>Smith</em></h1>
+      <p class="brand-sub">Board mockup · threaded-in, 20 picks</p>
+    </div>
+    <div class="spacer"></div>
+
+    <div class="stepper" role="group" aria-label="Number of cards">
+      <button type="button" id="btn-less" aria-label="Remove a card">−</button>
+      <span class="count"><span id="card-count">8</span><small>cards</small></span>
+      <button type="button" class="add-s" id="btn-add-s" aria-label="Add an S-threaded card">+S</button>
+      <button type="button" class="add-z" id="btn-add-z" aria-label="Add a Z-threaded card">+Z</button>
+    </div>
+
+    <div class="segmented" role="group" aria-label="Orientation">
+      <button type="button" id="btn-vert" aria-pressed="true">↓ Band</button>
+      <button type="button" id="btn-horiz" aria-pressed="false">→ Band</button>
+    </div>
+
+    <div class="segmented" role="group" aria-label="Card colour scheme">
+      <button type="button" id="btn-thread" aria-pressed="true">S/Z</button>
+      <button type="button" id="btn-index" aria-pressed="false">Index</button>
+    </div>
+
+    <div class="segmented" role="group" aria-label="Render mode">
+      <button type="button" id="btn-woven" aria-pressed="true">Woven</button>
+      <button type="button" id="btn-dots" aria-pressed="false">Dots</button>
+    </div>
+
+    <div class="segmented" role="group" aria-label="Screen mode">
+      <button type="button" id="btn-design" aria-pressed="true">Design</button>
+      <button type="button" id="btn-weave" aria-pressed="false">Weave</button>
+    </div>
+  </div>
+
+  <div class="weavebar" id="weavebar">
+    <div class="pick"><small>Pick</small><span id="pick-no">1</span></div>
+    <div class="turns" id="turns" aria-label="Turn direction per card for this pick"></div>
+    <button type="button" class="btn ghost" id="btn-back">Back</button>
+    <button type="button" class="btn" id="btn-next">Next pick</button>
+  </div>
+
+  <div class="board-scroll">
+    <div class="board v mode-woven" id="board" role="grid" aria-label="Weaving board"></div>
+  </div>
+
+  <p class="hint" id="hint">Click or drag to paint. Arrows move, Shift+arrows select, F/B set direction, 1–4 pick a hole.</p>
+  <p class="hint" id="live" role="status" aria-live="polite"></p>
+
+  <div class="notes">
+    <div>
+      <h2>What you're looking at</h2>
+      <p>Cards and picks are the two axes. Each note is the thread showing on the band's face at that card and pick, leaning <strong>/</strong> or <strong>\</strong> with the twist — so the note field <em>is</em> the woven band.</p>
+      <p><strong>↓ Band</strong> runs picks downward, cards across: the desktop layout. <strong>→ Band</strong> transposes it — every card visible down the side, the pattern growing to the right as you scroll. That's the phone layout, and it's the default on a narrow screen.</p>
+      <p>Card colour encodes <strong>threading direction</strong>, not index, so it survives a 40-card band. Every fifth card is a landmark. Note faces stay wool-coloured; identity colour never touches them.</p>
+    </div>
+    <div>
+      <h2>Editing</h2>
+      <ul>
+        <li>Click a note to flip it; <strong>drag</strong> to paint a run. <strong>Shift-click</strong> extends the selection without dragging.</li>
+        <li><strong>Hover</strong> on a desktop: the note ghosts to what it would become and every cell below that would change gets a dashed outline — the ripple, before you commit.</li>
+        <li><strong>Click a chip</strong> to open its card: threading, and a colour per hole. Long-press works on touch.</li>
+        <li>Adding a card opens that editor straight away, pre-filled from its neighbour.</li>
+      </ul>
+    </div>
+    <div>
+      <h2>Keyboard</h2>
+      <ul>
+        <li><kbd>←↑↓→</kbd> move · <kbd>Shift</kbd>+arrows extend · <kbd>PgUp</kbd>/<kbd>PgDn</kbd> five picks · <kbd>Home</kbd>/<kbd>End</kbd> first/last card</li>
+        <li><kbd>Space</kbd> flip · <kbd>F</kbd>/<kbd>B</kbd> forward/backward · <kbd>1</kbd>–<kbd>4</kbd> show hole A–D · <kbd>S</kbd>/<kbd>Z</kbd> threading · <kbd>E</kbd> edit card</li>
+        <li><kbd>Esc</kbd> collapse · <kbd>Ctrl/Cmd+Z</kbd> undo · <kbd>Shift+Ctrl/Cmd+Z</kbd> redo</li>
+      </ul>
+      <p>Arrow keys follow the band, not the screen: in <strong>→ Band</strong> the axes swap with the layout.</p>
+    </div>
+    <div>
+      <h2>Not final</h2>
+      <p>Threading here is a plain chevron. Palette is dyed wool: madder, woad, weld, walnut, undyed — the presets in the card editor, with a picker for anything else.</p>
+      <p>Hole-position and lean conventions are a first pass; the real ones get pinned by tests against published bands.</p>
+    </div>
+  </div>
+</div>
+
+<dialog id="editor" aria-labelledby="editor-title">
+  <h2 id="editor-title">Card 1</h2>
+  <p class="dsub" id="editor-sub">Threading and hole colours</p>
+
+  <div class="segmented" role="group" aria-label="Threading direction" style="margin-bottom:1rem">
+    <button type="button" id="ed-s" aria-pressed="false">S threaded</button>
+    <button type="button" id="ed-z" aria-pressed="false">Z threaded</button>
+  </div>
+
+  <h3 class="dlabel">Holes</h3>
+  <div class="holes-edit" id="ed-holes"></div>
+
+  <h3 class="dlabel">Dyed wool</h3>
+  <div class="swatches" id="ed-presets"></div>
+
+  <h3 class="dlabel">In this band</h3>
+  <div class="swatches" id="ed-used"></div>
+
+  <div class="wheel-row">
+    <input type="color" id="ed-wheel" value="#B4402C" aria-label="Custom colour" />
+    <label for="ed-wheel">Custom — applies to the selected hole</label>
+  </div>
+
+  <div class="dialog-actions">
+    <button type="button" class="btn ghost" id="ed-delete">Delete card</button>
+    <button type="button" class="btn" id="ed-done">Done</button>
+  </div>
+</dialog>
+
+<script>
+  // ---- palette: dyed wool, extensible ----
+  var P = ["#4B3826", "#B4402C", "#2F5F8F", "#D8A62B", "#EADCC0"];
+  var PRESETS = P.slice();
+  var WALNUT = 0, MADDER = 1, WOAD = 2, WELD = 3, CREAM = 4;
+
+  var PICKS = 20;
+  var MIN_CARDS = 4;
+  var MAX_CARDS = 40;
+
+  function makeCard(colors, threading) {
+    return { colors: colors, threading: threading, start: 0 };
+  }
+  function borderCard(t) { return makeCard([WALNUT, WALNUT, WALNUT, WALNUT], t); }
+  function fieldCard(t) { return makeCard([CREAM, CREAM, MADDER, MADDER], t); }
+
+  var cards = [
+    borderCard("S"), fieldCard("S"), fieldCard("S"),
+    makeCard([CREAM, WELD, WOAD, MADDER], "S"),
+    makeCard([CREAM, WELD, WOAD, MADDER], "Z"),
+    fieldCard("Z"), fieldCard("Z"), borderCard("Z")
+  ];
+
+  var turns = [];
+  for (var t0 = 0; t0 < PICKS; t0++) {
+    var row0 = [];
+    for (var c0 = 0; c0 < cards.length; c0++) row0.push(1);
+    turns.push(row0);
+  }
+
+  // ---- state ----
+  var render = "woven";
+  var mode = "design";
+  var colorMode = "threading";
+  var orientation = window.matchMedia("(max-width: 720px)").matches ? "h" : "v";
+  var currentPick = 0;
+  var focusCell = { pick: 0, card: 0 };
+  var anchor = { pick: 0, card: 0 };
+  var hover = null;
+  var preview = new Set();
+  var undoStack = [];
+  var redoStack = [];
+
+  var board = document.getElementById("board");
+  var cellEls = [];
+
+  // ---- identity colour ----
+  var darkGround = !window.matchMedia("(prefers-color-scheme: light)").matches;
+  var SZ_HUES = { S: 172, Z: 292 };
+  function identityColor(index) {
+    if (colorMode === "threading") {
+      var hue = SZ_HUES[cards[index].threading];
+      return darkGround ? "hsl(" + hue + " 58% 60%)" : "hsl(" + hue + " 52% 38%)";
+    }
+    var h = Math.round((index / Math.max(cards.length, 1)) * 330);
+    return darkGround ? "hsl(" + h + " 72% 60%)" : "hsl(" + h + " 62% 42%)";
+  }
+  function isLandmark(i) { return (i + 1) % 5 === 0; }
+
+  // ---- simulation ----
+  function simulate() {
+    var grid = [];
+    var pos = cards.map(function (c) { return c.start; });
+    for (var t = 0; t < PICKS; t++) {
+      var row = [];
+      for (var c = 0; c < cards.length; c++) {
+        var turn = turns[t][c];
+        pos[c] = (pos[c] + turn + 4) % 4;
+        var card = cards[c];
+        var idx = card.threading === "S" ? pos[c] : (3 - pos[c] + 4) % 4;
+        var lean = (card.threading === "S") === (turn === 1) ? "s" : "z";
+        row.push({ color: card.colors[idx], lean: lean });
+      }
+      grid.push(row);
+    }
+    return grid;
+  }
+
+  function rotationBefore(t, c) {
+    var pos = cards[c].start;
+    for (var i = 0; i < t; i++) pos = (pos + turns[i][c] + 4) % 4;
+    return pos;
+  }
+
+  // ---- band resizing ----
+  function boundary() {
+    var firstZ = cards.findIndex(function (c) { return c.threading === "Z"; });
+    if (firstZ === -1) return cards.length - 1;
+    if (firstZ === 0) return 1;
+    return firstZ;
+  }
+
+  function addCard(threading) {
+    if (cards.length >= MAX_CARDS) return;
+    pushUndo();
+    var at = boundary();
+    // inherit from the nearest neighbour so a new card is never a blank slate
+    var source = cards[Math.max(0, at - 1)];
+    cards.splice(at, 0, makeCard(source.colors.slice(), threading));
+    turns.forEach(function (row) { row.splice(at, 0, 1); });
+    rebuild();
+    openEditor(at);
+  }
+
+  function removeCard(index) {
+    if (cards.length <= MIN_CARDS) return say("A band needs at least " + MIN_CARDS + " cards");
+    pushUndo();
+    var at = index === undefined
+      ? Math.min(Math.max(boundary() - 1, 1), cards.length - 2)
+      : index;
+    cards.splice(at, 1);
+    turns.forEach(function (row) { row.splice(at, 1); });
+    rebuild();
+    say("Card " + (at + 1) + " removed");
+  }
+
+  // ---- layout ----
+  function fitCells() {
+    var n = cards.length;
+    var w = n > 28 ? 24 : n > 18 ? 30 : n > 12 ? 36 : 42;
+    var root = document.documentElement.style;
+    if (orientation === "v") {
+      root.setProperty("--cell-w", w + "px");
+      root.setProperty("--cell-h", "34px");
+      root.setProperty("--lean-base", "0deg");
+      root.setProperty("--weave-angle", "58deg");
+    } else {
+      // Cards run down the side. Shrink to keep them on screen, but stop at a
+      // 28px floor — past that the board scrolls rather than becoming untappable.
+      root.setProperty("--cell-w", "34px");
+      root.setProperty("--cell-h", (n > 12 ? 28 : 34) + "px");
+      root.setProperty("--lean-base", "90deg");
+      root.setProperty("--weave-angle", "148deg");
+    }
+  }
+
+  function place(el, row, col, rowSpan, colSpan) {
+    el.style.gridRow = row + (rowSpan ? " / span " + rowSpan : "");
+    el.style.gridColumn = col + (colSpan ? " / span " + colSpan : "");
+  }
+
+  function buildBoard() {
+    board.textContent = "";
+    board.className = "board " + orientation + " mode-" + render;
+    cellEls = [];
+    for (var t = 0; t < PICKS; t++) cellEls.push([]);
+
+    var n = cards.length;
+    if (orientation === "v") {
+      board.style.gridTemplateColumns = "var(--gutter) repeat(" + n + ", var(--cell-w))";
+      board.style.gridTemplateRows = "auto repeat(" + PICKS + ", var(--cell-h)) auto";
+    } else {
+      board.style.gridTemplateColumns = "var(--chip) repeat(" + PICKS + ", var(--cell-w)) auto";
+      board.style.gridTemplateRows = "auto repeat(" + n + ", var(--cell-h))";
+    }
+
+    // --- card chips, strings and rails ---
+    cards.forEach(function (card, c) {
+      var id = identityColor(c);
+      var landmark = isLandmark(c);
+
+      var chip = document.createElement("button");
+      chip.type = "button";
+      chip.className = "chip";
+      chip.style.setProperty("--id", id);
+      chip.dataset.card = c;
+      chip.setAttribute("aria-label", "Card " + (c + 1) + ", threaded " + card.threading + ", edit");
+      chip.innerHTML = "";
+
+      var idEl = document.createElement("span");
+      idEl.className = "id";
+      idEl.textContent = c + 1;
+      chip.appendChild(idEl);
+
+      var szEl = document.createElement("span");
+      szEl.className = "sz";
+      szEl.textContent = card.threading;
+      chip.appendChild(szEl);
+
+      var holes = document.createElement("span");
+      holes.className = "holes";
+      card.colors.forEach(function (ci) {
+        var h = document.createElement("i");
+        h.style.background = P[ci];
+        holes.appendChild(h);
+      });
+      chip.appendChild(holes);
+
+      var string = document.createElement("span");
+      string.className = "string";
+      string.style.setProperty("--id", id);
+
+      var rail = document.createElement("span");
+      rail.className = "rail";
+      rail.style.setProperty("--id", id);
+
+      var wrap = document.createElement("div");
+      wrap.className = landmark ? "row landmark" : "row";
+      wrap.appendChild(chip);
+      wrap.appendChild(string);
+      wrap.appendChild(rail);
+
+      if (orientation === "v") {
+        place(chip, 1, c + 2);
+        place(string, 2, c + 2, PICKS);
+        place(rail, PICKS + 2, c + 2);
+      } else {
+        place(chip, c + 2, 1);
+        place(string, c + 2, 2, null, PICKS);
+        place(rail, c + 2, PICKS + 2);
+      }
+      board.appendChild(wrap);
+    });
+
+    // --- one group per pick: row-major DOM, so a screen reader reads the
+    //     band in weaving order whichever way it is laid out ---
+    for (var t = 0; t < PICKS; t++) {
+      var group = document.createElement("div");
+      group.className = "row";
+      group.setAttribute("role", "row");
+
+      var marked = (t + 1) % 5 === 0;
+      var tick = document.createElement("div");
+      tick.className = marked ? "tick marked" : "tick";
+      if (marked && orientation === "v") {
+        var inlay = document.createElement("span");
+        inlay.className = "inlay";
+        tick.appendChild(inlay);
+      }
+      var num = document.createElement("span");
+      num.textContent = String(t + 1);
+      tick.appendChild(num);
+      if (orientation === "v") place(tick, t + 2, 1);
+      else place(tick, 1, t + 2);
+      group.appendChild(tick);
+
+      for (var c = 0; c < cards.length; c++) {
+        var cell = document.createElement("button");
+        cell.type = "button";
+        cell.className = "cell";
+        cell.setAttribute("role", "gridcell");
+        cell.dataset.pick = t;
+        cell.dataset.card = c;
+        var note = document.createElement("span");
+        note.className = "note";
+        cell.appendChild(note);
+        if (orientation === "v") place(cell, t + 2, c + 2);
+        else place(cell, c + 2, t + 2);
+        group.appendChild(cell);
+        cellEls[t][c] = cell;
+      }
+      board.appendChild(group);
+    }
+  }
+
+  function paint(rippleFrom) {
+    var grid = simulate();
+    var sel = selectionRect();
+    for (var t = 0; t < PICKS; t++) {
+      for (var c = 0; c < cards.length; c++) {
+        var cellObj = grid[t][c];
+        var el = cellEls[t][c];
+        var cls = "cell lean-" + cellObj.lean;
+
+        if (mode === "weave") {
+          if (t === currentPick) cls += " current";
+          else if (t < currentPick) cls += " past";
+        }
+        if (t >= sel.t0 && t <= sel.t1 && c >= sel.c0 && c <= sel.c1) cls += " selected";
+        if (t === focusCell.pick && c === focusCell.card) cls += " focused";
+        if (preview.has(t + ":" + c)) cls += " willchange";
+        if (hover && t === hover.pick && c === hover.card) cls += " ghost";
+        if (rippleFrom && c === rippleFrom.card && t >= rippleFrom.pick) cls += " rippling";
+
+        el.className = cls;
+        el.firstChild.style.animationDelay =
+          (rippleFrom && c === rippleFrom.card && t >= rippleFrom.pick)
+            ? ((t - rippleFrom.pick) * 22) + "ms" : "";
+        el.firstChild.style.background = P[cellObj.color];
+        el.tabIndex = (t === focusCell.pick && c === focusCell.card) ? 0 : -1;
+        el.setAttribute("aria-label",
+          "Card " + (c + 1) + ", pick " + (t + 1) + ", turning " +
+          (turns[t][c] === 1 ? "forward" : "backward"));
+      }
+    }
+    if (mode === "weave") paintWeavebar();
+  }
+
+  function rebuild() {
+    focusCell.card = Math.min(focusCell.card, cards.length - 1);
+    anchor.card = Math.min(anchor.card, cards.length - 1);
+    document.getElementById("card-count").textContent = String(cards.length);
+    document.getElementById("btn-less").disabled = cards.length <= MIN_CARDS;
+    document.getElementById("btn-add-s").disabled = cards.length >= MAX_CARDS;
+    document.getElementById("btn-add-z").disabled = cards.length >= MAX_CARDS;
+    fitCells();
+    buildBoard();
+    paint();
+  }
+
+  // ============================================================
+  //  One editing model: a selection, and commands acting on it.
+  // ============================================================
+
+  function selectionRect() {
+    return {
+      t0: Math.min(focusCell.pick, anchor.pick), t1: Math.max(focusCell.pick, anchor.pick),
+      c0: Math.min(focusCell.card, anchor.card), c1: Math.max(focusCell.card, anchor.card)
+    };
+  }
+  function selectionSize() {
+    var s = selectionRect();
+    return (s.t1 - s.t0 + 1) * (s.c1 - s.c0 + 1);
+  }
+  function say(msg) { document.getElementById("live").textContent = msg; }
+
+  function snapshot() { return JSON.stringify({ turns: turns, cards: cards, P: P }); }
+  function pushUndo() {
+    undoStack.push(snapshot());
+    if (undoStack.length > 100) undoStack.shift();
+    redoStack.length = 0;
+  }
+  function restore(json) {
+    var s = JSON.parse(json);
+    turns = s.turns; cards = s.cards; P = s.P;
+  }
+  function undo() {
+    if (!undoStack.length) return say("Nothing to undo");
+    redoStack.push(snapshot()); restore(undoStack.pop()); rebuild(); say("Undone");
+  }
+  function redo() {
+    if (!redoStack.length) return say("Nothing to redo");
+    undoStack.push(snapshot()); restore(redoStack.pop()); rebuild(); say("Redone");
+  }
+
+  function eachSelected(fn) {
+    var s = selectionRect();
+    for (var t = s.t0; t <= s.t1; t++) for (var c = s.c0; c <= s.c1; c++) fn(t, c);
+    return s;
+  }
+
+  function toggleTurn() {
+    pushUndo();
+    var s = eachSelected(function (t, c) { turns[t][c] = -turns[t][c]; });
+    paint({ pick: s.t0, card: s.c0 });
+    say("Flipped " + selectionSize() + " cell" + (selectionSize() === 1 ? "" : "s"));
+  }
+
+  function setTurn(dir, quiet) {
+    var changed = 0;
+    var s = eachSelected(function (t, c) {
+      if (turns[t][c] !== dir) { turns[t][c] = dir; changed++; }
+    });
+    if (!changed) return;
+    paint({ pick: s.t0, card: s.c0 });
+    if (!quiet) {
+      say("Set " + changed + " cell" + (changed === 1 ? "" : "s") +
+          " to turn " + (dir === 1 ? "forward" : "backward"));
+    }
+  }
+
+  function setHole(hole) {
+    pushUndo();
+    var applied = 0, refused = [];
+    var s = eachSelected(function (t, c) {
+      var card = cards[c];
+      var prev = rotationBefore(t, c);
+      var hit = null;
+      [1, -1].forEach(function (dir) {
+        var pos = (prev + dir + 4) % 4;
+        var idx = card.threading === "S" ? pos : (3 - pos + 4) % 4;
+        if (idx === hole && hit === null) hit = dir;
+      });
+      if (hit === null) refused.push("card " + (c + 1) + " pick " + (t + 1));
+      else { turns[t][c] = hit; applied++; }
+    });
+    paint({ pick: s.t0, card: s.c0 });
+    var msg = applied + " cell" + (applied === 1 ? "" : "s") + " set to hole " + "ABCD"[hole];
+    if (refused.length) {
+      msg += "; hole " + "ABCD"[hole] + " unreachable on " + refused.length +
+             " (" + refused.slice(0, 3).join(", ") + ")";
+    }
+    say(msg);
+  }
+
+  // ---- hover preview ----
+  function computePreview(t, c) {
+    var before = simulate();
+    var saved = turns[t][c];
+    turns[t][c] = -saved;
+    var after = simulate();
+    turns[t][c] = saved;
+    var set = new Set();
+    for (var i = t; i < PICKS; i++) {
+      if (before[i][c].color !== after[i][c].color || before[i][c].lean !== after[i][c].lean) {
+        set.add(i + ":" + c);
+      }
+    }
+    return set;
+  }
+  var canHover = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+
+  // ---- pointer binding ----
+  var painting = null;
+  var pressTimer = null;
+
+  board.addEventListener("pointerdown", function (e) {
+    var chip = e.target.closest(".chip");
+    if (chip) {
+      var ci = Number(chip.dataset.card);
+      pressTimer = setTimeout(function () { pressTimer = null; openEditor(ci); }, 450);
+      return;
+    }
+    var cell = e.target.closest(".cell");
+    if (!cell) return;
+    e.preventDefault();
+    var t = Number(cell.dataset.pick), c = Number(cell.dataset.card);
+
+    if (e.shiftKey) {
+      focusCell = { pick: t, card: c };
+      paint();
+      say("Selection: " + selectionSize() + " cells");
+      return;
+    }
+    pushUndo();
+    focusCell = { pick: t, card: c };
+    anchor = { pick: t, card: c };
+    painting = -turns[t][c];
+    hover = null; preview.clear();
+    setTurn(painting, true);
+    cellEls[t][c].focus({ preventScroll: true });
+    board.setPointerCapture(e.pointerId);
+  });
+
+  board.addEventListener("pointermove", function (e) {
+    if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
+    var el = document.elementFromPoint(e.clientX, e.clientY);
+    var cell = el && el.closest ? el.closest(".cell") : null;
+
+    if (painting !== null) {
+      if (!cell) return;
+      var t = Number(cell.dataset.pick), c = Number(cell.dataset.card);
+      if (t === focusCell.pick && c === focusCell.card) return;
+      focusCell = { pick: t, card: c };
+      setTurn(painting, true);
+      return;
+    }
+    if (!canHover || mode === "weave") return;
+    if (!cell) {
+      if (hover) { hover = null; preview.clear(); paint(); }
+      return;
+    }
+    var pt = Number(cell.dataset.pick), pc = Number(cell.dataset.card);
+    if (hover && hover.pick === pt && hover.card === pc) return;
+    hover = { pick: pt, card: pc };
+    preview = computePreview(pt, pc);
+    paint();
+  });
+
+  function endDrag(e) {
+    if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
+    if (painting === null) return;
+    painting = null;
+    if (e && e.pointerId !== undefined && board.hasPointerCapture(e.pointerId)) {
+      board.releasePointerCapture(e.pointerId);
+    }
+    say("Painted " + selectionSize() + " cell" + (selectionSize() === 1 ? "" : "s"));
+  }
+  board.addEventListener("pointerup", endDrag);
+  board.addEventListener("pointercancel", endDrag);
+  board.addEventListener("pointerleave", function () {
+    if (painting === null && hover) { hover = null; preview.clear(); paint(); }
+  });
+
+  board.addEventListener("click", function (e) {
+    var chip = e.target.closest(".chip");
+    if (chip) openEditor(Number(chip.dataset.card));
+  });
+
+  board.addEventListener("contextmenu", function (e) {
+    if (!e.target.closest(".cell")) return;
+    e.preventDefault();
+    say("Right-click opens the command menu in the real app: flip, forward, backward, show hole A–D.");
+  });
+
+  // ---- keyboard binding ----
+  // Arrows follow the band, not the screen: the axes swap with orientation.
+  function moveFocus(dPick, dCard, extend) {
+    focusCell = {
+      pick: Math.min(Math.max(focusCell.pick + dPick, 0), PICKS - 1),
+      card: Math.min(Math.max(focusCell.card + dCard, 0), cards.length - 1)
+    };
+    if (!extend) anchor = { pick: focusCell.pick, card: focusCell.card };
+    hover = null; preview.clear();
+    paint();
+    cellEls[focusCell.pick][focusCell.card].focus({ preventScroll: false });
+  }
+
+  board.addEventListener("keydown", function (e) {
+    var shift = e.shiftKey;
+    var meta = e.metaKey || e.ctrlKey;
+    var vertical = orientation === "v";
+
+    if (meta && e.key.toLowerCase() === "z") {
+      e.preventDefault();
+      if (shift) redo(); else undo();
+      return;
+    }
+
+    switch (e.key) {
+      case "ArrowUp":
+        e.preventDefault(); vertical ? moveFocus(-1, 0, shift) : moveFocus(0, -1, shift); return;
+      case "ArrowDown":
+        e.preventDefault(); vertical ? moveFocus(1, 0, shift) : moveFocus(0, 1, shift); return;
+      case "ArrowLeft":
+        e.preventDefault(); vertical ? moveFocus(0, -1, shift) : moveFocus(-1, 0, shift); return;
+      case "ArrowRight":
+        e.preventDefault(); vertical ? moveFocus(0, 1, shift) : moveFocus(1, 0, shift); return;
+      case "PageUp":   e.preventDefault(); moveFocus(-5, 0, shift); return;
+      case "PageDown": e.preventDefault(); moveFocus(5, 0, shift); return;
+      case "Home":     e.preventDefault(); moveFocus(0, -cards.length, shift); return;
+      case "End":      e.preventDefault(); moveFocus(0, cards.length, shift); return;
+      case "Escape":
+        e.preventDefault();
+        anchor = { pick: focusCell.pick, card: focusCell.card };
+        paint(); say("Selection collapsed"); return;
+      case " ":
+      case "Enter":
+        e.preventDefault(); toggleTurn(); return;
+    }
+
+    var k = e.key.toLowerCase();
+    if (k === "f") { e.preventDefault(); pushUndo(); setTurn(1); return; }
+    if (k === "b") { e.preventDefault(); pushUndo(); setTurn(-1); return; }
+    if (k === "e") { e.preventDefault(); openEditor(focusCell.card); return; }
+    if (k === "s" || k === "z") {
+      e.preventDefault();
+      pushUndo();
+      var want = k.toUpperCase(), n = 0;
+      eachSelected(function (t, c) {
+        if (cards[c].threading !== want) { cards[c].threading = want; n++; }
+      });
+      rebuild();
+      say(n + " card" + (n === 1 ? "" : "s") + " set to " + want + " threading");
+      return;
+    }
+    if ("1234".indexOf(e.key) !== -1) { e.preventDefault(); setHole(Number(e.key) - 1); return; }
+  });
+
+  // ============================================================
+  //  Card editor
+  // ============================================================
+
+  var editor = document.getElementById("editor");
+  var editing = 0;
+  var editingHole = 0;
+
+  function colorIndex(hex) {
+    var i = P.indexOf(hex);
+    if (i !== -1) return i;
+    P.push(hex);
+    return P.length - 1;
+  }
+
+  function renderEditor() {
+    var card = cards[editing];
+    document.getElementById("editor-title").textContent = "Card " + (editing + 1);
+    document.getElementById("editor-sub").textContent =
+      isLandmark(editing) ? "Landmark card · threading and hole colours" : "Threading and hole colours";
+    document.getElementById("ed-s").setAttribute("aria-pressed", String(card.threading === "S"));
+    document.getElementById("ed-z").setAttribute("aria-pressed", String(card.threading === "Z"));
+
+    var holesBox = document.getElementById("ed-holes");
+    holesBox.textContent = "";
+    card.colors.forEach(function (ci, h) {
+      var row = document.createElement("div");
+      row.className = "hole-row";
+      row.setAttribute("role", "button");
+      row.tabIndex = 0;
+      row.setAttribute("aria-selected", String(h === editingHole));
+
+      var label = document.createElement("span");
+      label.className = "label";
+      label.textContent = "ABCD"[h];
+      row.appendChild(label);
+
+      var sw = document.createElement("span");
+      sw.className = "swatch";
+      sw.style.background = P[ci];
+      row.appendChild(sw);
+
+      var hex = document.createElement("span");
+      hex.className = "hex";
+      hex.textContent = P[ci];
+      row.appendChild(hex);
+
+      row.addEventListener("click", function () {
+        editingHole = h;
+        renderEditor();
+      });
+      holesBox.appendChild(row);
+    });
+
+    fillSwatches("ed-presets", PRESETS);
+    fillSwatches("ed-used", P.filter(function (hex) { return PRESETS.indexOf(hex) === -1; }));
+    // "In this band" only appears once the band has colours beyond the presets
+    var hasCustom = P.length > PRESETS.length;
+    editor.querySelectorAll("h3.dlabel")[2].style.display = hasCustom ? "" : "none";
+    document.getElementById("ed-used").style.display = hasCustom ? "" : "none";
+    document.getElementById("ed-wheel").value = P[card.colors[editingHole]];
+    document.getElementById("ed-delete").disabled = cards.length <= MIN_CARDS;
+  }
+
+  function fillSwatches(id, list) {
+    var box = document.getElementById(id);
+    box.textContent = "";
+    list.forEach(function (hex) {
+      var b = document.createElement("button");
+      b.type = "button";
+      b.style.background = hex;
+      b.setAttribute("aria-label", "Set hole " + "ABCD"[editingHole] + " to " + hex);
+      b.addEventListener("click", function () { applyColor(hex); });
+      box.appendChild(b);
+    });
+  }
+
+  // Assigning a colour to a hole points that hole at a palette entry. It never
+  // edits the entry in place — that would recolour every other card using it.
+  function applyColor(hex) {
+    pushUndo();
+    cards[editing].colors[editingHole] = colorIndex(hex);
+    rebuild();
+    renderEditor();
+    say("Card " + (editing + 1) + " hole " + "ABCD"[editingHole] + " set to " + hex);
+  }
+
+  function openEditor(index) {
+    editing = index;
+    editingHole = 0;
+    renderEditor();
+    if (!editor.open) editor.showModal();
+  }
+
+  document.getElementById("ed-s").addEventListener("click", function () {
+    pushUndo(); cards[editing].threading = "S"; rebuild(); renderEditor();
+  });
+  document.getElementById("ed-z").addEventListener("click", function () {
+    pushUndo(); cards[editing].threading = "Z"; rebuild(); renderEditor();
+  });
+  document.getElementById("ed-wheel").addEventListener("input", function (e) {
+    applyColor(e.target.value.toUpperCase());
+  });
+  document.getElementById("ed-done").addEventListener("click", function () { editor.close(); });
+  document.getElementById("ed-delete").addEventListener("click", function () {
+    var i = editing;
+    editor.close();
+    removeCard(i);
+  });
+
+  // ---- modes ----
+  function setRender(next) {
+    render = next;
+    board.className = "board " + orientation + " mode-" + next;
+    document.getElementById("btn-woven").setAttribute("aria-pressed", String(next === "woven"));
+    document.getElementById("btn-dots").setAttribute("aria-pressed", String(next === "dots"));
+  }
+
+  function setOrientation(next) {
+    orientation = next;
+    document.getElementById("btn-vert").setAttribute("aria-pressed", String(next === "v"));
+    document.getElementById("btn-horiz").setAttribute("aria-pressed", String(next === "h"));
+    rebuild();
+    say(next === "v" ? "Band runs downward" : "Band runs to the right");
+  }
+
+  function setColorMode(next) {
+    colorMode = next;
+    document.getElementById("btn-thread").setAttribute("aria-pressed", String(next === "threading"));
+    document.getElementById("btn-index").setAttribute("aria-pressed", String(next === "index"));
+    rebuild();
+  }
+
+  function setMode(next) {
+    mode = next;
+    document.getElementById("btn-design").setAttribute("aria-pressed", String(next === "design"));
+    document.getElementById("btn-weave").setAttribute("aria-pressed", String(next === "weave"));
+    document.getElementById("weavebar").classList.toggle("on", next === "weave");
+    document.getElementById("hint").textContent = next === "weave"
+      ? "Work down the band one pick at a time. The board keeps your place."
+      : "Click or drag to paint. Arrows move, Shift+arrows select, F/B set direction, 1–4 pick a hole.";
+    paint();
+  }
+
+  function paintWeavebar() {
+    document.getElementById("pick-no").textContent = String(currentPick + 1);
+    var box = document.getElementById("turns");
+    box.textContent = "";
+    turns[currentPick].forEach(function (turn, c) {
+      var s = document.createElement("span");
+      s.className = turn === 1 ? "fwd" : "bwd";
+      s.style.setProperty("--id", identityColor(c));
+      s.textContent = turn === 1 ? "↑" : "↓";
+      box.appendChild(s);
+    });
+  }
+
+  function step(delta) {
+    currentPick = Math.max(0, Math.min(PICKS - 1, currentPick + delta));
+    paint();
+    cellEls[currentPick][0].scrollIntoView({ block: "center", inline: "center", behavior: "smooth" });
+  }
+
+  document.getElementById("btn-vert").addEventListener("click", function () { setOrientation("v"); });
+  document.getElementById("btn-horiz").addEventListener("click", function () { setOrientation("h"); });
+  document.getElementById("btn-thread").addEventListener("click", function () { setColorMode("threading"); });
+  document.getElementById("btn-index").addEventListener("click", function () { setColorMode("index"); });
+  document.getElementById("btn-woven").addEventListener("click", function () { setRender("woven"); });
+  document.getElementById("btn-dots").addEventListener("click", function () { setRender("dots"); });
+  document.getElementById("btn-design").addEventListener("click", function () { setMode("design"); });
+  document.getElementById("btn-weave").addEventListener("click", function () { setMode("weave"); });
+  document.getElementById("btn-add-s").addEventListener("click", function () { addCard("S"); });
+  document.getElementById("btn-add-z").addEventListener("click", function () { addCard("Z"); });
+  document.getElementById("btn-less").addEventListener("click", function () { removeCard(); });
+  document.getElementById("btn-next").addEventListener("click", function () { step(1); });
+  document.getElementById("btn-back").addEventListener("click", function () { step(-1); });
+
+  setOrientation(orientation);
+  setRender("woven");
+</script>
