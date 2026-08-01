@@ -1104,8 +1104,15 @@ describe('solveTurns minimum change', () => {
     const target = targetFrom(pattern);
 
     // Ask for a different colour at pick 4 only.
+    //
+    // A card advances one rotation per pick, so rotation parity flips every
+    // pick: at a given pick only two of its four holes are reachable, and
+    // which two alternates. Asking for an opposite-parity colour is asking for
+    // something no turn sequence can produce, which tests refusal rather than
+    // minimum change. Filter to the reachable half.
     const original = target[4]![0]!;
-    const alternatives = [WALNUT, MADDER, WOAD, WELD].filter((c) => c !== original);
+    const alternatives = [WALNUT, MADDER, WOAD, WELD]
+      .filter((c) => c !== original && c % 2 === original % 2);
     target[4]![0] = alternatives[0]!;
 
     const result = solveTurns(cards, target, { previous: pattern.picks });
