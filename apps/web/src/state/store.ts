@@ -39,6 +39,14 @@ interface HistoryEntry {
   label: string;
 }
 
+/**
+ * Opaque handle for an in-progress multi-step edit (a pointer drag: one
+ * undo entry, several mutations). A `symbol`, not a number or string, so a
+ * caller can't fabricate one that happens to match — the only way to get a
+ * valid token is from `beginGesture`, and it only compares equal to itself.
+ */
+export type GestureToken = symbol;
+
 interface StoreState {
   pattern: Pattern;
   selection: Selection;
@@ -48,15 +56,28 @@ interface StoreState {
   currentPick: number;
   past: HistoryEntry[];
   future: HistoryEntry[];
+  // The token of the gesture currently allowed to call `continueGesture`,
+  // or null when no gesture is open. Set by `beginGesture`; cleared by
+  // every other action that touches history (`apply`, `undo`, `redo`,
+  // `load`, `reset`) or opens a new one (`beginGesture` itself, which
+  // simply overwrites it) — so a token from a gesture that's no longer the
+  // open one always fails the identity check in `continueGesture`, rather
+  // than silently reopening closed history.
+  openGesture: GestureToken | null;
 
   apply: (mutate: (draft: Pattern) => void, label: string) => void;
-  // Continue a gesture that already recorded its own undo entry via `apply`
-  // (a pointer drag: `apply` fires once on pointerdown to push the pre-drag
-  // pattern, then every pointermove calls this instead). Replaces the live
-  // pattern — deep-frozen exactly like `apply`'s result — but never touches
-  // `past`/`future`, so a multi-cell drag still costs exactly one undo step
-  // no matter how many times this runs mid-gesture.
-  continueGesture: (mutate: (draft: Pattern) => void) => void;
+  // Start a multi-step gesture: pushes exactly one undo entry (like
+  // `apply`) and applies the first mutation, then returns a token that
+  // must be passed to every following `continueGesture` call for this
+  // gesture. There is no separate "end" — the token simply stops being
+  // useful once anything else touches history.
+  beginGesture: (mutate: (draft: Pattern) => void, label: string) => GestureToken;
+  // Continue the gesture identified by `token`: replaces the live pattern
+  // — deep-frozen exactly like `apply`'s result — but never touches
+  // `past`/`future`, so a multi-cell drag still costs exactly one undo
+  // step no matter how many times this runs. Throws if `token` is not the
+  // currently open gesture (none open, or a different/stale one).
+  continueGesture: (token: GestureToken, mutate: (draft: Pattern) => void) => void;
   undo: () => string | undefined;
   redo: () => string | undefined;
   setSelection: (selection: Selection) => void;
@@ -80,12 +101,15 @@ export const useStore = create<StoreState>((set, get) => ({
   currentPick: 0,
   past: [],
   future: [],
+  openGesture: null,
 
-  // The single write path. Everything that changes the pattern goes through
-  // here, so undo never misses a change. Clones before mutating so the
-  // pattern object already on the undo stack (and any reference a caller is
-  // still holding) stays untouched, then freezes the result before it
-  // becomes the live pattern.
+  // The single write path for a one-shot edit. Everything that changes the
+  // pattern outside a gesture goes through here, so undo never misses a
+  // change. Clones before mutating so the pattern object already on the
+  // undo stack (and any reference a caller is still holding) stays
+  // untouched, then freezes the result before it becomes the live pattern.
+  // Ends any gesture that was left open (e.g. by something other than the
+  // binding that started it) — after this, its token is stale.
   apply: (mutate, label) => {
     const { pattern, past } = get();
     const draft = structuredClone(pattern);
@@ -95,11 +119,33 @@ export const useStore = create<StoreState>((set, get) => ({
       pattern: draft,
       past: [...past, { pattern, label }].slice(-UNDO_LIMIT),
       future: [],
+      openGesture: null,
     });
   },
 
-  continueGesture: (mutate) => {
-    const { pattern } = get();
+  beginGesture: (mutate, label) => {
+    const { pattern, past } = get();
+    const draft = structuredClone(pattern);
+    mutate(draft);
+    freezePattern(draft);
+    const token: GestureToken = Symbol('gesture');
+    set({
+      pattern: draft,
+      past: [...past, { pattern, label }].slice(-UNDO_LIMIT),
+      future: [],
+      openGesture: token,
+    });
+    return token;
+  },
+
+  continueGesture: (token, mutate) => {
+    const { pattern, openGesture } = get();
+    if (token !== openGesture) {
+      throw new Error(
+        'continueGesture: no matching open gesture — it was never started, or has already ' +
+        'ended (a later apply/beginGesture/undo/redo/load/reset closed it).',
+      );
+    }
     const draft = structuredClone(pattern);
     mutate(draft);
     freezePattern(draft);
@@ -114,6 +160,7 @@ export const useStore = create<StoreState>((set, get) => ({
       pattern: previous.pattern,
       past: past.slice(0, -1),
       future: [{ pattern, label: previous.label }, ...future],
+      openGesture: null,
     });
     return previous.label;
   },
@@ -126,6 +173,7 @@ export const useStore = create<StoreState>((set, get) => ({
       pattern: next.pattern,
       past: [...past, { pattern, label: next.label }],
       future: future.slice(1),
+      openGesture: null,
     });
     return next.label;
   },
@@ -159,6 +207,7 @@ export const useStore = create<StoreState>((set, get) => ({
       future: [],
       selection: defaultSelection(),
       currentPick: 0,
+      openGesture: null,
     }),
 
   // Full reset (used between tests, and available for a "start over" action).
@@ -174,5 +223,6 @@ export const useStore = create<StoreState>((set, get) => ({
       currentPick: 0,
       past: [],
       future: [],
+      openGesture: null,
     }),
 }));

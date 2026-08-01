@@ -242,3 +242,109 @@ describe('store', () => {
     expect(state.pattern.meta.name).toBe('Chevron');
   });
 });
+
+describe('gesture token API (beginGesture / continueGesture)', () => {
+  beforeEach(() => useStore.getState().reset());
+
+  it('throws when continueGesture is called with no gesture ever begun', () => {
+    // A caller who reaches for `continueGesture` directly (skipping
+    // `beginGesture`) has no way to produce a token in the first place —
+    // `GestureToken` is a `symbol`, so `undefined` is the closest a caller
+    // could pass without TypeScript already refusing to compile. Either
+    // way, the store must not silently accept it.
+    expect(() => {
+      useStore.getState().continueGesture(undefined as never, () => {});
+    }).toThrow();
+  });
+
+  it('throws when continueGesture is called with a stale token from a finished gesture', () => {
+    const token = useStore.getState().beginGesture((draft) => {
+      draft.meta.name = 'first';
+    }, 'first');
+
+    // A later, unrelated `apply` ends the gesture (this is what a normal
+    // pointerup + some other edit looks like, or — the scenario the
+    // reviewer flagged — a careless reuse of an old token after the drag
+    // that produced it is long over).
+    useStore.getState().apply((draft) => { draft.meta.name = 'second'; }, 'second');
+
+    expect(() => {
+      useStore.getState().continueGesture(token, (draft) => { draft.meta.name = 'stale'; });
+    }).toThrow();
+
+    // And the throw must not have mutated anything.
+    expect(useStore.getState().pattern.meta.name).toBe('second');
+  });
+
+  it('throws when continueGesture is called with a stale token after undo/load/reset', () => {
+    const afterUndo = useStore.getState().beginGesture((d) => { d.meta.name = 'a'; }, 'a');
+    useStore.getState().undo();
+    expect(() => useStore.getState().continueGesture(afterUndo, () => {})).toThrow();
+
+    const afterLoad = useStore.getState().beginGesture((d) => { d.meta.name = 'c'; }, 'c');
+    useStore.getState().load(useStore.getState().pattern);
+    expect(() => useStore.getState().continueGesture(afterLoad, () => {})).toThrow();
+
+    const afterReset = useStore.getState().beginGesture((d) => { d.meta.name = 'd'; }, 'd');
+    useStore.getState().reset();
+    expect(() => useStore.getState().continueGesture(afterReset, () => {})).toThrow();
+  });
+
+  it('a stale token stays stale even across a later, unrelated undo/redo cycle', () => {
+    // `redo()` also clears `openGesture` defensively (for symmetry with
+    // `undo`/`apply`/`load`/`reset`), but there is no reachable sequence
+    // through the public API where a real `redo()` fires *while* a gesture
+    // is still open: both `beginGesture` and `apply` reset `future` to `[]`
+    // the moment they run, so by the time anything could populate `future`
+    // again (only `undo()` does), any gesture open before that point has
+    // already been invalidated by that same `undo()`. What *is* reachable,
+    // and the guarantee that actually matters, is this: once a gesture's
+    // token has gone stale, no amount of unrelated later undo/redo activity
+    // ever makes it valid again.
+    const staleToken = useStore.getState().beginGesture((d) => { d.meta.name = 'gesture'; }, 'gesture');
+    useStore.getState().apply((d) => { d.meta.name = 'unrelated'; }, 'unrelated'); // ends the gesture
+
+    useStore.getState().undo();
+    useStore.getState().redo();
+
+    expect(() => useStore.getState().continueGesture(staleToken, () => {})).toThrow();
+  });
+
+  it('a normal gesture (begin + several continues) still produces exactly one history entry and undoes completely', () => {
+    const before = structuredClone(useStore.getState().pattern);
+
+    const token = useStore.getState().beginGesture((draft) => {
+      draft.picks[0]![0] = -draft.picks[0]![0]! as -1 | 1;
+    }, 'paint');
+    useStore.getState().continueGesture(token, (draft) => {
+      draft.picks[1]![0] = -draft.picks[1]![0]! as -1 | 1;
+    });
+    useStore.getState().continueGesture(token, (draft) => {
+      draft.picks[2]![0] = -draft.picks[2]![0]! as -1 | 1;
+    });
+
+    expect(useStore.getState().past).toHaveLength(1);
+    expect(useStore.getState().pattern).not.toEqual(before);
+
+    const label = useStore.getState().undo();
+    expect(label).toBe('paint');
+    expect(useStore.getState().pattern).toEqual(before);
+    expect(useStore.getState().past).toHaveLength(0);
+  });
+
+  it('keeps the freeze contract through a gesture: getState().pattern and past[i].pattern are both frozen', () => {
+    const token = useStore.getState().beginGesture((draft) => {
+      draft.picks[0]![0] = -draft.picks[0]![0]! as -1 | 1;
+    }, 'paint');
+    useStore.getState().continueGesture(token, (draft) => {
+      draft.picks[1]![0] = -draft.picks[1]![0]! as -1 | 1;
+    });
+
+    const live = useStore.getState().pattern;
+    expect(() => { (live.picks[1] as (-1 | 1)[])[0] = 1; }).toThrow(TypeError);
+    expect(() => { (live.cards[0] as { threading: string }).threading = 'Z'; }).toThrow(TypeError);
+
+    const entry = useStore.getState().past[0]!;
+    expect(() => { (entry.pattern.picks[0] as (-1 | 1)[])[0] = 1; }).toThrow(TypeError);
+  });
+});

@@ -4,6 +4,7 @@ import { simulate } from '@weavesmith/core';
 import type { Pattern, Turn } from '@weavesmith/core';
 import { setTurn } from '../state/commands.js';
 import { useStore } from '../state/store.js';
+import type { GestureToken } from '../state/store.js';
 import type { CellRef, Selection } from '../state/selection.js';
 
 /** Which cells below this one would change if its turn flipped. */
@@ -80,9 +81,12 @@ export interface PointerBinding {
 export function usePointerBinding(): PointerBinding {
   const [hover, setHover] = useState<CellRef | null>(null);
   const [preview, setPreview] = useState<Set<string>>(EMPTY_PREVIEW);
-  // The direction being painted for the current drag, or null when not
-  // dragging. A ref, not state: it drives no render, only the logic below.
-  const paintingRef = useRef<Turn | null>(null);
+  // The direction being painted and the store's gesture token for the
+  // current drag, or null when not dragging. A ref, not state: it drives
+  // no render, only the logic below. The token is what makes every
+  // `continueGesture` call during this drag provably belong to the entry
+  // `beginGesture` pushed — the store throws if it doesn't.
+  const gestureRef = useRef<{ dir: Turn; token: GestureToken } | null>(null);
 
   const clearHover = useCallback(() => {
     setHover(null);
@@ -93,7 +97,7 @@ export function usePointerBinding(): PointerBinding {
     const target = cellFromElement(e.target as Element);
     if (!target) return;
 
-    const { pattern, selection, setSelection, apply } = useStore.getState();
+    const { pattern, selection, setSelection, beginGesture } = useStore.getState();
 
     if (e.shiftKey) {
       // Extend the selection only — this is a read, not an edit, so it
@@ -106,26 +110,27 @@ export function usePointerBinding(): PointerBinding {
 
     const current = pattern.picks[target.pick]![target.card]!;
     const dir = -current as Turn;
-    paintingRef.current = dir;
 
     const singleCell: Selection = { anchor: target, focus: target };
     setSelection(singleCell);
 
-    // One undo entry for the whole gesture: this is the only `apply` call
-    // in the drag. Every subsequent pointermove uses `continueGesture`,
-    // which updates the live pattern without pushing another entry.
-    apply((draft) => {
+    // One undo entry for the whole gesture: this is the only entry-pushing
+    // call in the drag. Every subsequent pointermove uses `continueGesture`
+    // with the token this returns, which updates the live pattern without
+    // pushing another entry.
+    const token = beginGesture((draft) => {
       const result = setTurn(draft, singleCell, dir);
       Object.assign(draft, result.pattern);
     }, `Set turn ${dir === 1 ? 'forward' : 'backward'}`);
+    gestureRef.current = { dir, token };
 
     e.currentTarget.setPointerCapture(e.pointerId);
   }, [clearHover]);
 
   const onPointerMove = useCallback((e: ReactPointerEvent<HTMLDivElement>) => {
-    const dir = paintingRef.current;
+    const gesture = gestureRef.current;
 
-    if (dir !== null) {
+    if (gesture !== null) {
       const target = cellUnderPointer(e);
       if (!target) return;
       const { selection, continueGesture, setSelection } = useStore.getState();
@@ -135,8 +140,8 @@ export function usePointerBinding(): PointerBinding {
       // Idempotent: re-painting cells already at `dir` (including ones
       // visited earlier in the same drag) changes nothing, so dragging
       // back and forth over already-painted cells costs nothing.
-      continueGesture((draft) => {
-        const result = setTurn(draft, grown, dir);
+      continueGesture(gesture.token, (draft) => {
+        const result = setTurn(draft, grown, gesture.dir);
         Object.assign(draft, result.pattern);
       });
       setSelection(grown);
@@ -157,8 +162,8 @@ export function usePointerBinding(): PointerBinding {
   }, [clearHover, hover]);
 
   const endDrag = useCallback((e: ReactPointerEvent<HTMLDivElement>) => {
-    if (paintingRef.current === null) return;
-    paintingRef.current = null;
+    if (gestureRef.current === null) return;
+    gestureRef.current = null;
     if (e.currentTarget.hasPointerCapture(e.pointerId)) {
       e.currentTarget.releasePointerCapture(e.pointerId);
     }
@@ -170,7 +175,7 @@ export function usePointerBinding(): PointerBinding {
   // where the pointer physically is, so the gesture survives leaving and
   // re-entering the board without splitting into two undo entries.
   const onPointerLeave = useCallback((_e: ReactPointerEvent<HTMLDivElement>) => {
-    if (paintingRef.current === null && hover) clearHover();
+    if (gestureRef.current === null && hover) clearHover();
   }, [hover, clearHover]);
 
   const handlers = useMemo<PointerHandlers>(() => ({
