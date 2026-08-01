@@ -1286,7 +1286,22 @@ import { HOLE_COUNT, HOLE_LABELS, MAX_CARDS, MIN_CARDS } from './types.js';
  * Returns every problem found, phrased for a person: 1-based indices, the
  * offending value quoted. An empty array means the value is a valid Pattern.
  */
+/**
+ * Check a value against the Pattern format.
+ *
+ * Returns every problem found. Never throws, for any input whatsoever — this
+ * is the public boundary, so the guarantee is structural rather than a claim
+ * about which operations happen to be safe.
+ */
 export function validatePattern(value: unknown): string[] {
+  try {
+    return inspect(value);
+  } catch {
+    return ['pattern could not be inspected'];
+  }
+}
+
+function inspect(value: unknown): string[] {
   const problems: string[] = [];
 
   if (typeof value !== 'object' || value === null || Array.isArray(value)) {
@@ -1372,10 +1387,17 @@ export function validatePattern(value: unknown): string[] {
 }
 ```
 
+Two hardening requirements that are easy to miss and are part of the contract, not polish:
+
+- **Never interpolate an unvalidated value directly.** Every `${...}` and `String(...)` above renders caller-supplied data into a message. A value whose `toString`, `valueOf` or `Symbol.toPrimitive` throws would take the whole validator down with it. Route them all through one module-private helper that renders any value safely and cannot itself throw — wrap its entire body, not just the risky-looking parts.
+- **The outer guard is what makes the promise true.** Even `Array.isArray` throws on a revoked Proxy, so hardening individual operations is a game with no end. The `try`/`catch` around `inspect` is the guarantee; everything inside it can then be written plainly.
+
+Add tests for both: a value with a throwing `toString`, and a revoked Proxy passed as `cards`. Assert no throw *and* a non-empty problem list, plus one asserting a valid pattern still returns `[]` so the guard cannot hide a wholesale failure.
+
 - [ ] **Step 4: Run it and watch it pass**
 
 Run: `pnpm --filter @weavesmith/core test validate`
-Expected: PASS, 12 tests.
+Expected: PASS, 12 tests plus your hardening cases.
 
 - [ ] **Step 5: Write the failing serialisation test**
 
