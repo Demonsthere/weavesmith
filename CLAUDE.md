@@ -67,6 +67,12 @@ published source.
 to make a test pass. Fixtures record provenance in a `source` field; the rules
 are in `packages/core/test/fixtures/README.md`.
 
+**Credit third-party sources in the repo README, not only in the `source`
+field.** A fixture transcribed from someone's published pattern is use of their
+work. The `source` field is the audit trail; the README's Credits section is the
+acknowledgement, and both are required. This applies to anything drawn from
+outside the repo — patterns, data, research, prior art.
+
 ## Working agreements
 
 - **TDD, always.** Write the failing test, run it, confirm it fails for the

@@ -123,6 +123,33 @@ Implementation is test-driven: the weaving conventions are pinned by fixtures
 transcribed from published historical bands, because they cannot be derived with
 confidence. If a fixture and the code disagree, the code is wrong.
 
+## Credits
+
+This project stands on work other people did first.
+
+**[Shelagh Lewins](https://www.shelaghlewins.com/tablet_weaving/patterns_past.php)**
+— her documented historical patterns are what WeaveSmith's weaving conventions
+are tested against. The
+[Narrow Oseberg Band](https://www.shelaghlewins.com/tablet_weaving/Oseberg_narrow/Oseberg_narrow.pdf)
+instruction sheet, reconstructing a band from the Oseberg ship burial
+(c. 834 AD), is transcribed as a test fixture in
+`packages/core/test/fixtures/oseberg-narrow.json`. Her threading chart is the
+reason we know our simulation matches real weaving rather than merely being
+self-consistent.
+
+**Eckhard "Guntram" Gartz** — for
+[GTT](https://www.guntram.co.za/tabletweaving/gtt.htm) and its
+[pattern archive](https://www.guntram.co.za/tabletweaving/patterns/patterns.html),
+which have served this craft for two decades and set the standard WeaveSmith is
+trying to meet.
+
+**[WICI](https://wici.org.pl/2020/04/tkactwo-tabliczkowe-przewodnik-cz-3-darmowe-materialy-do-nauki/)**
+— whose Polish tablet weaving guide is where this project started.
+
+Every fixture in `packages/core/test/fixtures/` records its origin in a `source`
+field. If you contribute one drawn from someone else's published work, credit
+them here too.
+
 ## Further reading on tablet weaving
 
 - [WICI's guide, part 3](https://wici.org.pl/2020/04/tkactwo-tabliczkowe-przewodnik-cz-3-darmowe-materialy-do-nauki/) — Polish, and a good index of free learning material
