@@ -26,6 +26,26 @@
 - **Cell size floor is 28px.** Shrink to fit down to that, then scroll.
 - **Cards per band: 4–40.**
 
+## What the engine turned out to be, that this plan predates
+
+`@weavesmith/core` is built and merged (314 tests). Three things differ from what
+this plan assumed when it was written:
+
+- **Rotation parity is a sharper constraint than "two of four colours".** A card
+  advances one rotation per pick, so its parity flips every pick. At pick *t* it can
+  only be at rotations of parity `(start + t + 1) % 2` — so not only are just two of
+  its four holes reachable, *which* two alternates pick by pick. Everything that
+  reasons about reachability depends on this: `setHole` refusals, the hover preview,
+  and any test that asks for "a different colour". Asking for an opposite-parity
+  colour is asking for something no turn sequence can produce, at any point in the
+  band. Two plan defects in the engine came from missing this.
+- **`gcPalette` throws `PatternError`** when a pattern's palette or colour indices
+  are corrupt, rather than silently producing a broken palette. The share path calls
+  it, so the share path must catch it.
+- **`targetOf(grid: Cell[][]): TargetGrid`** is exported. Use it instead of
+  hand-writing `simulate(p).map(r => r.map(c => c.color))` — that duplication is
+  exactly why it exists.
+
 ---
 
 ## File Structure
@@ -2134,6 +2154,9 @@ const fromBase64Url = (text: string): Uint8Array => {
 };
 
 export function encodePattern(pattern: Pattern): string {
+  // gcPalette throws PatternError on a corrupt palette or an out-of-range
+  // colour index. Let it: a share link for a broken band is worse than a
+  // refusal, and the caller has a PatternError path already.
   return toBase64Url(deflateSync(strToU8(toJSON(gcPalette(pattern))), { level: 9 }));
 }
 
@@ -2154,6 +2177,8 @@ Keys: `weavesmith:autosave` and `weavesmith:save:<name>`. `restore()` and `open(
 - [ ] **Step 4: Write the file menu**
 
 Download as JSON (`toJSON` + a Blob URL), upload (a file input, `fromJSON`, showing `PatternError.problems` as a list if it fails), copy share link, and — when `encodePattern(...).length > SHARE_LIMIT` — say plainly that the pattern is too large for a link and offer the download instead.
+
+**Wrap the share-link call in a `try`/`catch` for `PatternError`.** `encodePattern` runs `gcPalette`, which throws on a corrupt palette or an out-of-range colour index. Uncaught, that takes out the share button instead of telling the user what is wrong with their band — render `PatternError.problems` exactly as the upload path does. Add a test for it.
 
 On boot, `App` reads `location.hash`: `#p=<encoded>` loads a shared pattern, otherwise `restore()`, otherwise `defaultPattern()`.
 
