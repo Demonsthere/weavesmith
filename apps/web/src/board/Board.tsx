@@ -5,6 +5,7 @@ import { rectContains, selectionRect } from '../state/selection.js';
 import { identityColor, isLandmark } from './identity.js';
 import { Cell } from './Cell.js';
 import { CardChip } from './CardChip.js';
+import { usePointerBinding } from './usePointerBinding.js';
 import '../styles/board.css';
 
 /**
@@ -29,6 +30,7 @@ export function Board() {
   const { pattern, selection, orientation, render, mode, currentPick } = useStore();
   const band = useMemo(() => simulate(pattern), [pattern]);
   const rect = selectionRect(selection);
+  const { handlers, preview, hover } = usePointerBinding();
 
   const cardCount = pattern.cards.length;
   const pickCount = pattern.picks.length;
@@ -70,6 +72,7 @@ export function Board() {
         role="grid"
         aria-label="Weaving board"
         style={style}
+        {...handlers}
       >
         {pattern.cards.map((card, c) => (
           <CardChip
@@ -108,6 +111,8 @@ export function Board() {
                 turn={pattern.picks[t]![c]!}
                 selected={rectContains(rect, t, c)}
                 focused={selection.focus.pick === t && selection.focus.card === c}
+                ghost={hover !== null && hover.pick === t && hover.card === c}
+                willChange={preview.has(`${t}:${c}`)}
                 weaveState={
                   mode === 'weave'
                     ? t === currentPick ? 'current' : t < currentPick ? 'past' : 'ahead'

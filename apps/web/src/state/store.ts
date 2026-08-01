@@ -50,6 +50,13 @@ interface StoreState {
   future: HistoryEntry[];
 
   apply: (mutate: (draft: Pattern) => void, label: string) => void;
+  // Continue a gesture that already recorded its own undo entry via `apply`
+  // (a pointer drag: `apply` fires once on pointerdown to push the pre-drag
+  // pattern, then every pointermove calls this instead). Replaces the live
+  // pattern — deep-frozen exactly like `apply`'s result — but never touches
+  // `past`/`future`, so a multi-cell drag still costs exactly one undo step
+  // no matter how many times this runs mid-gesture.
+  continueGesture: (mutate: (draft: Pattern) => void) => void;
   undo: () => string | undefined;
   redo: () => string | undefined;
   setSelection: (selection: Selection) => void;
@@ -89,6 +96,14 @@ export const useStore = create<StoreState>((set, get) => ({
       past: [...past, { pattern, label }].slice(-UNDO_LIMIT),
       future: [],
     });
+  },
+
+  continueGesture: (mutate) => {
+    const { pattern } = get();
+    const draft = structuredClone(pattern);
+    mutate(draft);
+    freezePattern(draft);
+    set({ pattern: draft });
   },
 
   undo: () => {
