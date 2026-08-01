@@ -127,6 +127,15 @@ export function useKeyboardBinding(): KeyboardBinding {
         return;
     }
 
+    // The letter/digit commands are bare-key shortcuts, not chords — but
+    // `f`/`b`/`s`/`z`/`e`/digits are also what Cmd/Ctrl+F/B/S/E and friends
+    // type into, and the OS reserves those for Find/Bold/Save/etc. Swallow
+    // nothing that isn't actually one of ours: any Ctrl/Meta/Alt held means
+    // "let the browser handle it", full stop. Shift is exempt — it is
+    // already meaningful for arrows and (via the branch above) for redo, and
+    // none of these commands are case-sensitive.
+    if (event.ctrlKey || event.metaKey || event.altKey) return;
+
     const key = event.key.toLowerCase();
 
     if (key === 'f' || key === 'b') {

@@ -181,4 +181,74 @@ describe('keyboard binding', () => {
     const cells = screen.getAllByRole('gridcell');
     expect(cells).not.toContain(document.activeElement);
   });
+
+  // Bare-key shortcuts (f/b/s/z/e/1-4) are also what Cmd/Ctrl+F/B/S/E and
+  // digit chords type into; the OS reserves those (Find, Bold, Save, ...).
+  // Any Ctrl/Meta/Alt held must fall through untouched — Shift is exempt,
+  // since it is already meaningful elsewhere (arrows, redo) and none of
+  // these commands are case-sensitive.
+  it('does not swallow Cmd/Ctrl+S — only plain S sets threading', async () => {
+    const user = userEvent.setup();
+    render(<Board />);
+    const target = cell(0, 4); // card index 4 is Z-threaded in the default band
+    await user.click(target); // moves the store's selection, not just DOM focus
+    expect(useStore.getState().pattern.cards[4]!.threading).toBe('Z');
+
+    expect(fireEvent.keyDown(target, { key: 's', metaKey: true })).toBe(true); // not prevented
+    expect(useStore.getState().pattern.cards[4]!.threading).toBe('Z');
+
+    expect(fireEvent.keyDown(target, { key: 's', ctrlKey: true })).toBe(true); // not prevented
+    expect(useStore.getState().pattern.cards[4]!.threading).toBe('Z');
+
+    expect(fireEvent.keyDown(target, { key: 's' })).toBe(false); // prevented
+    expect(useStore.getState().pattern.cards[4]!.threading).toBe('S');
+  });
+
+  it('does not swallow Cmd/Ctrl+<digit> — only a plain digit runs setHole', () => {
+    render(<Board />);
+    const target = cell(0, 0);
+    target.focus();
+    const before = useStore.getState().past.length;
+
+    expect(fireEvent.keyDown(target, { key: '1', metaKey: true })).toBe(true); // not prevented
+    expect(useStore.getState().past.length).toBe(before);
+
+    expect(fireEvent.keyDown(target, { key: '1', ctrlKey: true })).toBe(true); // not prevented
+    expect(useStore.getState().past.length).toBe(before);
+
+    expect(fireEvent.keyDown(target, { key: '1' })).toBe(false); // prevented
+    // setHole always runs through `apply` (even when every cell refuses),
+    // so a real (unguarded) keypress always pushes one undo entry.
+    expect(useStore.getState().past.length).toBe(before + 1);
+  });
+
+  // Home/End are the semantic jump keys and, unlike arrows, do not swap
+  // axes with orientation: Home is always the first card, End the last,
+  // and the pick never moves — pinned in both orientations.
+  it('Home and End jump to the first/last card, pick unchanged, in vertical orientation', async () => {
+    const user = userEvent.setup();
+    render(<Board />);
+    const cardCount = useStore.getState().pattern.cards.length;
+    await user.click(cell(2, 3));
+
+    await user.keyboard('{Home}');
+    expect(useStore.getState().selection.focus).toEqual({ pick: 2, card: 0 });
+
+    await user.keyboard('{End}');
+    expect(useStore.getState().selection.focus).toEqual({ pick: 2, card: cardCount - 1 });
+  });
+
+  it('Home and End jump to the first/last card, pick unchanged, in horizontal orientation', async () => {
+    const user = userEvent.setup();
+    useStore.getState().setOrientation('horizontal');
+    render(<Board />);
+    const cardCount = useStore.getState().pattern.cards.length;
+    await user.click(cell(2, 3));
+
+    await user.keyboard('{Home}');
+    expect(useStore.getState().selection.focus).toEqual({ pick: 2, card: 0 });
+
+    await user.keyboard('{End}');
+    expect(useStore.getState().selection.focus).toEqual({ pick: 2, card: cardCount - 1 });
+  });
 });
