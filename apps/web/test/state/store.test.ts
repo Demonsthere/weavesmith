@@ -201,6 +201,31 @@ describe('store', () => {
     expect(useStore.getState().pattern.picks[0]![0]).toBe(before);
   });
 
+  it("freezes the pattern apply() itself produces, not just reset()'s", () => {
+    // The two tests above both capture `pattern` right after beforeEach's
+    // reset(), before calling apply() — so they only prove reset() froze it.
+    // This exercises apply()'s own freeze call by reading the pattern *after*
+    // an apply and attempting direct writes on it.
+    const before = useStore.getState().pattern.meta.name;
+    useStore.getState().apply((draft) => { draft.meta.name = 'post-apply'; }, 'rename');
+    const pattern = useStore.getState().pattern;
+    expect(pattern.meta.name).toBe('post-apply');
+
+    // A nested array element (frozen by the array recursion branch).
+    expect(() => { pattern.picks[0]![0] = -1; }).toThrow(TypeError);
+    // A nested object property (frozen by the object recursion branch).
+    expect(() => {
+      pattern.cards[0]!.threading = pattern.cards[0]!.threading === 'S' ? 'Z' : 'S';
+    }).toThrow(TypeError);
+    expect(pattern.picks[0]![0]).not.toBe(-1);
+
+    // apply/undo still work correctly afterward, and undo's returned label
+    // matches the change it reverted.
+    const label = useStore.getState().undo();
+    expect(label).toBe('rename');
+    expect(useStore.getState().pattern.meta.name).toBe(before);
+  });
+
   it('reset() restores orientation, render mode, screen mode and current pick too', () => {
     useStore.getState().setOrientation('horizontal');
     useStore.getState().setRender('dots');
