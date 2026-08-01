@@ -1,5 +1,34 @@
 {
-  "source": "https://www.shelaghlewins.com/tablet_weaving/patterns_past.php — 'Narrow Oseberg Band' (instruction sheet: https://www.shelaghlewins.com/tablet_weaving/Oseberg_narrow/Oseberg_narrow.pdf). Threaded-in / warp-twined band from the Oseberg ship burial, Vestfold, Norway, c. 834 AD; 10 tablets, all turned forward together every pick (not double-face, not brocade, not twill). Card colours and S/Z threading transcribed pixel-by-pixel from the PDF's Figure 6 threading chart (a vector diagram, not a photo), which independently agrees with the PDF's prose description ('Tablets 1-3 and 9-10: four yellow'; 'Tablets 4, 8: four blue'; 'Tablets 5, 7: one blue, three yellow'; 'Tablet 6: alternating blue and yellow') and with the explicit setup instructions ('turn tablet 5 so the blue thread is in position A', 'tablet 6 ... positions B and D', 'tablet 7 ... position C'). The 8-pick colour sequence below was derived from the document's own rotation diagrams (Figure 3: position labelling; Figure 4: which physical hole moves to which position on a forward turn) plus the explicit instruction order 'turn ... and pass the weft' (turn happens before the weft that becomes a pick, i.e. pick 1 is read after the first turn) — not by running this library's code. It was then cross-checked qualitatively against the woven-band photograph (Figure 1): the photo shows a period-4 zigzag running mid-tablet, outer-tablet, mid-tablet, opposite-outer-tablet, matching the derived sequence's column-6/7/6/5 oscillation, with a measured pixel period of ~59px for 4 picks, consistent with the plateau widths seen at the start of the photographed run. Confidence: high for the card setup (an unambiguous vector chart, triple-confirmed against prose and instructions); high-but-not-absolute for the pick-to-rotation phase alignment, which rests on the document's diagrams and wording rather than the photo (a mirrored photo would look identical either way, so the photo confirms shape/period, not absolute phase).",
+  "source": {
+    "kind": "sourced",
+    "url": "https://www.shelaghlewins.com/tablet_weaving/patterns_past.php",
+    "documentUrl": "https://www.shelaghlewins.com/tablet_weaving/Oseberg_narrow/Oseberg_narrow.pdf",
+    "author": "Shelagh Lewins, \"Tablet weaving for Dark Age re-enactors\"",
+    "patternName": "Narrow Oseberg Band",
+    "weaveStructure": "Threaded-in / warp-twined — all 10 tablets turn forward together every pick; not double-face, not brocade, not twill.",
+    "context": [
+      "The band this pattern reproduces comes from the Oseberg ship burial, Vestfold, Norway, c. 834 AD.",
+      "10 tablets. The source page grades this pattern 'A' — 'an accurate copy of a specific band'."
+    ],
+    "rejectedSources": [
+      "https://tabletweaving.shelaghlewins.com/ (the URL originally suggested) does not resolve (ENOTFOUND); the working site is https://www.shelaghlewins.com/tablet_weaving/.",
+      "GTT's own pattern archive (https://www.guntram.co.za/tabletweaving/patterns/patterns.html) and its threaded-in sub-pages link only to downloadable proprietary .gtt binary files or zipped images, with no page giving both an inline threading/turning chart and a readable resulting band together — it could not be transcribed with confidence and was not used."
+    ],
+    "transcription": [
+      "Card colours and S/Z threading were transcribed pixel-by-pixel from the PDF's Figure 6 threading chart, a vector diagram, not a photo, by extracting the embedded images with PyMuPDF and programmatically sampling each cell-centre pixel of the 10x4 grid.",
+      "Figure 6's S/Z row labels exist only inside that embedded raster image; the PDF has no separate text-layer copy of them, so they were read directly off the image (once at initial resolution, once after cropping and 6x zoom) rather than confirmed against machine-readable text.",
+      "The 8-pick colour sequence was derived from the document's own rotation diagrams (Figure 3: position labelling; Figure 4: which physical hole moves to which position on a forward turn) plus the explicit instruction wording 'turn ... and pass the weft' (turn happens before the weft that becomes a pick, i.e. pick 1 is read after the first turn) — not by running this library's code."
+    ],
+    "crossChecks": [
+      "Agrees independently with the PDF's prose description: 'Tablets 1-3 and 9-10: four yellow'; 'Tablets 4, 8: four blue'; 'Tablets 5, 7: one blue, three yellow'; 'Tablet 6: alternating blue and yellow'.",
+      "Agrees with the explicit setup instructions: 'turn tablet 5 so the blue thread is in position A'; 'tablet 6 ... positions B and D'; 'tablet 7 ... position C'.",
+      "Cross-checked qualitatively against the woven-band photograph (Figure 1): the photo shows a period-4 zigzag running mid-tablet, outer-tablet, mid-tablet, opposite-outer-tablet, matching the derived sequence's column-6/7/6/5 oscillation, with a measured pixel period of ~59px for 4 picks, consistent with the plateau widths seen at the start of the photographed run."
+    ],
+    "confidence": [
+      "High for the card setup: an unambiguous vector chart, triple-confirmed against two independent pieces of prose and the setup instructions.",
+      "High but not absolute for the pick-to-rotation phase alignment: it rests on the document's diagrams and wording rather than the photo, since a mirrored photo would look identical either way — the photo confirms shape and period, not absolute phase."
+    ]
+  },
   "pattern": {
     "version": 1,
     "meta": {

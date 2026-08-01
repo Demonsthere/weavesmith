@@ -1,14 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { simulate } from '../src/index.js';
 import type { Pattern } from '../src/index.js';
+import type { Fixture } from './helpers/fixture.js';
 import chevron from './fixtures/chevron-8.json' with { type: 'json' };
 import published from './fixtures/oseberg-narrow.json' with { type: 'json' };
-
-interface Fixture {
-  source: string;
-  pattern: Pattern;
-  expected?: string[];
-}
 
 function bandOf(pattern: Pattern): string[] {
   return simulate(pattern).map((row) => row.map((cell) => cell.color).join(''));
