@@ -38,6 +38,45 @@ if (typeof Element.prototype.setPointerCapture !== 'function') {
   };
 }
 
+// jsdom (25.x) parses `<dialog>` but implements none of its interactive
+// API: no `showModal`, no `close`, and no native Escape → cancel → close
+// chain. The card editor (Task 7) relies on all three for focus trapping
+// and Escape-to-dismiss, so the stub below reproduces the real algorithm
+// with actual bookkeeping — an `open` attribute that really flips, a
+// `cancel` event fired first and cancelable, `close` firing only when
+// `cancel` was not prevented — rather than a no-op that would let tests
+// pass without the dialog ever really opening or closing.
+if (typeof HTMLDialogElement.prototype.showModal !== 'function') {
+  // The stack of dialogs currently open via `showModal`, topmost last —
+  // real browsers only send Escape to the topmost modal dialog.
+  const openModals: HTMLDialogElement[] = [];
+
+  HTMLDialogElement.prototype.showModal = function (this: HTMLDialogElement) {
+    this.setAttribute('open', '');
+    if (!openModals.includes(this)) openModals.push(this);
+  };
+
+  HTMLDialogElement.prototype.close = function (
+    this: HTMLDialogElement,
+    returnValue?: string,
+  ) {
+    if (!this.hasAttribute('open')) return;
+    if (returnValue !== undefined) this.returnValue = returnValue;
+    this.removeAttribute('open');
+    const index = openModals.indexOf(this);
+    if (index !== -1) openModals.splice(index, 1);
+    this.dispatchEvent(new Event('close'));
+  };
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape') return;
+    const top = openModals.at(-1);
+    if (!top) return;
+    const notCancelled = top.dispatchEvent(new Event('cancel', { cancelable: true }));
+    if (notCancelled) top.close();
+  });
+}
+
 // jsdom also has no `window.matchMedia`. Default to "fine pointer with
 // hover" (a desktop mouse) so the hover-preview path is exercised by
 // default; tests that want to simulate a touch/coarse device override this

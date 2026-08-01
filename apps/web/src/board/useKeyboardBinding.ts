@@ -154,9 +154,7 @@ export function useKeyboardBinding(): KeyboardBinding {
 
     if (key === 'e') {
       event.preventDefault();
-      // The card editor is Task 7's deliverable; there is nothing to open
-      // yet, but the key is still handled (preventDefault) and announced so
-      // this binding's contract does not change once it lands.
+      useStore.getState().openEditor(selection.focus.card);
       setMessage(`Editing card ${selection.focus.card + 1}`);
       return;
     }

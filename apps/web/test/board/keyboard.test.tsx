@@ -238,6 +238,15 @@ describe('keyboard binding', () => {
     expect(useStore.getState().selection.focus).toEqual({ pick: 2, card: cardCount - 1 });
   });
 
+  it('opens the card editor for the focused card on E', async () => {
+    const user = userEvent.setup();
+    render(<Board />);
+    await user.click(cell(1, 3));
+    await user.keyboard('e');
+    expect(useStore.getState().editingCard).toBe(3);
+    expect(screen.getByRole('status')).toHaveTextContent(/editing card 4/i);
+  });
+
   it('Home and End jump to the first/last card, pick unchanged, in horizontal orientation', async () => {
     const user = userEvent.setup();
     useStore.getState().setOrientation('horizontal');

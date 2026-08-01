@@ -54,6 +54,12 @@ interface StoreState {
   render: RenderMode;
   mode: ScreenMode;
   currentPick: number;
+  // The card the editor dialog is open for, or null when it is closed. UI
+  // state, not document state — like `orientation`/`render`/`mode`, it
+  // lives here rather than being threaded through props, so a chip click,
+  // a long-press, and the `E` key can all open the same dialog without
+  // routing a callback down through `Board`.
+  editingCard: number | null;
   past: HistoryEntry[];
   future: HistoryEntry[];
   // The token of the gesture currently allowed to call `continueGesture`,
@@ -86,6 +92,8 @@ interface StoreState {
   setRender: (render: RenderMode) => void;
   setMode: (mode: ScreenMode) => void;
   setCurrentPick: (pick: number) => void;
+  openEditor: (index: number) => void;
+  closeEditor: () => void;
   load: (pattern: Pattern) => void;
   reset: () => void;
 }
@@ -99,6 +107,7 @@ export const useStore = create<StoreState>((set, get) => ({
   render: 'woven',
   mode: 'design',
   currentPick: 0,
+  editingCard: null,
   past: [],
   future: [],
   openGesture: null,
@@ -195,6 +204,9 @@ export const useStore = create<StoreState>((set, get) => ({
   setCurrentPick: (pick) =>
     set({ currentPick: clamp(pick, get().pattern.picks.length - 1) }),
 
+  openEditor: (index) => set({ editingCard: index }),
+  closeEditor: () => set({ editingCard: null }),
+
   // Importing a file replaces the pattern, but deliberately leaves display
   // preferences (orientation/render/mode) alone — those are UI state, not
   // part of the document being loaded. Clones before freezing so freezing
@@ -207,6 +219,7 @@ export const useStore = create<StoreState>((set, get) => ({
       future: [],
       selection: defaultSelection(),
       currentPick: 0,
+      editingCard: null,
       openGesture: null,
     }),
 
@@ -221,6 +234,7 @@ export const useStore = create<StoreState>((set, get) => ({
       render: 'woven',
       mode: 'design',
       currentPick: 0,
+      editingCard: null,
       past: [],
       future: [],
       openGesture: null,

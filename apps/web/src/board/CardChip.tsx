@@ -1,5 +1,12 @@
-import type { CSSProperties } from 'react';
+import { useRef } from 'react';
+import type { CSSProperties, PointerEvent as ReactPointerEvent } from 'react';
 import type { Card } from '@weavesmith/core';
+import { useStore } from '../state/store.js';
+
+/** Long-press duration before a held chip opens the editor on its own,
+ *  matching the mockup's touch affordance (a plain click also opens it,
+ *  immediately, via the button's `onClick`). */
+const LONG_PRESS_MS = 450;
 
 interface Props {
   card: Card;
@@ -22,6 +29,29 @@ interface Props {
  */
 export function CardChip({ card, index, pickCount, vertical, landmark, color, palette }: Props) {
   const idVar = { '--id': color } as CSSProperties;
+  // A ref, not state: it drives no render, only whether a pending timeout
+  // still needs cancelling.
+  const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const openEditor = () => useStore.getState().openEditor(index);
+
+  const cancelPress = () => {
+    if (pressTimer.current !== null) {
+      clearTimeout(pressTimer.current);
+      pressTimer.current = null;
+    }
+  };
+
+  // Starts the long-press timer; any movement or release before it fires
+  // cancels it (below). A plain click opens the editor immediately via
+  // `onClick` regardless of whether this timer was running.
+  const handlePointerDown = (_event: ReactPointerEvent<HTMLButtonElement>) => {
+    cancelPress();
+    pressTimer.current = setTimeout(() => {
+      pressTimer.current = null;
+      openEditor();
+    }, LONG_PRESS_MS);
+  };
 
   const chipStyle: CSSProperties = vertical
     ? { gridRow: 1, gridColumn: index + 2, ...idVar }
@@ -43,6 +73,11 @@ export function CardChip({ card, index, pickCount, vertical, landmark, color, pa
         style={chipStyle}
         data-card={index}
         aria-label={`Card ${index + 1}, threaded ${card.threading}, edit`}
+        onClick={openEditor}
+        onPointerDown={handlePointerDown}
+        onPointerMove={cancelPress}
+        onPointerUp={cancelPress}
+        onPointerCancel={cancelPress}
       >
         <span className="id">{index + 1}</span>
         <span className="sz">{card.threading}</span>
