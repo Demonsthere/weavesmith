@@ -4,8 +4,17 @@ import { HOLE_LABELS, MIN_CARDS } from '@weavesmith/core';
 import type { Hole, Threading } from '@weavesmith/core';
 import { removeCard, runCommand, setHoleColor, setThreading } from '../state/commands.js';
 import { useStore } from '../state/store.js';
-import { WOOL_PRESETS } from './palette.js';
+import { WOOL_NAMES, WOOL_PRESETS } from './palette.js';
 import './cardEditor.css';
+
+/** A wool name plus its hex where one is known (the dyed presets and
+ *  anything else that happens to match one), otherwise just the hex —
+ *  used for swatch accessible names so a screen-reader user hears "woad
+ *  #2F5F8F" rather than a bare, indistinguishable colour code. */
+function describeColor(hex: string): string {
+  const name = WOOL_NAMES[hex];
+  return name ? `${name} ${hex}` : hex;
+}
 
 export interface CardEditorProps {
   /** The card this dialog is open for, or null to render nothing. */
@@ -32,10 +41,18 @@ export function CardEditor({ cardIndex, onClose }: CardEditorProps) {
   const pattern = useStore((state) => state.pattern);
   const apply = useStore((state) => state.apply);
 
-  // A fresh mount happens every time the dialog goes from closed to open
-  // (see the early return below), so `selectedHole`'s initial value already
-  // covers "reset to hole A for a newly opened card" — this effect only
-  // needs to call `showModal`.
+  // `App` renders this component unconditionally (no `key`), so the
+  // component instance — and its `useState` — survives across a change in
+  // which card is open, even though the JSX collapses to `null` while
+  // `cardIndex` is null: React only remounts on a type or `key` change,
+  // neither of which happens here. So the reset has to happen in the
+  // state, not rely on a mount that may not occur — every change of
+  // `cardIndex` (including a different card opened without the dialog
+  // ever fully unmounting) goes back to hole A.
+  useEffect(() => {
+    setSelectedHole(0);
+  }, [cardIndex]);
+
   useEffect(() => {
     const dialog = dialogRef.current;
     if (dialog && cardIndex !== null && !dialog.open) dialog.showModal();
@@ -135,7 +152,7 @@ export function CardEditor({ cardIndex, onClose }: CardEditorProps) {
             key={hex}
             type="button"
             style={{ background: hex }}
-            aria-label={`Set to ${hex}`}
+            aria-label={`Set the selected hole to ${describeColor(hex)}`}
             onClick={() => applyColor(hex)}
           />
         ))}
@@ -150,7 +167,7 @@ export function CardEditor({ cardIndex, onClose }: CardEditorProps) {
                 key={hex}
                 type="button"
                 style={{ background: hex }}
-                aria-label={`Set to ${hex}`}
+                aria-label={`Set the selected hole to ${describeColor(hex)}`}
                 onClick={() => applyColor(hex)}
               />
             ))}

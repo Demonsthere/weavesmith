@@ -24,7 +24,7 @@ describe('CardEditor', () => {
     const user = userEvent.setup();
     render(<CardEditor cardIndex={1} onClose={() => {}} />);
     await user.click(screen.getByRole('button', { name: /hole A/i }));
-    await user.click(screen.getByRole('button', { name: /set to #2F5F8F/i }));
+    await user.click(screen.getByRole('button', { name: /selected hole to woad #2F5F8F/i }));
     expect(useStore.getState().pattern.cards[1]!.colors[0])
       .toBe(useStore.getState().pattern.palette.indexOf('#2F5F8F'));
   });
@@ -34,7 +34,7 @@ describe('CardEditor', () => {
     const shared = useStore.getState().pattern.cards[2]!.colors[0];
     render(<CardEditor cardIndex={1} onClose={() => {}} />);
     await user.click(screen.getByRole('button', { name: /hole A/i }));
-    await user.click(screen.getByRole('button', { name: /set to #2F5F8F/i }));
+    await user.click(screen.getByRole('button', { name: /selected hole to woad #2F5F8F/i }));
     expect(useStore.getState().pattern.cards[2]!.colors[0]).toBe(shared);
   });
 
@@ -73,7 +73,7 @@ describe('CardEditor', () => {
     render(<CardEditor cardIndex={1} onClose={() => {}} />);
     const before = useStore.getState().pattern.palette.length;
     await user.click(screen.getByRole('button', { name: /hole A/i }));
-    await user.click(screen.getByRole('button', { name: /set to #2F5F8F/i }));
+    await user.click(screen.getByRole('button', { name: /selected hole to woad #2F5F8F/i }));
     expect(useStore.getState().pattern.palette.length).toBe(before);
   });
 
@@ -130,6 +130,46 @@ describe('CardEditor', () => {
       if (i === 3) expect(threading).toBe('Z');
       else expect(threading).toBe(before[i]);
     });
+  });
+
+  // App.tsx (with its `key={editingCard}`) never actually exercises this
+  // path, but the component must not depend on that: `render()` once and
+  // `rerender()` the *same* tree through cardIndex → null → a different
+  // card, exactly as an unkeyed parent would, so the fix lives in the
+  // state and not merely in whether a remount happens to occur.
+  it('does not leak the selected hole across a change of which card is open, with no remount', async () => {
+    const user = userEvent.setup();
+    const { rerender } = render(<CardEditor cardIndex={1} onClose={() => {}} />);
+
+    await user.click(screen.getByRole('button', { name: /hole C/i }));
+    expect(screen.getByRole('button', { name: /hole C/i }))
+      .toHaveAttribute('aria-selected', 'true');
+
+    rerender(<CardEditor cardIndex={null} onClose={() => {}} />); // closed
+    rerender(<CardEditor cardIndex={2} onClose={() => {}} />); // a different card
+
+    expect(screen.getByRole('button', { name: /hole A/i }))
+      .toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('button', { name: /hole C/i }))
+      .toHaveAttribute('aria-selected', 'false');
+  });
+
+  it('gives a preset swatch an accessible name that includes the wool name and the hex', () => {
+    render(<CardEditor cardIndex={1} onClose={() => {}} />);
+    expect(screen.getByRole('button', { name: /selected hole to woad #2F5F8F/i }))
+      .toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /selected hole to madder #B4402C/i }))
+      .toBeInTheDocument();
+  });
+
+  it('falls back to just the hex for a custom colour with no wool name', () => {
+    render(<CardEditor cardIndex={1} onClose={() => {}} />);
+    const wheel = screen.getByLabelText(/custom colour/i);
+    fireEvent.input(wheel, { target: { value: '#123456' } });
+
+    // Exact match: no wool name string has snuck in alongside the hex.
+    const custom = screen.getByRole('button', { name: 'Set the selected hole to #123456' });
+    expect(custom).toBeInTheDocument();
   });
 
   it('Escape closes the dialog without applying a pending change', async () => {

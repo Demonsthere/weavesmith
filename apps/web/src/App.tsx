@@ -15,7 +15,11 @@ export function App() {
       </header>
       <main>
         <Board />
-        <CardEditor cardIndex={editingCard} onClose={closeEditor} />
+        {/* `key` forces a remount on every change of which card is being
+            edited — belt and braces alongside CardEditor's own
+            cardIndex-keyed reset effect, not a substitute for it: the
+            component must not depend on its parent remembering this. */}
+        <CardEditor key={editingCard} cardIndex={editingCard} onClose={closeEditor} />
       </main>
     </>
   );
