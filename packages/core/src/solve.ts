@@ -26,7 +26,7 @@ const TURNS: Turn[] = [1, -1];
 /**
  * A mismatch always outweighs any number of tie-break penalties: the
  * tie-break adds at most 1 per pick, so this only needs to exceed the
- * longest band anyone will ever solve. It holds up to 1,000,000 picks.
+ * longest band anyone will ever solve. It holds below 1,000,000 picks.
  */
 const MISMATCH = 1_000_000;
 
