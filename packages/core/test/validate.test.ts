@@ -164,5 +164,41 @@ describe('validatePattern', () => {
       const symbolProblems = validatePattern(asSymbol);
       expect(symbolProblems.some((p) => p.startsWith('unsupported version'))).toBe(true);
     });
+
+    // A revoked Proxy throws at the bare `Array.isArray` type predicate
+    // itself (IsArray checks revocation before any trap runs), before
+    // describe() is ever reached. No individual guard can catch this — only
+    // the outer try/catch around the whole of validatePattern can, which is
+    // exactly what the fallback below is for.
+    it('for a revoked Proxy as cards', () => {
+      const { proxy, revoke } = Proxy.revocable([], {});
+      revoke();
+      const pattern: unknown = { ...valid(), cards: proxy };
+      expect(() => validatePattern(pattern)).not.toThrow();
+      expect(validatePattern(pattern).length).toBeGreaterThan(0);
+    });
+
+    it('for a revoked Proxy as picks', () => {
+      const { proxy, revoke } = Proxy.revocable([], {});
+      revoke();
+      const pattern: unknown = { ...valid(), picks: proxy };
+      expect(() => validatePattern(pattern)).not.toThrow();
+      expect(validatePattern(pattern).length).toBeGreaterThan(0);
+    });
+
+    it('for a revoked Proxy as the whole pattern value', () => {
+      const { proxy, revoke } = Proxy.revocable({}, {});
+      revoke();
+      expect(() => validatePattern(proxy)).not.toThrow();
+      expect(validatePattern(proxy).length).toBeGreaterThan(0);
+    });
+
+    // The outer try/catch must not be quietly swallowing a real failure in
+    // the existing checks: a genuinely valid pattern must still take the
+    // normal path all the way through and come back empty, not fall into
+    // the catch and return the fallback problem.
+    it('still returns [] for a genuinely valid pattern', () => {
+      expect(validatePattern(valid())).toEqual([]);
+    });
   });
 });

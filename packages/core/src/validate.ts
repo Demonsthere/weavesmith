@@ -38,8 +38,26 @@ function describe(value: unknown): string {
  *
  * Returns every problem found, phrased for a person: 1-based indices, the
  * offending value quoted. An empty array means the value is a valid Pattern.
+ * Never throws, for any input whatsoever — a revoked Proxy, a value with
+ * hostile traps on every internal method, anything. `inspect` does the real
+ * work; this function's only job is to be the guarantee.
  */
 export function validatePattern(value: unknown): string[] {
+  try {
+    return inspect(value);
+  } catch {
+    return ['pattern could not be inspected'];
+  }
+}
+
+/**
+ * The actual Pattern-format checks. Not exported: `validatePattern` is the
+ * total, never-throws boundary, and this is everything behind it — a bare
+ * `Array.isArray` or property access here can still throw on a sufficiently
+ * hostile value (e.g. a revoked Proxy), and that's fine, because the outer
+ * function catches it.
+ */
+function inspect(value: unknown): string[] {
   const problems: string[] = [];
 
   if (typeof value !== 'object' || value === null || Array.isArray(value)) {
