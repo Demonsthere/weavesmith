@@ -1,0 +1,28 @@
+{
+  "source": "derived — mirrored S/Z threading must produce a mirrored band. NOTE: the inner cards use [2,1,2,1] (alternating), not [2,2,1,1] (blocked) as a literal reading of the task brief's example JSON would give: [2,2,1,1] does not actually alternate despite the brief's own prose calling it 'alternating cream/madder', and is not self-mirroring under holeAt('Z')=(4-rotation)%4 (colors[1] != colors[3]), so it cannot satisfy this fixture's own 'mirrors every row' property without changing holeAt('S') away from identity — which would break both the already-pinned conventions.test.ts relational property and the independently-sourced oseberg-narrow.json fixture. [2,1,2,1] genuinely alternates (matching the prose) and is self-mirroring, so it satisfies the property as originally intended. See task-4-report.md for the full derivation.",
+  "pattern": {
+    "version": 1,
+    "meta": { "name": "Chevron 8" },
+    "palette": ["#4B3826", "#B4402C", "#EADCC0"],
+    "cards": [
+      { "colors": [0, 0, 0, 0], "threading": "S", "start": 0 },
+      { "colors": [2, 1, 2, 1], "threading": "S", "start": 0 },
+      { "colors": [2, 1, 2, 1], "threading": "S", "start": 0 },
+      { "colors": [2, 1, 2, 1], "threading": "S", "start": 0 },
+      { "colors": [2, 1, 2, 1], "threading": "Z", "start": 0 },
+      { "colors": [2, 1, 2, 1], "threading": "Z", "start": 0 },
+      { "colors": [2, 1, 2, 1], "threading": "Z", "start": 0 },
+      { "colors": [0, 0, 0, 0], "threading": "Z", "start": 0 }
+    ],
+    "picks": [
+      [1, 1, 1, 1, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1, 1, 1, 1],
+      [1, 1, 1, 1, 1, 1, 1, 1]
+    ]
+  }
+}

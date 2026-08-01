@@ -1,3 +1,8 @@
+// Pinned by test/bands.test.ts against the Narrow Oseberg Band, transcribed from
+// https://www.shelaghlewins.com/tablet_weaving/patterns_past.php (instruction
+// sheet: https://www.shelaghlewins.com/tablet_weaving/Oseberg_narrow/Oseberg_narrow.pdf).
+// These two functions define what the library believes tablet weaving is.
+
 import type { Hole, Lean, Rotation, Threading, Turn } from './types.js';
 import { HOLE_COUNT } from './types.js';
 
