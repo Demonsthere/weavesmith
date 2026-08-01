@@ -63,4 +63,21 @@ describe('gcPalette', () => {
     gcPalette(pattern);
     expect(JSON.stringify(pattern)).toBe(before);
   });
+
+  it('does not alias the input pattern\'s nested arrays', () => {
+    const pattern = buildPattern([card([1, 1, 3, 3])], 1);
+    const cleaned = gcPalette(pattern);
+
+    // JSON.stringify equality cannot catch shared references: if `cleaned`
+    // reused the input's arrays, mutating them here would corrupt `pattern`
+    // too. Assert the objects are genuinely new, then prove it by mutating
+    // the result and checking the input is untouched.
+    expect(cleaned.cards[0]!.colors).not.toBe(pattern.cards[0]!.colors);
+    expect(cleaned.palette).not.toBe(pattern.palette);
+
+    cleaned.cards[0]!.colors[0] = 99;
+    cleaned.palette[0] = '#000000';
+    expect(pattern.cards[0]!.colors[0]).toBe(1);
+    expect(pattern.palette[0]).toBe('#4B3826');
+  });
 });
