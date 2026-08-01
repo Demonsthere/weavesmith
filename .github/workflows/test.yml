@@ -48,13 +48,16 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      # Build first, and not only to catch a package that compiles under vitest
+      # but fails to emit declarations. @weavesmith/core's types resolve to its
+      # dist, which is gitignored — so on a fresh checkout, typechecking the web
+      # app before core is built fails on an import that is perfectly valid.
+      # pnpm -r orders by workspace dependency, so core builds first.
+      - name: Build
+        run: pnpm -r build
+
       - name: Typecheck
         run: pnpm typecheck
 
       - name: Test
         run: pnpm test
-
-      # Catches a package that compiles under vitest but fails to emit
-      # declarations — the web app consumes @weavesmith/core through dist.
-      - name: Build
-        run: pnpm -r build
