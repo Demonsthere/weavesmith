@@ -1,26 +1,35 @@
 import { HOLE_COUNT, HOLE_LABELS, MAX_CARDS, MIN_CARDS } from './types.js';
 
+/** Fallback text for a value that resists every attempt to render it. */
+const UNPRINTABLE = '[unprintable value]';
+
 /**
- * Render an untrusted value for an error message. Never throws, even if the
- * value's `toString` or `Symbol.toPrimitive` does — validatePattern's whole
- * contract is that it returns problems instead of throwing, and these values
- * come straight from `JSON.parse` output or arbitrary in-memory objects, so
- * none of them can be trusted to stringify cleanly.
+ * Render an untrusted value for an error message. Never throws, for any
+ * input — validatePattern's whole contract is that it returns problems
+ * instead of throwing, and these values come straight from `JSON.parse`
+ * output or arbitrary in-memory objects, so none of them can be trusted to
+ * stringify cleanly. A hostile Proxy can make essentially any property
+ * access throw (including the `[[Get]]` for `toJSON` inside
+ * `JSON.stringify`, or for `Symbol.toStringTag` inside
+ * `Object.prototype.toString`), so the outer try/catch — not the individual
+ * operations inside it — is what actually makes this total.
  */
 function describe(value: unknown): string {
-  if (typeof value === 'string') return JSON.stringify(value);
-  if (value === null || value === undefined) return String(value);
-  if (typeof value === 'object') {
-    try {
-      return JSON.stringify(value) ?? Object.prototype.toString.call(value);
-    } catch {
-      return Object.prototype.toString.call(value);
-    }
-  }
   try {
+    if (typeof value === 'string') return JSON.stringify(value);
+    if (value === null || value === undefined) return String(value);
+    if (typeof value === 'object') {
+      try {
+        return JSON.stringify(value) ?? UNPRINTABLE;
+      } catch {
+        return Object.prototype.toString.call(value);
+      }
+    }
+    // Numbers, booleans, functions, symbols, bigints. JSON.stringify would
+    // return undefined for a function or symbol, so fall through to String.
     return String(value);
   } catch {
-    return Object.prototype.toString.call(value);
+    return UNPRINTABLE;
   }
 }
 

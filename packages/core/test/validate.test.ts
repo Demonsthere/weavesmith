@@ -114,5 +114,55 @@ describe('validatePattern', () => {
       const problems = validatePattern(pattern);
       expect(problems.some((p) => p.includes('turn must be 1 or -1'))).toBe(true);
     });
+
+    // A hostile toString is caught by JSON.stringify not needing to call it
+    // for plain objects. A Proxy that throws on *any* property access is a
+    // strictly harder case: it defeats JSON.stringify (which reads `toJSON`)
+    // AND the fallback Object.prototype.toString (which reads
+    // `Symbol.toStringTag`). Exercised on a field other than `version`, since
+    // the exposure is at all five call sites, not just that one.
+    it('for a hostile Proxy that throws on every property access', () => {
+      const pattern = valid();
+      const proxy = new Proxy(
+        {},
+        {
+          get() {
+            throw new Error('boom');
+          },
+        },
+      );
+      (pattern.cards[0] as { threading: unknown }).threading = proxy;
+      expect(() => validatePattern(pattern)).not.toThrow();
+      const problems = validatePattern(pattern);
+      expect(problems.some((p) => p.includes('threading must be S or Z'))).toBe(true);
+    });
+
+    // JSON.stringify(value) is `undefined` (not the string "undefined") for
+    // some inputs, e.g. an object with an explicit toJSON returning
+    // undefined, or a bare function/symbol. describe() must not let that
+    // undefined leak into the message as the literal text "undefined".
+    it('for a value whose JSON.stringify is undefined', () => {
+      const pattern: unknown = {
+        ...valid(),
+        version: { toJSON: () => undefined },
+      };
+      expect(() => validatePattern(pattern)).not.toThrow();
+      const problems = validatePattern(pattern);
+      const message = problems.find((p) => p.startsWith('unsupported version'));
+      expect(message).toBeDefined();
+      expect(message).not.toContain('undefined');
+    });
+
+    it('for a function or symbol as version', () => {
+      const asFunction: unknown = { ...valid(), version: () => 1 };
+      expect(() => validatePattern(asFunction)).not.toThrow();
+      const functionProblems = validatePattern(asFunction);
+      expect(functionProblems.some((p) => p.startsWith('unsupported version'))).toBe(true);
+
+      const asSymbol: unknown = { ...valid(), version: Symbol('v') };
+      expect(() => validatePattern(asSymbol)).not.toThrow();
+      const symbolProblems = validatePattern(asSymbol);
+      expect(symbolProblems.some((p) => p.startsWith('unsupported version'))).toBe(true);
+    });
   });
 });
