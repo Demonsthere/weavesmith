@@ -1,0 +1,47 @@
+name: Renovate
+
+on:
+  schedule:
+    # 04:17 UTC daily. Off the hour so it does not queue behind everyone
+    # else's midnight cron.
+    - cron: "17 4 * * *"
+  workflow_dispatch:
+    inputs:
+      logLevel:
+        description: Renovate log level
+        type: choice
+        default: info
+        options: [info, debug]
+      dryRun:
+        description: Run without opening PRs
+        type: boolean
+        default: false
+
+concurrency:
+  group: renovate
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  renovate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Self-hosted Renovate
+        uses: renovatebot/github-action@v46.1.21
+        with:
+          # A PAT, not GITHUB_TOKEN: pull requests opened with GITHUB_TOKEN do
+          # not trigger other workflows, so Renovate's PRs would never run the
+          # test suite — which is the entire point of having it open them.
+          token: ${{ secrets.RENOVATE_TOKEN }}
+        env:
+          RENOVATE_REPOSITORIES: ${{ github.repository }}
+          RENOVATE_PLATFORM: github
+          # Read the in-repo renovate.json rather than a separate global config.
+          RENOVATE_ONBOARDING: "false"
+          RENOVATE_REQUIRE_CONFIG: required
+          LOG_LEVEL: ${{ inputs.logLevel || 'info' }}
+          RENOVATE_DRY_RUN: ${{ inputs.dryRun && 'full' || '' }}

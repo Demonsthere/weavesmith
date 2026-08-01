@@ -1,0 +1,48 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:best-practices",
+    ":semanticCommits"
+  ],
+  "timezone": "Europe/Warsaw",
+  "schedule": ["before 6am"],
+  "labels": ["dependencies"],
+  "prConcurrentLimit": 5,
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": ["before 6am on monday"]
+  },
+  "packageRules": [
+    {
+      "description": "@weavesmith/core must stay dependency-free. Renovate should never add one, and any devDependency change there needs a human look.",
+      "matchFileNames": ["packages/core/package.json"],
+      "addLabels": ["core"]
+    },
+    {
+      "description": "Group the React toolchain — React, its types and the Vite plugin move together and are pointless to review one at a time.",
+      "groupName": "react",
+      "matchPackageNames": [
+        "react",
+        "react-dom",
+        "@types/react",
+        "@types/react-dom",
+        "@vitejs/plugin-react"
+      ]
+    },
+    {
+      "description": "Group the test toolchain for the same reason.",
+      "groupName": "vitest",
+      "matchPackageNames": [
+        "vitest",
+        "@vitest/**",
+        "jsdom",
+        "@testing-library/**"
+      ]
+    },
+    {
+      "description": "Node and pnpm floors are declared in engines and asserted by CI; bump them deliberately, not automatically.",
+      "matchDepTypes": ["engines"],
+      "enabled": false
+    }
+  ]
+}
