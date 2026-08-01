@@ -584,7 +584,8 @@ Pure functions over `(pattern, selection)`. No React, no events. This is what bo
 - Test: `apps/web/test/state/commands.test.ts`
 
 **Interfaces:**
-- Consumes: `solveTurns`, `simulate`, `advance`, `holeAt` from core; `Selection`, `selectionRect`, `cellsIn` from Task 2.
+- Consumes: `advance`, `holeAt`, `HOLE_LABELS`, `MIN_CARDS`, `MAX_CARDS` from core; `Selection`, `selectionRect`, `cellsIn` from Task 2.
+  Deliberately NOT `solveTurns`: it targets a colour, while `setHole` targets a hole, and cards routinely carry the same colour twice — the solver could satisfy "show hole B" by landing on hole A with the opposite lean.
 - Produces:
   - `interface CommandResult { pattern: Pattern; message: string }`
   - `toggleTurn(pattern, selection): CommandResult`

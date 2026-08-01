@@ -132,3 +132,9 @@ Don't re-propose these without new information:
   to a hole re-points it at an entry; it never edits the entry, because that
   would recolour every other card using it. Both operations are wanted, but
   they must not share a gesture.
+- **Routing `setHole` through `solveTurns`.** It looks like duplicated
+  reachability logic and is not. `solveTurns` targets a *colour*; `setHole`
+  targets a *hole*. Cards routinely carry the same colour in two holes, so the
+  solver could satisfy "show hole B" by landing on hole A — same colour,
+  opposite lean. `setHole` composes `advance` and `holeAt` directly, which is
+  the correct primitive to reuse.
