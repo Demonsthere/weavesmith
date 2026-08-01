@@ -95,6 +95,17 @@ describe('gcPalette', () => {
     expect(pattern.meta.name).toBe('test');
   });
 
+  /** Grabs the thrown PatternError's `.problems`, or fails if nothing threw. */
+  function problemsThrownBy(run: () => unknown): string[] {
+    try {
+      run();
+    } catch (error) {
+      expect(error).toBeInstanceOf(PatternError);
+      return (error as PatternError).problems;
+    }
+    throw new Error('expected run() to throw a PatternError, but it did not');
+  }
+
   it('refuses to launder a pattern with an out-of-range colour index', () => {
     // A card colour that points past the palette is already invalid; gc
     // must not turn it into a clean-looking file with a missing colour.
@@ -102,17 +113,33 @@ describe('gcPalette', () => {
     pattern.palette = ['#a', '#b'];
     expect(validatePattern(pattern))
       .toContain('card 1, hole D: colour 5 is not in the palette');
-    expect(() => gcPalette(pattern)).toThrow(PatternError);
+    const problems = problemsThrownBy(() => gcPalette(pattern));
+    expect(problems).toContain('card 1, hole D: colour 5 is not in the palette');
   });
 
   it('refuses a pattern with a non-string palette entry', () => {
     const pattern = buildPattern([card([0, 1, 2, 3])], 1);
-    // Clone before mutating: `pattern.palette` is the shared PALETTE array
-    // from the test helper, and mutating it in place would corrupt every
-    // other test in this file that calls buildPattern() afterward.
-    pattern.palette = [...pattern.palette];
     (pattern.palette as unknown[])[0] = null;
-    expect(() => gcPalette(pattern)).toThrow(PatternError);
+    const problems = problemsThrownBy(() => gcPalette(pattern));
+    expect(problems).toContain('palette entry 1 must be a string, found null');
+  });
+
+  // Same hole-skipping bug as validate.ts's forEach loops, reached through
+  // gcPalette's own paletteIntegrityProblems check: a sparse array should
+  // not be able to sneak an out-of-range/undefined colour or palette entry
+  // past it and out the other side as a literal `undefined` in the result.
+  it('refuses a pattern with a sparse colours array', () => {
+    const pattern = buildPattern([card([0, 1, 2, 3])], 1);
+    delete (pattern.cards[0]!.colors as number[])[1];
+    const problems = problemsThrownBy(() => gcPalette(pattern));
+    expect(problems).toContain('card 1, hole B: colour undefined is not in the palette');
+  });
+
+  it('refuses a pattern with a sparse palette', () => {
+    const pattern = buildPattern([card([0, 1, 2, 3])], 1);
+    delete (pattern.palette as unknown[])[1];
+    const problems = problemsThrownBy(() => gcPalette(pattern));
+    expect(problems).toContain('palette entry 2 must be a string, found undefined');
   });
 
   describe('always produces a pattern that still validates clean', () => {

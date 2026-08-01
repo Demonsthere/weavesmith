@@ -15,7 +15,7 @@ export function buildPattern(cards: Card[], picks: number): Pattern {
   return {
     version: 1,
     meta: { name: 'test' },
-    palette: PALETTE,
+    palette: [...PALETTE],
     cards,
     picks: Array.from({ length: picks }, () =>
       cards.map(() => 1 as Turn),

@@ -49,14 +49,19 @@ export function fromJSON(text: string): Pattern {
 function paletteIntegrityProblems(pattern: Pattern): string[] {
   const problems: string[] = [];
 
-  pattern.palette.forEach((color, index) => {
+  // Array.from, not a bare forEach: forEach skips holes in a sparse array
+  // entirely, which would let a sparse palette or colours array through
+  // both checks below unexamined. Array.from turns each hole into an
+  // actual `undefined` element that the checks then reject. Same fix as
+  // validate.ts's element loops, for the same reason.
+  Array.from(pattern.palette).forEach((color, index) => {
     if (typeof color !== 'string') {
       problems.push(`palette entry ${index + 1} must be a string, found ${String(color)}`);
     }
   });
 
   pattern.cards.forEach((card, cardIndex) => {
-    card.colors.forEach((color, hole) => {
+    Array.from(card.colors).forEach((color, hole) => {
       if (!Number.isInteger(color) || color < 0 || color >= pattern.palette.length) {
         problems.push(
           `card ${cardIndex + 1}, hole ${HOLE_LABELS[hole]}: colour ${String(color)} is not in the palette`,

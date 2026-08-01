@@ -91,7 +91,11 @@ function inspect(value: unknown): string[] {
   if (!palette) {
     problems.push('palette must be an array of colours');
   } else {
-    palette.forEach((color, index) => {
+    // Array.from, not a bare forEach: forEach skips holes in a sparse array
+    // entirely (never calls back for a missing index), which would let a
+    // sparse palette validate clean. Array.from turns each hole into an
+    // actual `undefined` element that the type check below then rejects.
+    Array.from(palette).forEach((color, index) => {
       if (typeof color !== 'string') {
         problems.push(`palette entry ${index + 1} must be a string, found ${describe(color)}`);
       }
@@ -111,7 +115,9 @@ function inspect(value: unknown): string[] {
     problems.push(`a band takes at most ${MAX_CARDS} cards, found ${cards.length}`);
   }
 
-  cards.forEach((raw, index) => {
+  // Array.from: see the palette loop above — a sparse `cards` array must
+  // not skip a hole's checks entirely.
+  Array.from(cards).forEach((raw, index) => {
     const label = `card ${index + 1}`;
     if (typeof raw !== 'object' || raw === null) {
       problems.push(`${label} must be an object`);
@@ -123,7 +129,7 @@ function inspect(value: unknown): string[] {
     if (!colors || colors.length !== HOLE_COUNT) {
       problems.push(`${label} must have ${HOLE_COUNT} holes, found ${colors?.length ?? 0}`);
     } else if (palette) {
-      colors.forEach((color, hole) => {
+      Array.from(colors).forEach((color, hole) => {
         if (
           typeof color !== 'number' ||
           !Number.isInteger(color) ||
@@ -156,7 +162,8 @@ function inspect(value: unknown): string[] {
     return problems;
   }
 
-  picks.forEach((raw, pick) => {
+  // Array.from: see the palette loop above.
+  Array.from(picks).forEach((raw, pick) => {
     if (!Array.isArray(raw)) {
       problems.push(`pick ${pick + 1} must be an array of turns`);
       return;
@@ -166,7 +173,7 @@ function inspect(value: unknown): string[] {
         `pick ${pick + 1} has ${raw.length} turns but the band has ${cards.length} cards`,
       );
     }
-    raw.forEach((turn, cardIndex) => {
+    Array.from(raw).forEach((turn, cardIndex) => {
       if (turn !== 1 && turn !== -1) {
         problems.push(
           `pick ${pick + 1}, card ${cardIndex + 1}: turn must be 1 or -1, found ${describe(turn)}`,

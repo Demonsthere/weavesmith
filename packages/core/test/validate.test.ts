@@ -96,13 +96,44 @@ describe('validatePattern', () => {
 
   it('rejects a palette entry that is not a string', () => {
     const pattern = valid();
-    // Clone before mutating: `pattern.palette` is the shared PALETTE array
-    // from the test helper, and mutating it in place would corrupt every
-    // other test in this file that calls valid()/buildPattern() afterward.
-    pattern.palette = [...pattern.palette];
     (pattern.palette as unknown[])[0] = 123;
     expect(validatePattern(pattern))
       .toContain('palette entry 1 must be a string, found 123');
+  });
+
+  // Array.prototype.forEach skips holes entirely — it never calls back for
+  // a missing index — so a sparse array sailed through every one of these
+  // element checks: the loop body simply never ran for the hole. Each of
+  // these four failed before validate.ts's loops were normalised with
+  // Array.from (which turns a hole into an actual `undefined` element that
+  // the existing type checks then reject).
+  describe('sparse arrays', () => {
+    it('rejects a sparse colours array', () => {
+      const pattern = valid();
+      delete (pattern.cards[0]!.colors as number[])[1];
+      expect(validatePattern(pattern))
+        .toContain('card 1, hole B: colour undefined is not in the palette');
+    });
+
+    it('rejects a sparse picks row', () => {
+      const pattern = valid();
+      delete (pattern.picks[0] as unknown[])[1];
+      expect(validatePattern(pattern))
+        .toContain('pick 1, card 2: turn must be 1 or -1, found undefined');
+    });
+
+    it('rejects a sparse cards array', () => {
+      const pattern = valid();
+      delete (pattern.cards as unknown[])[1];
+      expect(validatePattern(pattern)).toContain('card 2 must be an object');
+    });
+
+    it('rejects a sparse palette', () => {
+      const pattern = valid();
+      delete (pattern.palette as unknown[])[1];
+      expect(validatePattern(pattern))
+        .toContain('palette entry 2 must be a string, found undefined');
+    });
   });
 
   describe('meta', () => {
