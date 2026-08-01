@@ -1,3 +1,5 @@
+import { Board } from './board/Board.js';
+
 export function App() {
   return (
     <>
@@ -7,7 +9,7 @@ export function App() {
         </h1>
       </header>
       <main>
-        <div role="grid" aria-label="Weaving board" />
+        <Board />
       </main>
     </>
   );
