@@ -69,8 +69,34 @@ function inspect(value: unknown): string[] {
     problems.push(`unsupported version ${describe(pattern.version)}, expected 1`);
   }
 
+  const meta =
+    typeof pattern.meta === 'object' && pattern.meta !== null && !Array.isArray(pattern.meta)
+      ? (pattern.meta as Record<string, unknown>)
+      : null;
+  if (!meta) {
+    problems.push('meta must be an object');
+  } else {
+    if (typeof meta.name !== 'string') {
+      problems.push('meta.name must be a string');
+    }
+    if (meta.author !== undefined && typeof meta.author !== 'string') {
+      problems.push('meta.author must be a string');
+    }
+    if (meta.notes !== undefined && typeof meta.notes !== 'string') {
+      problems.push('meta.notes must be a string');
+    }
+  }
+
   const palette = Array.isArray(pattern.palette) ? (pattern.palette as unknown[]) : null;
-  if (!palette) problems.push('palette must be an array of colours');
+  if (!palette) {
+    problems.push('palette must be an array of colours');
+  } else {
+    palette.forEach((color, index) => {
+      if (typeof color !== 'string') {
+        problems.push(`palette entry ${index + 1} must be a string, found ${describe(color)}`);
+      }
+    });
+  }
 
   const cards = Array.isArray(pattern.cards) ? (pattern.cards as unknown[]) : null;
   if (!cards) {
@@ -98,7 +124,12 @@ function inspect(value: unknown): string[] {
       problems.push(`${label} must have ${HOLE_COUNT} holes, found ${colors?.length ?? 0}`);
     } else if (palette) {
       colors.forEach((color, hole) => {
-        if (typeof color !== 'number' || color < 0 || color >= palette.length) {
+        if (
+          typeof color !== 'number' ||
+          !Number.isInteger(color) ||
+          color < 0 ||
+          color >= palette.length
+        ) {
           problems.push(
             `${label}, hole ${HOLE_LABELS[hole]}: colour ${describe(color)} is not in the palette`,
           );
@@ -109,7 +140,12 @@ function inspect(value: unknown): string[] {
     if (card.threading !== 'S' && card.threading !== 'Z') {
       problems.push(`${label}: threading must be S or Z, found ${describe(card.threading)}`);
     }
-    if (typeof card.start !== 'number' || card.start < 0 || card.start > 3) {
+    if (
+      typeof card.start !== 'number' ||
+      !Number.isInteger(card.start) ||
+      card.start < 0 ||
+      card.start > 3
+    ) {
       problems.push(`${label}: start must be 0-3, found ${describe(card.start)}`);
     }
   });

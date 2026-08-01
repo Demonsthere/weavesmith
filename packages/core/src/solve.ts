@@ -1,10 +1,27 @@
 import { advance, holeAt } from './conventions.js';
 import { HOLE_COUNT } from './types.js';
-import type { Card, Rotation, Turn } from './types.js';
+import type { Card, Cell, Rotation, Turn } from './types.js';
 
 /** Desired colour per cell, [pick][card]. null means "any colour will do". */
 export type TargetGrid = (number | null)[][];
 
+/**
+ * Turn a simulated band into a solver target.
+ *
+ * A target encodes colour only — lean is an output of weaving (it falls out
+ * of threading and turn direction), never something a caller asks for. This
+ * is the conversion every caller feeding `simulate`'s output back into
+ * `solveTurns` needs, so it exists once instead of as a `.map((row) =>
+ * row.map((cell) => cell.color))` repeated at every call site.
+ */
+export function targetOf(grid: Cell[][]): TargetGrid {
+  return grid.map((row) => row.map((cell) => cell.color));
+}
+
+/**
+ * `card` and `pick` are 0-based, for code — contrast with validatePattern's
+ * 1-based prose, which is for people. Don't "fix" one to match the other.
+ */
 export interface Unreachable {
   card: number;
   pick: number;

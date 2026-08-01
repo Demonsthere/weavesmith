@@ -11,6 +11,16 @@ describe('toJSON / fromJSON', () => {
     expect(fromJSON(toJSON(pattern))).toEqual(pattern);
   });
 
+  it('round-trips meta unchanged whether author/notes are present or absent', () => {
+    const bare = valid();
+    expect(bare.meta.author).toBeUndefined();
+    expect(bare.meta.notes).toBeUndefined();
+    expect(fromJSON(toJSON(bare))).toEqual(bare);
+
+    const full = { ...valid(), meta: { name: 'test', author: 'a weaver', notes: 'a note' } };
+    expect(fromJSON(toJSON(full))).toEqual(full);
+  });
+
   it('writes readable, diffable JSON', () => {
     expect(toJSON(valid())).toContain('\n');
   });

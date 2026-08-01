@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { MIN_CARDS, simulate, solveTurns } from '../src/index.js';
+import { MIN_CARDS, simulate, solveTurns, targetOf } from '../src/index.js';
 import type { Card, Pattern, Threading, Turn } from '../src/index.js';
 import { PALETTE } from './helpers/build.js';
 
@@ -57,7 +57,7 @@ describe('solve/simulate round trip', () => {
 
   it.each(seeds)('reproduces the band for seed %i', (seed) => {
     const pattern = randomPattern(seed);
-    const target = simulate(pattern).map((row) => row.map((cell) => cell.color));
+    const target = targetOf(simulate(pattern));
 
     const result = solveTurns(pattern.cards, target, { previous: pattern.picks });
 
@@ -67,7 +67,7 @@ describe('solve/simulate round trip', () => {
 
   it('returns exactly the original turns when seeded with them', () => {
     const pattern = randomPattern(42);
-    const target = simulate(pattern).map((row) => row.map((cell) => cell.color));
+    const target = targetOf(simulate(pattern));
     const result = solveTurns(pattern.cards, target, { previous: pattern.picks });
     expect(result.picks).toEqual(pattern.picks);
   });

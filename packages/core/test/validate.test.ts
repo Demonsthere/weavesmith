@@ -74,6 +74,76 @@ describe('validatePattern', () => {
     expect(validatePattern(pattern)).toContain('card 1: start must be 0-3, found 7');
   });
 
+  it('rejects a non-integer start rotation', () => {
+    const pattern = valid();
+    (pattern.cards[0] as { start: number }).start = 2.5;
+    expect(validatePattern(pattern)).toContain('card 1: start must be 0-3, found 2.5');
+  });
+
+  it('rejects a non-integer colour index', () => {
+    const pattern = valid();
+    (pattern.cards[0]!.colors as number[])[3] = 1.5;
+    expect(validatePattern(pattern))
+      .toContain('card 1, hole D: colour 1.5 is not in the palette');
+  });
+
+  it('rejects NaN as a colour index', () => {
+    const pattern = valid();
+    (pattern.cards[0]!.colors as number[])[3] = NaN;
+    expect(validatePattern(pattern))
+      .toContain('card 1, hole D: colour NaN is not in the palette');
+  });
+
+  it('rejects a palette entry that is not a string', () => {
+    const pattern = valid();
+    // Clone before mutating: `pattern.palette` is the shared PALETTE array
+    // from the test helper, and mutating it in place would corrupt every
+    // other test in this file that calls valid()/buildPattern() afterward.
+    pattern.palette = [...pattern.palette];
+    (pattern.palette as unknown[])[0] = 123;
+    expect(validatePattern(pattern))
+      .toContain('palette entry 1 must be a string, found 123');
+  });
+
+  describe('meta', () => {
+    it('rejects a pattern with no meta at all', () => {
+      const pattern = valid() as Record<string, unknown>;
+      delete pattern.meta;
+      expect(validatePattern(pattern)).toContain('meta must be an object');
+    });
+
+    it('rejects a meta that is not an object', () => {
+      expect(validatePattern({ ...valid(), meta: 'hello' }))
+        .toContain('meta must be an object');
+    });
+
+    it('rejects a meta that is an array', () => {
+      expect(validatePattern({ ...valid(), meta: [] }))
+        .toContain('meta must be an object');
+    });
+
+    it('rejects a meta whose name is not a string', () => {
+      expect(validatePattern({ ...valid(), meta: { name: 123 } }))
+        .toContain('meta.name must be a string');
+    });
+
+    it('rejects a meta whose author is not a string, when present', () => {
+      expect(validatePattern({ ...valid(), meta: { name: 'x', author: 123 } }))
+        .toContain('meta.author must be a string');
+    });
+
+    it('rejects a meta whose notes is not a string, when present', () => {
+      expect(validatePattern({ ...valid(), meta: { name: 'x', notes: 123 } }))
+        .toContain('meta.notes must be a string');
+    });
+
+    it('accepts a meta with only name, and with name/author/notes all present', () => {
+      expect(validatePattern({ ...valid(), meta: { name: 'x' } })).toEqual([]);
+      expect(validatePattern({ ...valid(), meta: { name: 'x', author: 'a', notes: 'n' } }))
+        .toEqual([]);
+    });
+  });
+
   it('collects every problem rather than stopping at the first', () => {
     const pattern = valid();
     (pattern.cards[0] as { threading: string }).threading = 'X';

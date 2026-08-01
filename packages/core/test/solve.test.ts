@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { simulate, solveTurns } from '../src/index.js';
+import { simulate, solveTurns, targetOf } from '../src/index.js';
 import type { Pattern, TargetGrid, Turn } from '../src/index.js';
 import { buildPattern, card, MADDER, WALNUT, WELD, WOAD } from './helpers/build.js';
 
 function targetFrom(pattern: Pattern): TargetGrid {
-  return simulate(pattern).map((row) => row.map((cell) => cell.color));
+  return targetOf(simulate(pattern));
 }
 
 describe('solveTurns', () => {
