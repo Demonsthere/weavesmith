@@ -133,11 +133,26 @@ describe('store', () => {
     for (let i = 0; i < 105; i++) {
       useStore.getState().apply((draft) => { draft.meta.name = `n${i}`; }, `step ${i}`);
     }
-    const { past } = useStore.getState() as unknown as { past: { meta: { name: string } }[] };
+    const { past } = useStore.getState() as unknown as {
+      past: { pattern: { meta: { name: string } }; label: string }[];
+    };
     expect(past).toHaveLength(100);
     // The oldest surviving entry should be from step 5 (n4), not step 0.
-    expect(past[0]!.meta.name).toBe('n4');
-    expect(past.at(-1)!.meta.name).toBe('n103');
+    expect(past[0]!.pattern.meta.name).toBe('n4');
+    expect(past.at(-1)!.pattern.meta.name).toBe('n103');
+  });
+
+  it('round-trips the label through undo and redo', () => {
+    useStore.getState().apply(() => {}, 'flip card 3');
+    const undoneLabel = useStore.getState().undo();
+    expect(undoneLabel).toBe('flip card 3');
+    const redoneLabel = useStore.getState().redo();
+    expect(redoneLabel).toBe('flip card 3');
+  });
+
+  it('returns undefined from undo/redo when there is nothing to move through', () => {
+    expect(useStore.getState().undo()).toBeUndefined();
+    expect(useStore.getState().redo()).toBeUndefined();
   });
 
   it('clears both undo and redo history on load', () => {
@@ -153,6 +168,37 @@ describe('store', () => {
     expect(useStore.getState().pattern.meta.name).toBe('Imported');
     useStore.getState().redo();
     expect(useStore.getState().pattern.meta.name).toBe('Imported');
+  });
+
+  it('throws when a nested part of getState().pattern is mutated directly', () => {
+    const pattern = useStore.getState().pattern;
+    expect(() => { (pattern.meta as { name: string }).name = 'sneaky'; }).toThrow(TypeError);
+    expect(() => { pattern.picks[0]![0] = -1; }).toThrow(TypeError);
+    expect(() => { pattern.picks.push([...pattern.picks[0]!]); }).toThrow(TypeError);
+    expect(() => { pattern.cards[0]!.colors[0] = 999; }).toThrow(TypeError);
+    expect(() => { (pattern.cards as unknown[]).push(pattern.cards[0]); }).toThrow(TypeError);
+    expect(() => { (pattern.palette as string[]).push('#000000'); }).toThrow(TypeError);
+    // Nothing actually changed.
+    expect(pattern.meta.name).not.toBe('sneaky');
+    expect(pattern.picks[0]![0]).not.toBe(-1);
+  });
+
+  it('keeps undo history correct even after a rejected direct mutation', () => {
+    // This reproduces the exact bypass the store must defend against: get a
+    // reference to the live pattern and try to write through it instead of
+    // going through apply(). The write must throw (previous test) and, just
+    // as importantly, must leave apply/undo/redo working correctly afterward.
+    const before = useStore.getState().pattern.picks[0]![0];
+    const stolen = useStore.getState().pattern;
+    expect(() => { stolen.picks[0]![0] = (before === 1 ? -1 : 1); }).toThrow(TypeError);
+
+    useStore.getState().apply((draft) => {
+      draft.picks[0]![0] = (before === 1 ? -1 : 1);
+    }, 'flip');
+    expect(useStore.getState().pattern.picks[0]![0]).not.toBe(before);
+
+    useStore.getState().undo();
+    expect(useStore.getState().pattern.picks[0]![0]).toBe(before);
   });
 
   it('reset() restores orientation, render mode, screen mode and current pick too', () => {
