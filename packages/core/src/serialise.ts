@@ -30,3 +30,26 @@ export function fromJSON(text: string): Pattern {
 
   return value as Pattern;
 }
+
+/**
+ * Drop palette entries no card uses and renumber what remains.
+ *
+ * Recolouring a band leaves orphaned entries behind; this keeps saved files
+ * honest about what the band actually contains.
+ */
+export function gcPalette(pattern: Pattern): Pattern {
+  const used = new Set<number>();
+  for (const card of pattern.cards) for (const color of card.colors) used.add(color);
+
+  const kept = [...used].sort((a, b) => a - b);
+  const remap = new Map(kept.map((oldIndex, newIndex) => [oldIndex, newIndex]));
+
+  return {
+    ...pattern,
+    palette: kept.map((index) => pattern.palette[index]!),
+    cards: pattern.cards.map((card) => ({
+      ...card,
+      colors: card.colors.map((c) => remap.get(c)!) as [number, number, number, number],
+    })),
+  };
+}
