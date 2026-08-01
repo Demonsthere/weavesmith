@@ -6,6 +6,8 @@ import { identityColor, isLandmark } from './identity.js';
 import { Cell } from './Cell.js';
 import { CardChip } from './CardChip.js';
 import { usePointerBinding } from './usePointerBinding.js';
+import { useKeyboardBinding } from './useKeyboardBinding.js';
+import { LiveRegion } from './LiveRegion.js';
 import '../styles/board.css';
 
 /**
@@ -31,6 +33,7 @@ export function Board() {
   const band = useMemo(() => simulate(pattern), [pattern]);
   const rect = selectionRect(selection);
   const { handlers, preview, hover } = usePointerBinding();
+  const { onKeyDown, message } = useKeyboardBinding();
 
   const cardCount = pattern.cards.length;
   const pickCount = pattern.picks.length;
@@ -73,6 +76,7 @@ export function Board() {
         aria-label="Weaving board"
         style={style}
         {...handlers}
+        onKeyDown={onKeyDown}
       >
         {pattern.cards.map((card, c) => (
           <CardChip
@@ -126,6 +130,7 @@ export function Board() {
           </div>
         ))}
       </div>
+      <LiveRegion message={message} />
     </div>
   );
 }

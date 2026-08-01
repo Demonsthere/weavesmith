@@ -2,7 +2,7 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 import type { PointerEvent as ReactPointerEvent } from 'react';
 import { simulate } from '@weavesmith/core';
 import type { Pattern, Turn } from '@weavesmith/core';
-import { setTurn } from '../state/commands.js';
+import { runCommand, setTurn } from '../state/commands.js';
 import { useStore } from '../state/store.js';
 import type { GestureToken } from '../state/store.js';
 import type { CellRef, Selection } from '../state/selection.js';
@@ -119,8 +119,7 @@ export function usePointerBinding(): PointerBinding {
     // with the token this returns, which updates the live pattern without
     // pushing another entry.
     const token = beginGesture((draft) => {
-      const result = setTurn(draft, singleCell, dir);
-      Object.assign(draft, result.pattern);
+      runCommand(draft, setTurn, singleCell, dir);
     }, `Set turn ${dir === 1 ? 'forward' : 'backward'}`);
     gestureRef.current = { dir, token };
 
@@ -141,8 +140,7 @@ export function usePointerBinding(): PointerBinding {
       // visited earlier in the same drag) changes nothing, so dragging
       // back and forth over already-painted cells costs nothing.
       continueGesture(gesture.token, (draft) => {
-        const result = setTurn(draft, grown, gesture.dir);
-        Object.assign(draft, result.pattern);
+        runCommand(draft, setTurn, grown, gesture.dir);
       });
       setSelection(grown);
       return;

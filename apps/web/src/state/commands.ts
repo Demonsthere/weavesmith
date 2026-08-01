@@ -17,6 +17,25 @@ function edit(pattern: Pattern, mutate: (draft: Pattern) => void): Pattern {
   return draft;
 }
 
+/**
+ * Run one of the commands above against a mutable draft (the kind handed to
+ * the store's `apply`/`beginGesture`/`continueGesture` callbacks) and write
+ * its result back into that draft. Every command here is pure — it clones
+ * its `pattern` argument rather than touching it — so the only way to fold
+ * a command's result into an in-progress draft is this merge; both the
+ * pointer and keyboard bindings need exactly this shape, so it lives here
+ * once instead of being copied at each call site.
+ */
+export function runCommand<Args extends unknown[]>(
+  draft: Pattern,
+  command: (pattern: Pattern, ...args: Args) => CommandResult,
+  ...args: Args
+): string {
+  const result = command(draft, ...args);
+  Object.assign(draft, result.pattern);
+  return result.message;
+}
+
 export function toggleTurn(pattern: Pattern, selection: Selection): CommandResult {
   const cells = cellsIn(selectionRect(selection));
   const next = edit(pattern, (draft) => {
