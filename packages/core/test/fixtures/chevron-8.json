@@ -5,7 +5,7 @@
     "corrections": [
       "The inner six cards originally read colours [2,2,1,1] (verbatim from the implementation plan's own example), which cannot produce a mirrored band under any correct convention: an S card and a Z card both threaded [2,2,1,1], turned forward together from start 0, show colours 2,1,1,2 (S, picks 1-4) against 1,1,2,2 (Z, picks 1-4) — equal at picks 2 and 4, but unequal at picks 1 and 3.",
       "Corrected to [2,1,2,1], which is self-mirroring (colors[1] === colors[3] === 1) and also matches this fixture's own prose claim of 'alternating cream/madder', which [2,2,1,1] (blocked: cream, cream, madder, madder) did not.",
-      "Full derivation recorded in .superpowers/sdd/2026-08-01-weavesmith-core/task-4-report.md."
+      "See docs/superpowers/plans/2026-08-01-weavesmith-core.md, Task 4 Step 2, which now carries this same corrected [2,1,2,1] example and explanation."
     ]
   },
   "pattern": {
