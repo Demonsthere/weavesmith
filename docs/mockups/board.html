@@ -607,7 +607,9 @@
   // ---- layout ----
   function fitCells() {
     var n = cards.length;
-    var w = n > 28 ? 24 : n > 18 ? 30 : n > 12 ? 36 : 42;
+    // 28px is the floor; past that the board scrolls rather than shrinking
+    // further, or the cells stop being reliable tap targets.
+    var w = n > 18 ? 28 : n > 12 ? 36 : 42;
     var root = document.documentElement.style;
     if (orientation === "v") {
       root.setProperty("--cell-w", w + "px");

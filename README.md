@@ -114,10 +114,13 @@ is the interesting one.
 Requires Node 22+ and pnpm 9+.
 
 ```bash
-pnpm install
-pnpm test          # everything
-pnpm --filter @weavesmith/web dev
+make install
+make check         # typecheck + the whole test suite, what CI runs
+make dev           # the app on a local dev server
 ```
+
+`make` on its own lists every target. It is a thin wrapper over pnpm — drop to
+`pnpm --filter @weavesmith/web …` whenever you need a flag it does not expose.
 
 Implementation is test-driven: the weaving conventions are pinned by fixtures
 transcribed from published historical bands, because they cannot be derived with

@@ -1,0 +1,143 @@
+/*
+ * Ported verbatim from docs/mockups/board.html (the `.board-scroll` through
+ * `.rippling`/reduced-motion block). Do not re-derive these rules — the
+ * prototype already solved the row-major DOM / CSS-grid-placement problem
+ * for both orientations, including the `--lean-base` / `--weave-angle`
+ * stitch rotation. Card-count-driven sizing (`--cell-w`/`--cell-h`,
+ * `--lean-base`/`--weave-angle` per orientation) is computed in Board.tsx
+ * and applied as inline custom properties on the `.board` element, the
+ * React equivalent of the prototype's `fitCells()`.
+ */
+
+.board-scroll { overflow: auto; padding: 1.5rem 0 0.5rem; }
+
+/* DOM is row-major (a group per pick) so screen readers read the band
+   correctly; `display: contents` lets the cells be grid items regardless,
+   and orientation is a matter of where each cell is placed. */
+.board { display: grid; width: max-content; margin: 0 auto; }
+.row { display: contents; }
+
+.tick {
+  display: flex; align-items: center; gap: 0.3rem;
+  font-family: var(--mono); font-size: 0.6875rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted); opacity: 0.55;
+}
+.tick.marked { opacity: 1; }
+.tick .inlay { width: 5px; height: 5px; border-radius: 50%; background: var(--string); }
+.v .tick { justify-content: flex-end; padding-right: 0.4rem; }
+.h .tick { justify-content: center; padding-bottom: 0.3rem; }
+
+.chip {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--text);
+  font-family: var(--ui);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 0;
+  overflow: hidden;
+}
+.v .chip { flex-direction: column; margin: 0 1px 8px; border-bottom: 3px solid var(--id); }
+.h .chip { flex-direction: row; margin: 1px 8px 1px 0; border-right: 3px solid var(--id); padding: 0 4px; }
+.chip:hover { border-top-color: var(--id); border-left-color: var(--id); }
+.chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.chip .id {
+  font-family: var(--mono); font-size: 0.75rem; font-weight: 600;
+  font-variant-numeric: tabular-nums; color: var(--id); line-height: 1;
+}
+.chip .sz {
+  font-family: var(--display); font-size: 0.8125rem; font-weight: 700;
+  line-height: 1; color: var(--muted);
+}
+.chip .holes { display: flex; gap: 2px; }
+.h .chip .holes { flex-direction: column; }
+.chip .holes i {
+  width: min(6px, calc((var(--cell-w) - 14px) / 4));
+  height: 6px; border-radius: 1px; display: block;
+}
+.h .chip .holes i { width: 6px; height: min(5px, calc((var(--cell-h) - 8px) / 4)); }
+.landmark .chip { background: color-mix(in srgb, var(--id) 12%, var(--panel)); }
+.landmark .chip .id { font-size: 0.8125rem; font-weight: 700; }
+
+.string { background: var(--id); opacity: 0.85; border-radius: 2px; align-self: center; justify-self: center; }
+.v .string { width: 3px; height: 100%; }
+.h .string { height: 3px; width: 100%; }
+.mode-woven .string { opacity: 0; }
+
+.rail { background: var(--id); opacity: 0.55; border-radius: 2px; align-self: center; justify-self: center; }
+.v .rail { height: 3px; width: 100%; margin-top: 4px; }
+.h .rail { width: 3px; height: 100%; margin-left: 4px; }
+.landmark .rail { opacity: 1; }
+.v .landmark .rail { height: 6px; }
+.h .landmark .rail { width: 6px; }
+
+.cell {
+  position: relative;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+  touch-action: none;
+}
+.v .cell { border-top: 1px solid var(--line); }
+.h .cell { border-left: 1px solid var(--line); }
+
+.note {
+  position: absolute; top: 50%; left: 50%;
+  width: 16px; height: 26px;
+  margin: -13px 0 0 -8px;
+  border-radius: 8px;
+  z-index: 2;
+  transition: transform 140ms ease, background-color 140ms ease;
+}
+.lean-s .note { transform: rotate(calc(var(--lean-base) + 28deg)); }
+.lean-z .note { transform: rotate(calc(var(--lean-base) - 28deg)); }
+.cell:hover .note { box-shadow: 0 0 0 2px var(--accent); }
+
+.mode-woven .cell { border-color: transparent; }
+.mode-woven .note {
+  width: 100%; height: 100%; margin: 0; top: 0; left: 0;
+  border-radius: 2px;
+}
+.mode-woven .lean-s .note {
+  transform: none;
+  background-image: repeating-linear-gradient(var(--weave-angle),
+    rgba(255,255,255,0.13) 0 3px, rgba(0,0,0,0.16) 3px 7px);
+}
+.mode-woven .lean-z .note {
+  transform: none;
+  background-image: repeating-linear-gradient(calc(180deg - var(--weave-angle)),
+    rgba(255,255,255,0.13) 0 3px, rgba(0,0,0,0.16) 3px 7px);
+}
+
+.cell.selected { background: color-mix(in srgb, var(--accent) 14%, transparent); z-index: 2; }
+.cell.focused { outline: 2px solid var(--accent); outline-offset: -2px; z-index: 5; }
+.cell:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; z-index: 5; }
+.cell.ghost .note { opacity: 0.5; }
+.cell.willchange::after {
+  content: ""; position: absolute; inset: 2px;
+  border: 1px dashed color-mix(in srgb, var(--accent) 70%, transparent);
+  border-radius: 3px; pointer-events: none; z-index: 4;
+}
+.cell.current {
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  z-index: 3;
+}
+.v .cell.current { box-shadow: inset 0 1px 0 var(--accent), inset 0 -1px 0 var(--accent); }
+.h .cell.current { box-shadow: inset 1px 0 0 var(--accent), inset -1px 0 0 var(--accent); }
+.cell.current .note { box-shadow: 0 0 12px 2px color-mix(in srgb, var(--accent) 55%, transparent); }
+.cell.past .note { opacity: 0.32; }
+
+@keyframes pulse {
+  0% { transform: scale(1); } 45% { transform: scale(1.3); } 100% { transform: scale(1); }
+}
+.rippling .note { animation: pulse 260ms ease; }
+@media (prefers-reduced-motion: reduce) {
+  .rippling .note { animation: none; }
+  .note { transition: none; }
+}

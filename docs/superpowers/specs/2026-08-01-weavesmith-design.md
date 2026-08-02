@@ -252,8 +252,18 @@ your own band, which is the wrong thing to hide.
 
 Both orientations are one component: DOM order is fixed and only grid placement
 changes. Cell lean and the woven-mode stitch angle rotate 90° with the layout so the
-fabric still reads correctly. Arrow keys follow the *band*, not the screen — Down is
-always "next pick" — so muscle memory survives the flip.
+fabric still reads correctly.
+
+**Arrow keys are spatial; the jump keys are semantic.** Arrows move the focus in the
+direction pressed, so they swap axes with the layout: in the horizontal band, Down
+moves to the next *card*, because cards are what run downward there. PageUp/PageDown
+(five picks) and Home/End (first/last card) stay semantic and do not swap.
+
+An earlier draft of this spec had arrows follow the band instead — Down always
+meaning "next pick", on the reasoning that muscle memory should survive a flip. That
+is wrong: pressing Down and watching the cursor travel sideways is disorienting, and
+it breaks the convention every grid and spreadsheet sets. Direction beats semantics
+for a directional control.
 
 Orientation is chosen automatically from viewport width and can be overridden; the
 override sticks.
