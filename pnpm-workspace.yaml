@@ -1,3 +1,14 @@
 packages:
   - "packages/*"
   - "apps/*"
+
+# pnpm 11 turns unapproved dependency build scripts into a hard error rather
+# than a warning, so every package needing a postinstall has to be named here.
+# esbuild (via Vite) downloads its platform binary in one — without this the
+# app cannot be built or tested.
+#
+# The point of the setting is that adding a name is a decision: a postinstall
+# is arbitrary code running at install time, which is where supply-chain
+# attacks land. Keep this list short and know why each entry is on it.
+allowBuilds:
+  esbuild: true
