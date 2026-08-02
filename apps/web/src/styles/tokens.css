@@ -47,3 +47,46 @@
   --text: #241D17; --muted: #6C6155; --accent: #A9690F;
   --sz-s: hsl(172 52% 38%); --sz-z: hsl(292 52% 38%);
 }
+
+/*
+ * The rest of this file ports the mockup's `body` rule plus the minimum of
+ * its page chrome (`.wrap`, `.topbar`, `.brand`) needed so the app's actual
+ * markup — `#root > header[role="banner"] > h1` and `#root > main` — renders
+ * against the ground instead of the browser default. See
+ * docs/mockups/board.html for the source rules.
+ */
+body {
+  background: var(--ground);
+  color: var(--text);
+  font-family: var(--ui);
+  margin: 0;
+  padding: 0 0 4rem;
+  -webkit-font-smoothing: antialiased;
+}
+
+#root > header,
+#root > main {
+  max-width: 940px;
+  margin: 0 auto;
+  padding: 0 1.25rem;
+}
+
+#root > header[role="banner"] {
+  padding-top: 1.5rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid var(--line);
+}
+
+#root > header[role="banner"] h1 {
+  font-family: var(--display);
+  font-size: 1.75rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin: 0;
+  font-weight: 600;
+}
+
+#root > header[role="banner"] h1 em {
+  font-style: normal;
+  color: var(--accent);
+}
