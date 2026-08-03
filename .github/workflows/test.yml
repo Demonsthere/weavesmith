@@ -9,6 +9,8 @@ on:
       - "pnpm-lock.yaml"
       - "pnpm-workspace.yaml"
       - "tsconfig.base.json"
+      # CI drives the Makefile now, so a change to it changes what CI runs.
+      - "Makefile"
       - ".github/workflows/test.yml"
   # Commits land on main directly today, so main would otherwise never be
   # tested by CI. Same filters.
@@ -21,6 +23,8 @@ on:
       - "pnpm-lock.yaml"
       - "pnpm-workspace.yaml"
       - "tsconfig.base.json"
+      # CI drives the Makefile now, so a change to it changes what CI runs.
+      - "Makefile"
       - ".github/workflows/test.yml"
   workflow_dispatch:
 
@@ -46,7 +50,16 @@ jobs:
           node-version: 24
           cache: pnpm
 
-      - run: pnpm install --frozen-lockfile
+      # Every step below goes through the Makefile, so CI runs the same
+      # commands a contributor runs locally — one definition of "install",
+      # "build", "typecheck" and "test", not two that can drift apart.
+      #
+      # `make install` is `pnpm install` with no flags, which is what you want
+      # locally. pnpm reads $CI and defaults `frozen-lockfile` to true when it
+      # is set, so on the runner this is the frozen install CI needs without
+      # the Makefile having to carry a CI-only flag.
+      - name: Install
+        run: make install
 
       # Build first, and not only to catch a package that compiles under vitest
       # but fails to emit declarations. @weavesmith/core's types resolve to its
@@ -54,10 +67,12 @@ jobs:
       # app before core is built fails on an import that is perfectly valid.
       # pnpm -r orders by workspace dependency, so core builds first.
       - name: Build
-        run: pnpm -r build
+        run: make build
 
+      # `make lint` is the typecheck target: tsc under `strict` plus
+      # `noUncheckedIndexedAccess` is the whole static-analysis story today.
       - name: Typecheck
-        run: pnpm typecheck
+        run: make lint
 
       - name: Test
-        run: pnpm test
+        run: make test
