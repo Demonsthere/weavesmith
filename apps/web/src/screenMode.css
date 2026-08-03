@@ -1,0 +1,39 @@
+/*
+ * `.segmented` ported from docs/mockups/board.html (~lines 81-98). Its outer
+ * shell (`display: inline-flex`, the border/radius/background) is shared
+ * there with `.stepper`, which `board/cardStepper.css` already ports under
+ * its own selector — repeated here under `.segmented` alone rather than a
+ * combined selector spanning two files.
+ */
+.segmented {
+  display: inline-flex;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--panel);
+}
+.segmented button {
+  appearance: none; border: 0; background: transparent;
+  color: var(--muted);
+  font-family: var(--ui); font-size: 0.75rem;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  padding: 0.4rem 0.8rem; cursor: pointer;
+}
+.segmented button[aria-pressed="true"] {
+  background: var(--accent); color: var(--ground); font-weight: 600;
+}
+.segmented button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+/*
+ * `.controls` itself has no mockup source — the mockup keeps every control
+ * (orientation, colour scheme, render mode, screen mode) in one topbar,
+ * most of which this app doesn't have yet. This just holds the stepper and
+ * the screen-mode toggle together until more controls arrive.
+ */
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem 0.9rem;
+  margin: 1.5rem 0 0;
+}

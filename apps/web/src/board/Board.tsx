@@ -1,4 +1,4 @@
-import { useMemo, type CSSProperties } from 'react';
+import { useEffect, useMemo, useRef, type CSSProperties } from 'react';
 import { simulate } from '@weavesmith/core';
 import { useStore } from '../state/store.js';
 import { rectContains, selectionRect } from '../state/selection.js';
@@ -34,10 +34,26 @@ export function Board() {
   const rect = selectionRect(selection);
   const { handlers, preview, hover } = usePointerBinding();
   const { onKeyDown, message } = useKeyboardBinding();
+  const boardRef = useRef<HTMLDivElement>(null);
 
   const cardCount = pattern.cards.length;
   const pickCount = pattern.picks.length;
   const vertical = orientation === 'vertical';
+
+  // Weave mode's at-loom tracker: keep the current pick on screen as
+  // `currentPick` advances, the way a weaver would slide the band along
+  // under their hands. Scoped to this board's own cells (not
+  // `document.querySelector`) so a second Board instance, if one ever
+  // exists, can't scroll the wrong one. A no-op outside weave mode — the
+  // effect still runs on every `currentPick` change regardless of mode, but
+  // there's nothing to scroll to when design mode never advances it.
+  useEffect(() => {
+    if (mode !== 'weave') return;
+    const cell = boardRef.current?.querySelector(
+      `[data-pick="${currentPick}"][data-card="0"]`,
+    );
+    cell?.scrollIntoView({ block: 'center', inline: 'center' });
+  }, [mode, currentPick]);
 
   // Sizing follows the card axis: in `vertical` cards are columns, so
   // `--cell-w` shrinks with card count and `--cell-h` stays fixed; in
@@ -71,6 +87,7 @@ export function Board() {
   return (
     <div className="board-scroll">
       <div
+        ref={boardRef}
         className={`board ${vertical ? 'v' : 'h'} mode-${render}`}
         role="grid"
         aria-label="Weaving board"
