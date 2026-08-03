@@ -1,9 +1,14 @@
 /*
  * Ported from docs/mockups/board.html (the "weave bar" block, ~lines
- * 264-297: `.weavebar` through `.btn`). The prototype hides the bar with a
+ * 264-288: `.weavebar` rules). The prototype hides the bar with a
  * `.weavebar`/`.on` pair toggled by its `setMode`; here the component is
  * only ever mounted while `mode === 'weave'` (see App.tsx), so there is
  * nothing to toggle and that half of the rule is dropped.
+ *
+ * The mockup's `.btn` rule (~lines 289-297, right after this block) is not
+ * here — it also styles the card editor's Done/Delete buttons, so it lives
+ * in the shared `styles/controls.css` instead of this weave-bar-specific
+ * file. See that file for why.
  */
 
 .weavebar {
@@ -39,21 +44,3 @@
 }
 .weavebar .turns span.fwd { color: var(--text); }
 .weavebar .turns span.bwd { color: var(--muted); }
-
-/*
- * `.btn` is the mockup's general button style, not weave-bar-specific — the
- * card editor (Task 7) already uses `btn`/`btn ghost` classNames but the
- * rule itself was never ported, so its Done/Delete buttons currently render
- * unstyled. Porting it here (its natural home, since this is the task whose
- * mockup section defines it) fixes that incidentally; it is not a rewrite
- * of the editor.
- */
-.btn {
-  appearance: none; border: 1px solid var(--accent);
-  background: var(--accent); color: var(--ground);
-  font-family: var(--ui); font-weight: 600; font-size: 0.8125rem;
-  letter-spacing: 0.06em; text-transform: uppercase;
-  padding: 0.6rem 1.1rem; border-radius: 999px; cursor: pointer;
-}
-.btn.ghost { background: transparent; color: var(--text); border-color: var(--line); }
-.btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }

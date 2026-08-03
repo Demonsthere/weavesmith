@@ -3,6 +3,7 @@ import type { CSSProperties } from 'react';
 import { useStore } from '../state/store.js';
 import { identityColor } from '../board/identity.js';
 import { hasSavedPosition, loadPosition, savePosition } from './position.js';
+import '../styles/controls.css';
 import './weaveBar.css';
 
 /**

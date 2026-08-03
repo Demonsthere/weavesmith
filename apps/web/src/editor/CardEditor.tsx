@@ -5,6 +5,7 @@ import type { Hole, Threading } from '@weavesmith/core';
 import { removeCard, runCommand, setHoleColor, setThreading } from '../state/commands.js';
 import { useStore } from '../state/store.js';
 import { WOOL_NAMES, WOOL_PRESETS } from './palette.js';
+import '../styles/controls.css';
 import './cardEditor.css';
 
 /** A wool name plus its hex where one is known (the dyed presets and
