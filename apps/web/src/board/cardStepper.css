@@ -1,0 +1,40 @@
+/*
+ * Ported verbatim from docs/mockups/board.html (the `.stepper` rules,
+ * around lines 81-122). Do not re-derive these — `.segmented` there shares
+ * the outer shell but is a different control (Task 8 only needs `.stepper`).
+ */
+
+.stepper {
+  display: inline-flex;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--panel);
+}
+.stepper button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+.stepper button {
+  appearance: none; border: 0; background: transparent;
+  color: var(--text); font-family: var(--ui);
+  font-size: 1rem; line-height: 1; width: 2rem; cursor: pointer;
+}
+.stepper button.add-s, .stepper button.add-z {
+  width: auto; padding: 0 0.6rem;
+  font-family: var(--display); font-size: 0.875rem; font-weight: 700;
+}
+.stepper button.add-s:not(:disabled) { color: var(--sz-s); }
+.stepper button.add-z:not(:disabled) { color: var(--sz-z); }
+.stepper button.add-z { border-left: 1px solid var(--line); }
+.stepper button:hover:not(:disabled) { background: color-mix(in srgb, currentColor 14%, transparent); }
+.stepper button:disabled { color: var(--line); cursor: not-allowed; }
+.stepper .count {
+  display: flex; align-items: baseline; gap: 0.35rem;
+  padding: 0.4rem 0.5rem;
+  border-left: 1px solid var(--line); border-right: 1px solid var(--line);
+  font-family: var(--mono); font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+}
+.stepper .count small {
+  font-family: var(--ui); font-size: 0.625rem;
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted);
+}

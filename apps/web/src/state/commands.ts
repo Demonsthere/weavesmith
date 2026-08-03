@@ -158,6 +158,20 @@ export function addCard(
   };
 }
 
+/**
+ * The index the stepper's `−` button should remove: just inside the S/Z
+ * boundary (see `boundary` above), so a shrink undoes a grow symmetrically —
+ * and never a border card (index 0 or the last index), per the design spec's
+ * "Resizing the band". `boundary` only ever returns a value in
+ * `[1, cards.length - 1]`, so the only edge case is when it lands exactly on
+ * the trailing border (an all-S band, or a single Z card at the end): step
+ * one short of it instead.
+ */
+export function removalIndex(cards: Card[]): number {
+  const index = boundary(cards);
+  return index === cards.length - 1 ? index - 1 : index;
+}
+
 export function removeCard(pattern: Pattern, index: number): CommandResult {
   if (pattern.cards.length <= MIN_CARDS) {
     return { pattern, message: `A band needs at least ${MIN_CARDS} cards` };
