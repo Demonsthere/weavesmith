@@ -1,0 +1,18 @@
+/*
+ * `.btn` — the mockup's general button style (docs/mockups/board.html,
+ * ~lines 289-297), used by two features that don't otherwise know about
+ * each other: the card editor's Done/Delete (Task 7) and the weave bar's
+ * Back/Next (Task 9). Neither feature owns this rule, so it lives in this
+ * genuinely shared stylesheet rather than in either feature's own CSS file
+ * — putting it in one and having the other depend on that file loading
+ * first is the same hidden coupling either direction.
+ */
+.btn {
+  appearance: none; border: 1px solid var(--accent);
+  background: var(--accent); color: var(--ground);
+  font-family: var(--ui); font-weight: 600; font-size: 0.8125rem;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  padding: 0.6rem 1.1rem; border-radius: 999px; cursor: pointer;
+}
+.btn.ghost { background: transparent; color: var(--text); border-color: var(--line); }
+.btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }

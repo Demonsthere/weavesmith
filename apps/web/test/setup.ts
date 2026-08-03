@@ -77,6 +77,28 @@ if (typeof HTMLDialogElement.prototype.showModal !== 'function') {
   });
 }
 
+// Node 22+ defines its own global `localStorage` accessor (the source of
+// the "--localstorage-file was not provided" warning at startup), and
+// vitest's jsdom environment only copies keys from `window` onto the global
+// that are on its own DOM-API allowlist — `localStorage` isn't one of them,
+// so it leaves Node's accessor in place rather than overwriting it. Node's
+// version resolves to `undefined` without that flag, which shadows jsdom's
+// real, working `Storage` implementation for anything that reads the bare
+// `localStorage` global (the position store does, like real app code would).
+// `globalThis.jsdom` is the underlying JSDOM instance vitest's environment
+// stashes there; redirect the global to its actual `window.localStorage` —
+// real get/set/remove/clear semantics via jsdom — rather than reimplementing
+// Storage by hand. (Read via `jsdomInstance`, not `globalThis.localStorage`
+// itself, so this doesn't trip Node's own accessor and print its warning.)
+const jsdomInstance = (globalThis as unknown as { jsdom?: { window: Window } }).jsdom;
+if (jsdomInstance) {
+  Object.defineProperty(globalThis, 'localStorage', {
+    value: jsdomInstance.window.localStorage,
+    configurable: true,
+    writable: true,
+  });
+}
+
 // jsdom also has no `window.matchMedia`. Default to "fine pointer with
 // hover" (a desktop mouse) so the hover-preview path is exercised by
 // default; tests that want to simulate a touch/coarse device override this
@@ -92,4 +114,14 @@ if (typeof window.matchMedia !== 'function') {
     removeEventListener: () => {},
     dispatchEvent: () => false,
   }) as MediaQueryList;
+}
+
+// jsdom does not implement `Element.scrollIntoView` at all — it has no
+// layout engine, so there is nothing for a real implementation to scroll
+// to, unlike the pointer-capture stub above where actual bookkeeping was
+// possible. This is an honest recording no-op: it exists purely so weave
+// mode's auto-scroll (Board.tsx) doesn't throw "not a function" under
+// jsdom, not to emulate scrolling.
+if (typeof Element.prototype.scrollIntoView !== 'function') {
+  Element.prototype.scrollIntoView = () => {};
 }

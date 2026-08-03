@@ -1,0 +1,46 @@
+/*
+ * Ported from docs/mockups/board.html (the "weave bar" block, ~lines
+ * 264-288: `.weavebar` rules). The prototype hides the bar with a
+ * `.weavebar`/`.on` pair toggled by its `setMode`; here the component is
+ * only ever mounted while `mode === 'weave'` (see App.tsx), so there is
+ * nothing to toggle and that half of the rule is dropped.
+ *
+ * The mockup's `.btn` rule (~lines 289-297, right after this block) is not
+ * here — it also styles the card editor's Done/Delete buttons, so it lives
+ * in the shared `styles/controls.css` instead of this weave-bar-specific
+ * file. See that file for why.
+ */
+
+.weavebar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin: 0.5rem 0 0;
+  padding: 0.85rem 1rem;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+.weavebar .pick {
+  font-family: var(--display);
+  font-size: 1.5rem;
+  font-variant-numeric: tabular-nums;
+}
+.weavebar .pick small {
+  display: block;
+  font-family: var(--ui);
+  font-size: 0.625rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.weavebar .turns { flex: 1 1 auto; display: flex; gap: 4px; overflow-x: auto; }
+.weavebar .turns span {
+  flex: 0 0 auto; width: 26px; height: 30px;
+  display: grid; place-items: center; border-radius: 6px;
+  background: var(--ground); border: 1px solid var(--line);
+  border-bottom: 3px solid var(--id, var(--line));
+  font-size: 0.9rem; line-height: 1;
+}
+.weavebar .turns span.fwd { color: var(--text); }
+.weavebar .turns span.bwd { color: var(--muted); }
