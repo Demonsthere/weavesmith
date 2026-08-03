@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { simulate, validatePattern } from '@weavesmith/core';
-import { addCard, removeCard, setHole, setHoleColor, setThreading, setTurn, toggleTurn }
-  from '../../src/state/commands.js';
+import type { Card, Threading } from '@weavesmith/core';
+import {
+  addCard, removeCard, removalIndex, setHole, setHoleColor, setThreading, setTurn, toggleTurn,
+} from '../../src/state/commands.js';
 import { defaultPattern } from '../../src/state/defaultPattern.js';
 
 const cell = (pick: number, card: number) => ({ focus: { pick, card }, anchor: { pick, card } });
@@ -131,6 +133,40 @@ describe('removeCard', () => {
     const { pattern: after, message } = removeCard(pattern, 1);
     expect(after.cards).toHaveLength(4);
     expect(message).toMatch(/at least 4/);
+  });
+});
+
+describe('removalIndex', () => {
+  const bandOf = (threadings: Threading[]): Card[] =>
+    threadings.map((threading) => ({ colors: [0, 0, 0, 0], threading, start: 0 }));
+
+  it('on an all-S band, takes from just inside the trailing edge, never the border card', () => {
+    const cards = bandOf(['S', 'S', 'S', 'S', 'S']);
+    const index = removalIndex(cards);
+    expect(index).toBe(3);
+    expect(index).not.toBe(0);
+    expect(index).not.toBe(cards.length - 1);
+  });
+
+  it('on a mirrored S-then-Z band, takes from just inside the S/Z boundary', () => {
+    // Mirrors defaultPattern(): 4 S cards then 4 Z cards, boundary at index 4.
+    const cards = bandOf(['S', 'S', 'S', 'S', 'Z', 'Z', 'Z', 'Z']);
+    expect(removalIndex(cards)).toBe(4);
+  });
+
+  it('never removes a border card, across every S/Z split and band length', () => {
+    for (let length = 5; length <= 12; length++) {
+      for (let split = 0; split <= length; split++) {
+        const threadings: Threading[] = Array.from(
+          { length },
+          (_, i) => (i < split ? 'S' : 'Z'),
+        );
+        const cards = bandOf(threadings);
+        const index = removalIndex(cards);
+        expect(index).toBeGreaterThan(0);
+        expect(index).toBeLessThan(cards.length - 1);
+      }
+    }
   });
 });
 
