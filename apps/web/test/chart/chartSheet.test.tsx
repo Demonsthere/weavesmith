@@ -1,13 +1,9 @@
 import { render, screen, within } from '@testing-library/react';
-import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { Chart } from '../../src/chart/Chart.js';
 import { useStore } from '../../src/state/store.js';
 import { defaultPattern } from '../../src/state/defaultPattern.js';
-
-const source = (relative: string): string =>
-  readFileSync(fileURLToPath(new URL(relative, import.meta.url)), 'utf8');
+import { printCss } from '../printCss.js';
 
 /** Where each landmark sits in the rendered sheet, top to bottom. */
 function orderOf(...testIds: string[]): string[] {
@@ -65,8 +61,7 @@ describe('the printed sheet', () => {
   });
 
   it('hides the app chrome banner in print, since the masthead replaces it', () => {
-    const print = source('../../src/styles/print.css');
-    expect(print.slice(print.indexOf('@media print'))).toMatch(
+    expect(printCss().printBlock).toMatch(
       /header\[role=['"]banner['"]\][^{]*\{[^}]*display:\s*none/,
     );
   });
@@ -74,8 +69,6 @@ describe('the printed sheet', () => {
   it('keeps the wordmark its own colour on paper', () => {
     // The print block forces a light theme and had flattened --accent to
     // black, which stripped the wordmark of the one bit of identity it has.
-    const print = source('../../src/styles/print.css');
-    const printBlock = print.slice(print.indexOf('@media print'));
-    expect(printBlock).not.toMatch(/--accent:\s*#000000/);
+    expect(printCss().printBlock).not.toMatch(/--accent:\s*#000000/);
   });
 });

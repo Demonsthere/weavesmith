@@ -4,9 +4,12 @@
  * imported once from main.tsx rather than from the Chart component.
  *
  * The plan's draft of this file hid `.topbar` and `.hint`; neither class
- * exists in the app's markup (they were the mockup's names). The real
- * chrome is `.controls` (card stepper + screen-mode toggle), `.board-scroll`
- * and `.weavebar`, plus the screen nav — hidden by name below.
+ * exists in the app's markup (they were the mockup's names), and `.hint`
+ * lingered here as a dead selector until a review caught its neighbour.
+ * The real chrome is `.controls` (card stepper + screen-mode toggle),
+ * `.board-scroll`, `.weavebar`, the screen nav and the footer — hidden by
+ * name below, alongside the `.screen-only` class for anything that only
+ * makes sense on a display.
  */
 /*
  * Anything that only makes sense on paper. Hidden by default and revealed
@@ -57,8 +60,7 @@
   .weavebar,
   .screen-nav,
   .filemenu,
-  .site-footer,
-  .hint {
+  .site-footer {
     display: none;
   }
 
@@ -117,19 +119,6 @@
   }
   .masthead-coffee img { display: block; margin-left: auto; }
   .masthead-coffee span { font-family: var(--mono); }
-
-  /* Kept with the sheet rather than orphaned onto a page of its own. */
-  .chart-qr {
-    break-inside: avoid;
-    margin-top: 1.2rem;
-    padding-top: 0.8rem;
-    border-top: 1px solid #999999;
-    font-size: 9pt;
-    color: #555555;
-  }
-  .chart-qr img { display: block; margin-bottom: 0.3rem; }
-  .chart-qr p { margin: 0; }
-  .chart-qr span { font-family: var(--mono); color: #000000; }
 
   .chart {
     break-inside: auto;

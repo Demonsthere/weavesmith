@@ -1,14 +1,10 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Chart } from '../../src/chart/Chart.js';
 import { Board } from '../../src/board/Board.js';
 import { useStore } from '../../src/state/store.js';
-
-const source = (relative: string): string =>
-  readFileSync(fileURLToPath(new URL(relative, import.meta.url)), 'utf8');
+import { printCss } from '../printCss.js';
 
 const printButton = () => screen.getByRole('button', { name: /print|pdf/i });
 
@@ -57,10 +53,7 @@ describe('the print button', () => {
     render(<Chart />);
     expect(printButton().closest('.screen-only')).not.toBeNull();
 
-    const print = source('../../src/styles/print.css');
-    expect(print.slice(print.indexOf('@media print'))).toMatch(
-      /\.screen-only[^{]*\{[^}]*display:\s*none/,
-    );
+    expect(printCss().printBlock).toMatch(/\.screen-only[^{]*\{[^}]*display:\s*none/);
   });
 
   it('does not appear on the board', () => {
