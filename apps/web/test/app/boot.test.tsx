@@ -1,9 +1,9 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { App } from '../../src/App.js';
 import { encodePattern } from '../../src/io/share.js';
-import { autosave, restore } from '../../src/io/storage.js';
+import { AUTOSAVE_DELAY, autosave, restore } from '../../src/io/storage.js';
 import { useStore } from '../../src/state/store.js';
 import { defaultPattern } from '../../src/state/defaultPattern.js';
 
@@ -68,13 +68,21 @@ describe('reset in the running app', () => {
     await user.click(screen.getByRole('button', { name: /^reset/i }));
     await user.click(screen.getByRole('button', { name: /discard/i }));
 
-    // Checked *before* the debounce can fire: afterwards the subscription
-    // writes the default band, which would make "not Uploaded" true whether
-    // or not the reset actually cleared anything.
+    // Checked *before* the debounce can fire: afterwards any assertion of
+    // the form "not Uploaded" would hold whether or not the reset actually
+    // cleared anything.
     expect(restore()).toBeNull();
 
-    await waitFor(() => expect(restore()?.meta.name ?? 'Chevron').toBe('Chevron'), {
-      timeout: 2000,
-    });
+    // Resetting is itself a pattern change, so the subscription schedules a
+    // write — but `clearAutosave` runs after it and cancels that write, so
+    // the slate stays clean rather than immediately re-filling with the
+    // default band. Waited out in real time: this is the window the
+    // debounced write would have landed in.
+    await new Promise((resolve) => setTimeout(resolve, AUTOSAVE_DELAY * 2));
+    expect(restore()).toBeNull();
+
+    // Autosave is cancelled, not switched off: the next real edit persists.
+    act(() => useStore.getState().apply((draft) => (draft.meta.name = 'Fresh'), 'rename'));
+    await waitFor(() => expect(restore()?.meta.name).toBe('Fresh'), { timeout: 2000 });
   });
 });

@@ -12,6 +12,8 @@ import './fileMenu.css';
 interface Report {
   message: string;
   problems: string[];
+  /** Something to read or copy by hand, rather than a fault to fix. */
+  detail?: string;
 }
 
 const problemsOf = (error: unknown): string[] =>
@@ -103,7 +105,21 @@ export function FileMenu() {
       return;
     }
 
-    await navigator.clipboard.writeText(linkFor(encoded));
+    const link = linkFor(encoded);
+    try {
+      // The Clipboard API is not available over plain HTTP and can be
+      // refused by permissions even when it is. Neither is a reason to lose
+      // the link — showing it is a worse experience than copying it, but a
+      // far better one than a button that silently does nothing.
+      await navigator.clipboard.writeText(link);
+    } catch {
+      setReport({
+        message: 'The clipboard is not available here. Copy this link by hand:',
+        problems: [],
+        detail: link,
+      });
+      return;
+    }
     setReport({ message: 'Share link copied.', problems: [] });
   };
 
@@ -168,6 +184,7 @@ export function FileMenu() {
               ))}
             </ul>
           )}
+          {report.detail && <code className="filemenu-detail">{report.detail}</code>}
         </div>
       )}
     </div>

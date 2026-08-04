@@ -111,6 +111,35 @@ describe('FileMenu', () => {
     write.mockRestore();
   });
 
+  it('shows the link to copy by hand when the clipboard refuses', async () => {
+    // Plain HTTP has no Clipboard API at all, and a permission prompt can
+    // be denied even on HTTPS. Either way the link must not be lost.
+    const user = userEvent.setup();
+    render(<FileMenu />);
+    vi.spyOn(navigator.clipboard, 'writeText').mockRejectedValue(
+      new DOMException('Write permission denied.', 'NotAllowedError'),
+    );
+
+    await user.click(screen.getByRole('button', { name: /link/i }));
+
+    const alert = await screen.findByRole('alert');
+    expect(alert).toHaveTextContent(/clipboard is not available/i);
+    expect(alert).toHaveTextContent(`#p=${encodePattern(defaultPattern())}`);
+    vi.restoreAllMocks();
+  });
+
+  it('survives there being no Clipboard API at all', async () => {
+    const user = userEvent.setup();
+    render(<FileMenu />);
+    const clipboard = navigator.clipboard;
+    Object.defineProperty(navigator, 'clipboard', { value: undefined, configurable: true });
+
+    await user.click(screen.getByRole('button', { name: /link/i }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(/copy this link by hand/i);
+    Object.defineProperty(navigator, 'clipboard', { value: clipboard, configurable: true });
+  });
+
   it('reports a corrupt palette instead of the share button crashing', async () => {
     const user = userEvent.setup();
     // `encodePattern` runs `gcPalette`, which throws PatternError on an
