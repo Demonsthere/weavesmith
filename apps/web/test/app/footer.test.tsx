@@ -30,19 +30,19 @@ describe('Footer', () => {
     );
   });
 
-  it('serves the coffee button from our own origin', () => {
-    // The official button is hot-linked in the snippet buycoffee.to hands
-    // out. This app is a PWA whose entire promise is opening at a loom with
-    // no network, where a remote image is a broken box — and it would also
-    // be a third-party request on every single page load. Same pixels,
-    // served by us and precached with everything else.
+  it('serves the coffee logo from our own origin', () => {
+    // The snippet buycoffee.to hands out hot-links their image. This app is
+    // a PWA whose entire promise is opening at a loom with no network, where
+    // a remote image is a broken box — and it would also be a third-party
+    // request on every single page load. Same pixels, served by us and
+    // precached with everything else.
     render(<Footer />);
     const image = screen.getByRole('img', { name: /buycoffee/i });
     expect(image.getAttribute('src')).not.toMatch(/^https?:/);
-    expect(image.getAttribute('src')).toMatch(/buycoffee.*\.png$/);
+    expect(image.getAttribute('src')).toMatch(/buycoffee-logo\.png$/);
   });
 
-  it('reserves space for the coffee button so the footer does not jump', () => {
+  it('reserves space for the coffee logo so the footer does not jump', () => {
     // Width and height as attributes, not just CSS: without them the
     // footer reflows the moment the image decodes.
     render(<Footer />);

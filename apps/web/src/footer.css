@@ -57,9 +57,11 @@
 .footer-btn svg { flex: 0 0 auto; }
 
 /*
- * buycoffee.to's own button. Deliberately unstyled beyond the focus ring and
- * alignment: it is their brand asset, and re-skinning someone else's button
- * is how you end up with a button that no longer reads as theirs.
+ * buycoffee.to's own logotype. Deliberately unstyled beyond the focus ring
+ * and alignment: it is their brand asset, and re-skinning someone else's
+ * mark is how you end up with one that no longer reads as theirs. The green
+ * carries itself on both the dark and light grounds, so it needs no
+ * per-theme treatment.
  */
 .footer-coffee {
   display: inline-flex;

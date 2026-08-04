@@ -4,15 +4,16 @@ const REPO = 'https://github.com/Demonsthere/weavesmith';
 const COFFEE = 'https://buycoffee.to/demonsthere';
 
 /*
- * buycoffee.to's own share button, served from our origin rather than
- * hot-linked as their snippet does. This app is a PWA whose whole promise is
- * opening at a loom with no network, where a remote image is a broken box —
- * and hot-linking would also mean a third-party request on every page load.
- * The file is the same one they serve (500x131, so it stays sharp at the
- * 195x51 it is drawn at); regenerate by re-downloading
- * https://buycoffee.to/static/img/share/share-button-dark.png
+ * buycoffee.to's own logotype, served from our origin rather than
+ * hot-linked. This app is a PWA whose whole promise is opening at a loom
+ * with no network, where a remote image is a broken box — and hot-linking
+ * would also mean a third-party request on every page load.
+ *
+ * Intrinsic size is 531x269; the pair below holds that ratio (96 x 48.63
+ * rounds to 49) so the browser reserves the right box before the image
+ * decodes and the footer never jumps.
  */
-const COFFEE_BUTTON = { src: './buycoffee-button.png', width: 195, height: 51 };
+const COFFEE_LOGO = { src: './buycoffee-logo.png', width: 96, height: 49 };
 
 /*
  * Inline SVG, not an icon font or a remote sprite: the app has to work at a
@@ -46,8 +47,8 @@ function GitHubMark() {
  * Both are anchors, never buttons. They navigate, so the browser's own
  * behaviour — middle-click, "copy link address", focus order — comes free;
  * a `<button>` calling `location.assign` would throw all of that away for a
- * shape that is only CSS. The source link is our own chip; the coffee one is
- * buycoffee.to's official button, which is theirs to design, not ours.
+ * shape that is only CSS. The source link is our own chip; the coffee one
+ * carries buycoffee.to's own logotype, which is theirs to design, not ours.
  */
 export function Footer() {
   return (
@@ -64,9 +65,9 @@ export function Footer() {
           {/* Width and height as attributes, not only CSS: without them the
               footer reflows the moment the image decodes. */}
           <img
-            src={COFFEE_BUTTON.src}
-            width={COFFEE_BUTTON.width}
-            height={COFFEE_BUTTON.height}
+            src={COFFEE_LOGO.src}
+            width={COFFEE_LOGO.width}
+            height={COFFEE_LOGO.height}
             alt="Postaw kawę dla demonsthere na buycoffee.to"
           />
         </a>
