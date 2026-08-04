@@ -48,6 +48,10 @@
   /* The chart prints its own masthead — app name, band name and the QR —
      so the app's chrome banner would only repeat the first of those. */
   header[role='banner'],
+  /* Anything that only makes sense on a screen — the print button first
+     among them, since a button that prints itself is a small joke at the
+     weaver's expense. */
+  .screen-only,
   .controls,
   .board-scroll,
   .weavebar,

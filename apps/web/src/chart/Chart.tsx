@@ -2,6 +2,7 @@ import { HOLE_LABELS } from '@weavesmith/core';
 import { useStore } from '../state/store.js';
 import { Summary } from './Summary.js';
 import { WOOL_NAMES } from '../editor/palette.js';
+import '../styles/controls.css';
 import './chart.css';
 
 /**
@@ -44,6 +45,17 @@ export function Chart() {
           made it on the left, which band it is underneath, and the QR
           tucked into the corner where it closes nothing and interrupts
           nothing. */}
+      {/* Screen-only, and the counterpart to the masthead above: a weaver on
+          a phone should not have to find "print to PDF" in a browser menu,
+          which is where this sheet is least discoverable and most wanted.
+          `window.print()` is the whole implementation — the print
+          stylesheet already decides what a page looks like. */}
+      <div className="chart-actions screen-only">
+        <button type="button" className="btn" onClick={() => window.print()}>
+          Print or save as PDF
+        </button>
+      </div>
+
       <header className="chart-masthead print-only" data-testid="chart-masthead">
         <div className="masthead-titles">
           <p className="masthead-app">

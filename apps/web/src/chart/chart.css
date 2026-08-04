@@ -8,6 +8,12 @@
  * styles/print.css.
  */
 
+.chart-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 0.6rem;
+}
+
 .chart-sheet {
   margin: 0.5rem 0 0;
   padding: 1rem;
