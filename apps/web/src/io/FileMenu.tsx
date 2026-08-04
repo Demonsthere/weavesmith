@@ -6,6 +6,8 @@ import { clearPosition } from '../weave/position.js';
 import { PatternName } from './PatternName.js';
 import { SHARE_LIMIT, encodePattern, linkFor } from './share.js';
 import { clearAutosave } from './storage.js';
+import { downloadBlob, fileNameFor } from './download.js';
+import { SVG_TYPE, bandToSVG, svgToPNG } from './exportImage.js';
 import '../styles/controls.css';
 import './fileMenu.css';
 
@@ -18,10 +20,6 @@ interface Report {
 
 const problemsOf = (error: unknown): string[] =>
   error instanceof PatternError ? error.problems : ['this file could not be read'];
-
-/** A pattern name that is safe to hand to a filesystem. */
-const fileNameFor = (name: string): string =>
-  `${name.replace(/[^A-Za-z0-9 _-]/g, '').trim() || 'band'}.json`;
 
 /**
  * Save, open and share. Every failure path here ends in the same place: a
@@ -39,13 +37,36 @@ export function FileMenu() {
   const inputId = useId();
 
   const download = () => {
-    const url = URL.createObjectURL(new Blob([toJSON(pattern)], { type: 'application/json' }));
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = fileNameFor(pattern.meta.name);
-    link.click();
-    URL.revokeObjectURL(url);
+    downloadBlob(
+      new Blob([toJSON(pattern)], { type: 'application/json' }),
+      fileNameFor(pattern.meta.name, 'json'),
+    );
     setReport(null);
+  };
+
+  const exportSVG = () => {
+    downloadBlob(
+      new Blob([bandToSVG(pattern)], { type: SVG_TYPE }),
+      fileNameFor(pattern.meta.name, 'svg'),
+    );
+    setReport(null);
+  };
+
+  /**
+   * PNG is the only export that can fail on the browser's side: it needs an
+   * image decoder and a canvas, and a large band can exceed what the canvas
+   * will rasterise. Say so rather than handing over an empty file.
+   */
+  const exportPNG = async () => {
+    try {
+      downloadBlob(await svgToPNG(bandToSVG(pattern)), fileNameFor(pattern.meta.name, 'png'));
+      setReport(null);
+    } catch (error) {
+      setReport({
+        message: 'The PNG could not be made. The SVG export works everywhere and prints better:',
+        problems: [error instanceof Error ? error.message : 'unknown reason'],
+      });
+    }
   };
 
   const openFile = async (file: File) => {
@@ -147,6 +168,14 @@ export function FileMenu() {
       <label className="btn ghost file-open" htmlFor={inputId}>
         Open a pattern file
       </label>
+
+      <button type="button" className="btn ghost" onClick={exportSVG}>
+        Export SVG
+      </button>
+
+      <button type="button" className="btn ghost" onClick={() => void exportPNG()}>
+        Export PNG
+      </button>
 
       <button type="button" className="btn ghost" onClick={() => void copyLink()}>
         Copy link
