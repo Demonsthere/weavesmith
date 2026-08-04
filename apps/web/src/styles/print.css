@@ -60,7 +60,13 @@
   }
 
   .print-only {
-    display: block;
+    /*
+     * `revert`, not `block`: this is a general-purpose class, and forcing
+     * `block` would flatten a print-only `<span>` or table cell into
+     * something it is not. `revert` drops the screen rule above and lets
+     * the element go back to its own natural display.
+     */
+    display: revert;
   }
 
   /* Kept with the sheet rather than orphaned onto a page of its own. */

@@ -44,8 +44,19 @@ describe('the coffee QR on the chart', () => {
     // instead, the same way the card editor's button styling is checked.
     const print = source('../../src/styles/print.css');
     expect(print).toMatch(/\.print-only\s*\{[^}]*display:\s*none/);
-    const printBlock = print.slice(print.indexOf('@media print'));
-    expect(printBlock).toMatch(/\.print-only\s*\{[^}]*display:\s*block/);
+
+    // Asserted before slicing: without this, losing the `@media print`
+    // block would make `indexOf` return -1, slice the last character, and
+    // fail with a message about a regex rather than about the missing
+    // block.
+    const printBlockStart = print.indexOf('@media print');
+    expect(printBlockStart).toBeGreaterThan(-1);
+
+    // `revert` rather than `block` so the class stays safe on inline and
+    // table elements; what matters is that print un-hides what screen hid.
+    expect(print.slice(printBlockStart)).toMatch(
+      /\.print-only\s*\{[^}]*display:\s*revert/,
+    );
   });
 
   it('serves the code from our own origin', () => {

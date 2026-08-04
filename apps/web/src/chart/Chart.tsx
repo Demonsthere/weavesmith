@@ -76,7 +76,7 @@ export function Chart() {
           src={COFFEE_QR.src}
           width={COFFEE_QR.size}
           height={COFFEE_QR.size}
-          alt="QR code linking to buycoffee.to/demonsthere"
+          alt={`QR code linking to ${COFFEE}`}
         />
         {/* The address in text as well as in the code: a printed sheet
             outlives any one phone, and someone should be able to type it. */}
