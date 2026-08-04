@@ -12,10 +12,11 @@ on:
       # CI drives the Makefile now, so a change to it changes what CI runs.
       - "Makefile"
       - ".github/workflows/test.yml"
-  # Commits land on main directly today, so main would otherwise never be
-  # tested by CI. Same filters.
+  # This repo's default branch is master, not main — with `main` here the
+  # push trigger never fired at all, so anything that reached the default
+  # branch outside a PR went untested. Same filters.
   push:
-    branches: [main]
+    branches: [master]
     paths:
       - "packages/**"
       - "apps/**"
