@@ -1,6 +1,7 @@
 import { useId, useRef, useState } from 'react';
 import { PatternError, fromJSON, toJSON } from '@weavesmith/core';
 import { useStore } from '../state/store.js';
+import { PatternName } from './PatternName.js';
 import { SHARE_LIMIT, encodePattern, linkFor } from './share.js';
 import '../styles/controls.css';
 import './fileMenu.css';
@@ -79,6 +80,8 @@ export function FileMenu() {
 
   return (
     <div className="filemenu">
+      <PatternName />
+
       <button type="button" className="btn ghost" onClick={download}>
         Download
       </button>

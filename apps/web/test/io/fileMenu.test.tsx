@@ -130,3 +130,32 @@ describe('FileMenu', () => {
     expect(within(alert).getAllByRole('listitem').length).toBeGreaterThan(0);
   });
 });
+
+describe('FileMenu naming', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    useStore.getState().reset();
+  });
+
+  it('offers the pattern name for editing', () => {
+    render(<FileMenu />);
+    expect(screen.getByLabelText(/pattern name/i)).toHaveValue('Chevron');
+  });
+
+  it('downloads under the name the weaver gave the band', async () => {
+    const user = userEvent.setup();
+    const created = vi.spyOn(URL, 'createObjectURL');
+    const clicked = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+    render(<FileMenu />);
+
+    await user.clear(screen.getByLabelText(/pattern name/i));
+    await user.type(screen.getByLabelText(/pattern name/i), 'Snartemo band{Enter}');
+    await user.click(screen.getByRole('button', { name: /download/i }));
+
+    expect((clicked.mock.instances[0] as HTMLAnchorElement).download).toBe('Snartemo band.json');
+    expect(JSON.parse(await (created.mock.calls[0]![0] as Blob).text()).meta.name).toBe(
+      'Snartemo band',
+    );
+    vi.restoreAllMocks();
+  });
+});

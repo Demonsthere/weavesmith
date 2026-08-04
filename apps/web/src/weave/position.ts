@@ -45,6 +45,29 @@ export function loadPosition(patternName: string): number {
 }
 
 /**
+ * Moves a saved position when the pattern is renamed. Without this, the
+ * name-keyed store would strand the entry: a weaver who renames a band
+ * mid-weave would come back to pick 1 and an orphaned key that nothing ever
+ * reads again.
+ *
+ * Does nothing when there is no saved position — renaming a band you have
+ * never woven must not invent a position for it, which is the same
+ * distinction `hasSavedPosition` exists to make.
+ */
+export function renamePosition(oldName: string, newName: string): void {
+  if (oldName === newName) return;
+  try {
+    const raw = localStorage.getItem(keyFor(oldName));
+    if (raw === null) return;
+    localStorage.setItem(keyFor(newName), raw);
+    localStorage.removeItem(keyFor(oldName));
+  } catch {
+    // Same best-effort contract as savePosition: failing to carry the
+    // position across is not a reason to fail the rename.
+  }
+}
+
+/**
  * Whether a position has actually been saved for this pattern, as opposed
  * to `loadPosition` defaulting to 0. The distinction matters to callers
  * that only want to *hydrate* a stored position, never to impose 0 onto a

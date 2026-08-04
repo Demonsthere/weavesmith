@@ -49,3 +49,33 @@
 }
 .filemenu-report p { margin: 0; }
 .filemenu-report ul { margin: 0.35rem 0 0; padding-left: 1.1rem; }
+
+/*
+ * The name field. It reads as part of the same row as the buttons, but it
+ * is document state (it rides along in the file and the share link), not a
+ * control, so it is styled as a field rather than as another `.btn`.
+ */
+.pattern-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-right: 0.25rem;
+}
+.pattern-name label {
+  font-size: 0.6875rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.pattern-name input {
+  font-family: var(--display);
+  font-size: 1rem;
+  letter-spacing: 0.02em;
+  color: var(--text);
+  background: var(--ground);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 0.4rem 0.6rem;
+  min-width: 10ch;
+}
+.pattern-name input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
