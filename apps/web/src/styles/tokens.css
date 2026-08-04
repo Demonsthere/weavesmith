@@ -90,3 +90,30 @@ body {
   font-style: normal;
   color: var(--accent);
 }
+
+/*
+ * Screen nav (Board / Chart). Page chrome like the rules above, so it sits
+ * with them rather than in a feature stylesheet — no feature owns it.
+ * `aria-current` does the styling as well as the announcing: one source of
+ * truth for "which screen am I on", so the two cannot disagree.
+ */
+.screen-nav {
+  display: flex;
+  gap: 1.25rem;
+  margin-top: 0.6rem;
+}
+.screen-nav a {
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 0.75rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding-bottom: 0.2rem;
+  border-bottom: 2px solid transparent;
+}
+.screen-nav a:hover { color: var(--text); }
+.screen-nav a[aria-current="page"] {
+  color: var(--text);
+  border-bottom-color: var(--accent);
+}
+.screen-nav a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }

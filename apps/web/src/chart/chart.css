@@ -1,0 +1,108 @@
+/*
+ * The chart sheet. The mockup (docs/mockups/board.html) has no chart screen
+ * to port from — it is a board prototype only — so these rules are new, but
+ * they are built from the same tokens so the sheet belongs to the same app.
+ *
+ * Print rules are NOT here: they are page-level (they hide the board, the
+ * weave bar and the controls, which this feature does not own) and live in
+ * styles/print.css.
+ */
+
+.chart-sheet {
+  margin: 0.5rem 0 0;
+  padding: 1rem;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+
+.chart-sheet h2,
+.chart-sheet h3 {
+  font-family: var(--display);
+  letter-spacing: 0.04em;
+  margin: 1.2rem 0 0.4rem;
+}
+.chart-sheet h2 { font-size: 1.4rem; margin-top: 0; }
+.chart-sheet h3 { font-size: 0.75rem; text-transform: uppercase; color: var(--muted); }
+
+.summary-line { margin: 0.2rem 0; }
+
+.thread-counts,
+.twist-list {
+  list-style: none;
+  margin: 0.2rem 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1.25rem;
+}
+
+.summary-swatch {
+  display: inline-block;
+  width: 0.85em;
+  height: 0.85em;
+  margin-right: 0.35em;
+  vertical-align: -0.1em;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  /* Keeps the swatch legible on paper, where browsers drop backgrounds by
+     default — the colour name next to it is the real carrier either way. */
+  print-color-adjust: exact;
+}
+
+.chart,
+.threading {
+  border-collapse: collapse;
+  margin: 0.6rem 0 1.4rem;
+  font-family: var(--mono);
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.chart caption,
+.threading caption {
+  font-family: var(--display);
+  font-size: 1.1rem;
+  letter-spacing: 0.04em;
+  text-align: left;
+  padding-bottom: 0.3rem;
+}
+
+.chart th,
+.chart td,
+.threading th,
+.threading td {
+  border: 1px solid var(--line);
+  padding: 0.15rem 0.4rem;
+  text-align: center;
+}
+
+.chart thead th,
+.threading thead th {
+  background: var(--ground);
+  font-family: var(--ui);
+  font-size: 0.6875rem;
+}
+
+/* Threading direction, in the same hue the board uses for it — but the
+   letter carries the meaning, so this survives monochrome printing. */
+.chart .sz,
+.threading .sz {
+  display: block;
+  font-size: 0.625rem;
+  color: var(--muted);
+}
+
+.chart .pick-no {
+  color: var(--muted);
+  font-size: 0.6875rem;
+}
+
+.chart .turn { width: 1.9em; }
+
+/* Every fifth pick banded, the same landmark rhythm the board uses to stop
+   you losing your place in a long band. */
+.chart tbody tr:nth-child(5n) td { border-bottom: 2px solid var(--string); }
+
+.threading .thread { white-space: nowrap; }
+.threading .thread-name { font-size: 0.6875rem; }
