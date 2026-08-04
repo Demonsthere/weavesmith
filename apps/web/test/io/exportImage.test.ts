@@ -1,5 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
-import { bandToSVG, svgToPNG } from '../../src/io/exportImage.js';
+import {
+  MAX_PNG_SCALE,
+  PNG_TARGET_EDGE,
+  bandToSVG,
+  pngScaleFor,
+  svgToPNG,
+} from '../../src/io/exportImage.js';
 import { defaultPattern } from '../../src/state/defaultPattern.js';
 
 describe('bandToSVG', () => {
@@ -92,5 +98,34 @@ describe('svgToPNG', () => {
     expect(revoked).toHaveBeenCalledTimes(1);
     vi.unstubAllGlobals();
     revoked.mockRestore();
+  });
+});
+
+describe('export sizing', () => {
+  it('opens at a usable size by default', () => {
+    // The SVG is vector, so this is not about resolution — `width`/`height`
+    // decide the size a viewer opens it at, and a 16px cell made the default
+    // band 128px wide, which reads as a thumbnail.
+    const pattern = defaultPattern();
+    const svg = bandToSVG(pattern);
+    expect(svg).toContain(`width="${pattern.cards.length * 32}"`);
+    expect(svg).toContain(`height="${pattern.picks.length * 32}"`);
+  });
+
+  it('scales a PNG so the long edge lands near the target, whatever the band', () => {
+    // A 4-card sampler and a 40-card belt should both come out usefully big.
+    // A fixed multiplier cannot do that: 2x of a small band is still small.
+    expect(pngScaleFor(256, 768)).toBeCloseTo(PNG_TARGET_EDGE / 768, 5);
+    expect(pngScaleFor(1280, 6400)).toBeCloseTo(PNG_TARGET_EDGE / 6400, 5);
+    // Long edge is the long edge whichever way round the band runs.
+    expect(pngScaleFor(6400, 1280)).toBeCloseTo(PNG_TARGET_EDGE / 6400, 5);
+  });
+
+  it('does not blow a tiny band up without limit', () => {
+    expect(pngScaleFor(8, 8)).toBeLessThanOrEqual(MAX_PNG_SCALE);
+  });
+
+  it('refuses to render a zero-sized band rather than dividing by zero', () => {
+    expect(pngScaleFor(0, 0)).toBeGreaterThan(0);
   });
 });

@@ -6,7 +6,33 @@ export interface SVGOptions {
   cell?: number;
 }
 
-const DEFAULT_CELL = 16;
+/**
+ * Side of one exported cell. The SVG is vector, so this is not a resolution
+ * choice — it is the size a viewer opens the file at, and 16px made the
+ * default band 128px wide, which reads as a thumbnail of itself.
+ */
+const DEFAULT_CELL = 32;
+
+/** Roughly how long the exported PNG's longest edge should be, in pixels. */
+export const PNG_TARGET_EDGE = 2000;
+
+/** Ceiling on the upscale, so a four-card sampler is not blown up absurdly. */
+export const MAX_PNG_SCALE = 8;
+
+/**
+ * How much to scale an SVG of this size so its long edge lands near
+ * `PNG_TARGET_EDGE`.
+ *
+ * A fixed multiplier cannot serve both ends of the range this app allows: 2x
+ * of a 4-card sampler is still a thumbnail, and 2x of a 40-card belt at 200
+ * picks is an image no viewer will open. Scaling to the long edge makes both
+ * come out usefully big without a control to explain.
+ */
+export function pngScaleFor(width: number, height: number): number {
+  const longest = Math.max(width, height);
+  if (!Number.isFinite(longest) || longest <= 0) return 1;
+  return Math.min(PNG_TARGET_EDGE / longest, MAX_PNG_SCALE);
+}
 
 const escapeXML = (text: string): string =>
   text
@@ -94,11 +120,12 @@ export const SVG_TYPE = 'image/svg+xml;charset=utf-8';
  * a 0-byte file.
  */
 export function svgToPNG(svg: string, options: SVGOptions & { scale?: number } = {}): Promise<Blob> {
-  const scale = options.scale ?? 2;
   const size = /width="(\d+)" height="(\d+)"/.exec(svg);
   if (!size) return Promise.reject(new Error('This does not look like an SVG document.'));
-  const width = Number(size[1]) * scale;
-  const height = Number(size[2]) * scale;
+  const natural = { width: Number(size[1]), height: Number(size[2]) };
+  const scale = options.scale ?? pngScaleFor(natural.width, natural.height);
+  const width = Math.max(1, Math.round(natural.width * scale));
+  const height = Math.max(1, Math.round(natural.height * scale));
 
   return new Promise<Blob>((resolve, reject) => {
     const url = URL.createObjectURL(new Blob([svg], { type: SVG_TYPE }));

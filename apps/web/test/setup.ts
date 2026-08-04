@@ -136,3 +136,17 @@ if (typeof URL.createObjectURL !== 'function') {
   URL.createObjectURL = () => `blob:weavesmith/${(nextId += 1)}`;
   URL.revokeObjectURL = () => {};
 }
+
+// jsdom has no ResizeObserver and no layout engine, so there is nothing for
+// a real implementation to measure. This is an honest no-op: the board reads
+// "unmeasured" as "do not scale" (see board/sizing.ts), so under jsdom it
+// renders at its natural card-count-driven size — which is what every board
+// test written before cell growth existed asserts. Tests that exercise
+// growth stub this with an eager version of their own.
+if (typeof ResizeObserver !== 'function') {
+  globalThis.ResizeObserver = class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  } as unknown as typeof ResizeObserver;
+}
