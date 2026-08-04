@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   MAX_PNG_SCALE,
   PNG_TARGET_EDGE,
+  PNG_TIMEOUT,
   bandToSVG,
   pngScaleFor,
   svgToPNG,
@@ -59,6 +60,51 @@ describe('bandToSVG', () => {
   });
 });
 
+/** An `Image` that always fails to decode — jsdom loads no resources, so a
+ *  real one fires neither event and every test using it would time out. */
+function stubFailingImage() {
+  vi.stubGlobal(
+    'Image',
+    class {
+      onerror: (() => void) | null = null;
+      set src(_value: string) {
+        queueMicrotask(() => this.onerror?.());
+      }
+    },
+  );
+}
+
+describe('svgToPNG dimension parsing', () => {
+  it('accepts a fractional cell size', async () => {
+    // `bandToSVG` takes any number for `cell`, and an odd card count times a
+    // fractional cell gives fractional dimensions. Rejecting those as "not an
+    // SVG" would be refusing a document this module just produced.
+    const pattern = defaultPattern();
+    const svg = bandToSVG({ ...pattern, cards: pattern.cards.slice(0, 7) }, { cell: 10.3 });
+    expect(svg).toContain('width="72.1"');
+    // Getting as far as decoding is the assertion: before this, a fractional
+    // cell was refused outright as "not an SVG document".
+    stubFailingImage();
+    await expect(svgToPNG(svg)).rejects.toThrow(/could not be drawn/i);
+    vi.unstubAllGlobals();
+  });
+
+  it('does not care what order the attributes come in', async () => {
+    // The contract is "an SVG string", not "a string this module wrote".
+    const svg =
+      '<svg xmlns="http://www.w3.org/2000/svg" height="40" viewBox="0 0 20 40" width="20"></svg>';
+    stubFailingImage();
+    await expect(svgToPNG(svg)).rejects.toThrow(/could not be drawn/i);
+    vi.unstubAllGlobals();
+  });
+
+  it('still refuses a document with no dimensions at all', () => {
+    return expect(svgToPNG('<svg xmlns="http://www.w3.org/2000/svg"></svg>')).rejects.toThrow(
+      /does not look like an SVG/i,
+    );
+  });
+});
+
 describe('svgToPNG', () => {
   it('rejects a string that is not an SVG document', async () => {
     // Interface only: rasterising needs a real browser. What is worth
@@ -68,17 +114,34 @@ describe('svgToPNG', () => {
   });
 
   it('rejects when the image will not decode', async () => {
+    stubFailingImage();
+    await expect(svgToPNG(bandToSVG(defaultPattern()))).rejects.toThrow(/could not be drawn/i);
+    vi.unstubAllGlobals();
+  });
+
+  it('gives up rather than hanging when the image never settles', async () => {
+    // `Image` firing neither `load` nor `error` leaves the Export PNG button
+    // silently dead with no report — the one outcome this module exists to
+    // avoid. jsdom reproduces it exactly, because it loads no resources.
+    vi.useFakeTimers();
     vi.stubGlobal(
       'Image',
       class {
-        onerror: (() => void) | null = null;
-        set src(_value: string) {
-          queueMicrotask(() => this.onerror?.());
-        }
+        set src(_value: string) {}
       },
     );
-    await expect(svgToPNG(bandToSVG(defaultPattern()))).rejects.toThrow(/could not be drawn/i);
+    const pending = svgToPNG(bandToSVG(defaultPattern()));
+    const settled = vi.fn();
+    void pending.catch(settled);
+
+    await vi.advanceTimersByTimeAsync(PNG_TIMEOUT - 1);
+    expect(settled).not.toHaveBeenCalled();
+
+    await vi.advanceTimersByTimeAsync(2);
+    await expect(pending).rejects.toThrow(/too long/i);
+
     vi.unstubAllGlobals();
+    vi.useRealTimers();
   });
 
   it('revokes the object URL even when it fails', async () => {

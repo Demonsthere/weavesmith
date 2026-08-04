@@ -20,6 +20,17 @@ export const PNG_TARGET_EDGE = 2000;
 export const MAX_PNG_SCALE = 8;
 
 /**
+ * How long to wait for the browser to decode the SVG before giving up.
+ *
+ * `Image` is only guaranteed to fire `load` or `error` in practice, not in
+ * principle — and a promise that never settles leaves the Export PNG button
+ * silently dead, with no report, which is the one outcome this module exists
+ * to avoid. Generous enough that a large band on a slow machine finishes
+ * first; the timeout is a backstop, not a budget.
+ */
+export const PNG_TIMEOUT = 15_000;
+
+/**
  * How much to scale an SVG of this size so its long edge lands near
  * `PNG_TARGET_EDGE`.
  *
@@ -33,6 +44,13 @@ export function pngScaleFor(width: number, height: number): number {
   if (!Number.isFinite(longest) || longest <= 0) return 1;
   return Math.min(PNG_TARGET_EDGE / longest, MAX_PNG_SCALE);
 }
+
+/**
+ * Trims binary floating-point noise off a coordinate: a fractional `cell`
+ * turns 7 x 10.3 into 72.10000000000001, which is both ugly in the output
+ * and a needless precision claim about a thread's position.
+ */
+const num = (value: number): string => String(Number(value.toFixed(3)));
 
 const escapeXML = (text: string): string =>
   text
@@ -80,7 +98,8 @@ export function bandToSVG(pattern: Pattern, options: SVGOptions = {}): string {
       const y = pick * cell;
       const fill = pattern.palette[woven.color] ?? '#000000';
       parts.push(
-        `<rect x="${x}" y="${y}" width="${cell}" height="${cell}" fill="${escapeXML(fill)}"/>`,
+        `<rect x="${num(x)}" y="${num(y)}" width="${num(cell)}" height="${num(cell)}" ` +
+          `fill="${escapeXML(fill)}"/>`,
       );
       // `/` runs bottom-left to top-right; `\` the other way. Inset so the
       // stroke reads as a stitch on the cell rather than a grid line
@@ -92,7 +111,8 @@ export function bandToSVG(pattern: Pattern, options: SVGOptions = {}): string {
           : [x + inset, y + inset, x + cell - inset, y + cell - inset];
       const stroke = lightness(fill) < 0.5 ? '#ffffff' : '#000000';
       parts.push(
-        `<path data-lean="${woven.lean === '/' ? '/' : '\\'}" d="M${x1} ${y1}L${x2} ${y2}" ` +
+        `<path data-lean="${woven.lean === '/' ? '/' : '\\'}" ` +
+          `d="M${num(x1)} ${num(y1)}L${num(x2)} ${num(y2)}" ` +
           `stroke="${stroke}" stroke-opacity="0.35" stroke-width="${(cell * 0.16).toFixed(2)}" ` +
           `stroke-linecap="round"/>`,
       );
@@ -100,15 +120,15 @@ export function bandToSVG(pattern: Pattern, options: SVGOptions = {}): string {
   });
 
   return (
-    `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" ` +
-    `viewBox="0 0 ${width} ${height}" role="img">` +
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${num(width)}" height="${num(height)}" ` +
+    `viewBox="0 0 ${num(width)} ${num(height)}" role="img">` +
     `<title>${escapeXML(pattern.meta.name)}</title>` +
     parts.join('') +
     `</svg>`
   );
 }
 
-/** File name stem shared by every export of one band. */
+/** MIME type for the SVG blobs this module produces. */
 export const SVG_TYPE = 'image/svg+xml;charset=utf-8';
 
 /**
@@ -120,9 +140,21 @@ export const SVG_TYPE = 'image/svg+xml;charset=utf-8';
  * a 0-byte file.
  */
 export function svgToPNG(svg: string, options: SVGOptions & { scale?: number } = {}): Promise<Blob> {
-  const size = /width="(\d+)" height="(\d+)"/.exec(svg);
-  if (!size) return Promise.reject(new Error('This does not look like an SVG document.'));
-  const natural = { width: Number(size[1]), height: Number(size[2]) };
+  // Each attribute looked up on its own, and decimals allowed. The previous
+  // single pattern required `width` and `height` to be adjacent, in that
+  // order, and integral — so it rejected both a fractional `cell` from this
+  // very module and almost any SVG written by anything else, with the
+  // misleading complaint that the document was not an SVG.
+  const dimension = (name: 'width' | 'height'): number | null => {
+    const match = new RegExp(`\\b${name}="([0-9]*\\.?[0-9]+)(?:px)?"`).exec(svg);
+    return match ? Number(match[1]) : null;
+  };
+  const parsedWidth = dimension('width');
+  const parsedHeight = dimension('height');
+  if (parsedWidth === null || parsedHeight === null || parsedWidth <= 0 || parsedHeight <= 0) {
+    return Promise.reject(new Error('This does not look like an SVG document.'));
+  }
+  const natural = { width: parsedWidth, height: parsedHeight };
   const scale = options.scale ?? pngScaleFor(natural.width, natural.height);
   const width = Math.max(1, Math.round(natural.width * scale));
   const height = Math.max(1, Math.round(natural.height * scale));
@@ -130,10 +162,28 @@ export function svgToPNG(svg: string, options: SVGOptions & { scale?: number } =
   return new Promise<Blob>((resolve, reject) => {
     const url = URL.createObjectURL(new Blob([svg], { type: SVG_TYPE }));
     const image = new Image();
+    let settled = false;
 
-    const fail = (reason: string) => {
+    const timer = setTimeout(() => {
+      fail('The band took too long to draw. Try the SVG export instead.');
+    }, PNG_TIMEOUT);
+
+    const finish = () => {
+      settled = true;
+      clearTimeout(timer);
       URL.revokeObjectURL(url);
+    };
+
+    function fail(reason: string) {
+      if (settled) return;
+      finish();
       reject(new Error(reason));
+    }
+
+    const succeed = (blob: Blob) => {
+      if (settled) return;
+      finish();
+      resolve(blob);
     };
 
     image.onload = () => {
@@ -143,13 +193,12 @@ export function svgToPNG(svg: string, options: SVGOptions & { scale?: number } =
       const context = canvas.getContext('2d');
       if (!context) return fail('This browser cannot draw to a canvas.');
       context.drawImage(image, 0, 0, width, height);
-      URL.revokeObjectURL(url);
       if (typeof canvas.toBlob !== 'function') {
-        return reject(new Error('This browser cannot turn the band into a PNG.'));
+        return fail('This browser cannot turn the band into a PNG.');
       }
       canvas.toBlob((blob) => {
-        if (blob) resolve(blob);
-        else reject(new Error('This browser cannot turn the band into a PNG.'));
+        if (blob) succeed(blob);
+        else fail('This browser cannot turn the band into a PNG.');
       }, 'image/png');
     };
     image.onerror = () => fail('The band could not be drawn as an image.');
