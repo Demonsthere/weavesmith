@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Let a weaver paint the band they want, solve for the turn sequence that produces it, and see honestly marked every cell no turn sequence can reach.
+**Goal:** Let a weaver paint the band they want, solve for the turn sequence that produces it, and see honestly marked every cell the solved turns cannot deliver.
 
 **Architecture:** A sparse `target` grid (`palette index | null`, `null` = "any colour will do") lives on `Pattern`, so it autosaves, exports and travels in a share link. A new `reportTarget` in core splits band-vs-target disagreements into *unreachable* (the solver cannot fix it) and *unmet* (a Solve would). The web app gains a third screen mode, `paint`; both existing binding hooks branch on it and dispatch three new commands, so there is still one editing model with three bindings.
 
@@ -480,10 +480,14 @@ Append to the end of the file:
 ```ts
 export interface TargetReport {
   /**
-   * Cells no optimal turn sequence can satisfy — either the card does not
-   * carry the colour at all, or satisfying this pick would cost a mismatch
-   * at another. Re-solving will not help; the fix is a different hole
-   * colour or a different threading.
+   * Cells the card's minimum-mismatch turn sequence does not satisfy —
+   * either the card carries no hole in that colour, or showing it here
+   * would cost a mismatch at another painted pick on the same card and the
+   * solver took the cheaper trade. This is a claim about the column, not
+   * about the cell in isolation: in the second case the colour *is*
+   * showable there, just not alongside everything else asked of that card.
+   * Re-solving will not help either way; the fix is a different hole
+   * colour, a different threading, or asking for less.
    */
   unreachable: Unreachable[];
   /** Cells where the band simply disagrees with the target. Solve fixes these. */
@@ -1067,6 +1071,8 @@ it previews a ripple, and a target does not ripple."
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it } from 'vitest';
+import { simulate } from '@weavesmith/core';
+import type { Turn } from '@weavesmith/core';
 import { Board } from '../../src/board/Board.js';
 import { useStore } from '../../src/state/store.js';
 
@@ -1116,14 +1122,23 @@ describe('painting with the keyboard', () => {
   it('solves with Ctrl+Enter', async () => {
     const user = userEvent.setup();
     render(<Board />);
-    await user.click(cell(1, 0));
+    await user.click(cell(1, 3));
 
-    const { pattern } = useStore.getState();
-    const currently = pattern.cards[0]!.colors[0];
-    const wanted = pattern.cards[0]!.colors.findIndex((c) => c !== currently) + 1;
-    await user.keyboard(`${wanted}{Enter}{Control>}{Enter}{/Control}`);
+    // Card 3, not card 0: card 0 is threaded all-walnut, so no colour it can
+    // show would change anything. `wanted` is a *palette* index — the digit
+    // that selects it is one higher — and it is the colour the other turn at
+    // this pick would show, so it is reachable by construction.
+    const before = useStore.getState().pattern;
+    const flipped = structuredClone(before);
+    flipped.picks[1]![3] = -flipped.picks[1]![3]! as Turn;
+    const wanted = simulate(flipped)[1]![3]!.color;
+    expect(wanted).not.toBe(simulate(before)[1]![3]!.color);
+    expect(wanted + 1).toBeLessThanOrEqual(9);
 
-    expect(useStore.getState().pattern.picks).not.toEqual(pattern.picks);
+    await user.keyboard(`${wanted + 1}{Enter}{Control>}{Enter}{/Control}`);
+
+    expect(useStore.getState().pattern.picks).not.toEqual(before.picks);
+    expect(simulate(useStore.getState().pattern)[1]![3]!.color).toBe(wanted);
     expect(screen.getByRole('status')).toHaveTextContent(/Solved/);
   });
 
@@ -1394,9 +1409,13 @@ export function BrushStrip() {
   return (
     <div className="brushstrip">
       <div className="swatches" role="group" aria-label="Brush colour">
+        {/* Keyed by index, not by hex: nothing forbids a palette from
+            carrying the same colour twice — validate only requires strings,
+            and gcPalette dedupes by index rather than by value — so a hex
+            key could collide. */}
         {pattern.palette.map((hex, index) => (
           <button
-            key={hex}
+            key={index}
             type="button"
             className="swatch"
             style={{ background: hex }}
@@ -2003,8 +2022,8 @@ In `README.md`, under "What v1 does", after the **Simulate** bullet:
 
 ```markdown
 - **Solve backwards.** Paint the band you want and get the turn sequence that
-  produces it — with the cells no turn sequence can reach marked honestly
-  rather than quietly approximated.
+  produces it — with the cells the cards cannot deliver marked honestly rather
+  than quietly approximated.
 ```
 
 - [ ] **Step 4: Run everything**

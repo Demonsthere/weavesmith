@@ -16,12 +16,28 @@ you work forwards from turns only.
 
 Two failures look identical on screen and are not the same thing:
 
-- **unreachable** — no turn sequence shows that colour there. Solving again
-  will not help; the fix is a different hole colour or a different threading.
+- **unreachable** — the best turn sequence for that card cannot show that
+  colour there. Solving again will not help; the fix is a different hole
+  colour, a different threading, or asking for less on that card.
 - **unmet** — the band disagrees with the target, but a solve would fix it.
   You get here by editing turns in Design mode after a solve.
 
-Naming both is most of the honesty this feature promises.
+"Unreachable" is a statement about the card's whole column, not about the cell
+alone, and the wording has to keep that promise honest. Two ways to earn it:
+
+- **Absolutely** — the card carries no hole in that colour, so no rotation
+  ever shows it.
+- **In conflict** — the colour is on the card, but showing it here would cost
+  a mismatch at another painted pick on the same card, and the solver's
+  minimum-mismatch path takes the cheaper trade. The classic case is asking
+  for the same single-hole colour on two consecutive picks: rotation moves
+  every pick, so a card can satisfy either pick but not both.
+
+The UI does not distinguish them — in both cases the answer is "not with this
+card as threaded" — but nothing in the copy may claim the colour is impossible
+*in isolation*, because in the conflict case it is not.
+
+Naming unreachable and unmet apart is most of the honesty this feature promises.
 
 ## Scope
 
@@ -87,8 +103,11 @@ it gets its own test.
 
 ```ts
 export interface TargetReport {
-  unreachable: Unreachable[];  // no turn sequence can show this
-  unmet: Unreachable[];        // band ≠ target, but Solve would fix it
+  /** The card's best turn sequence cannot show this — the colour is not on
+      the card at all, or showing it here would cost another painted pick. */
+  unreachable: Unreachable[];
+  /** Band ≠ target, but Solve would fix it. */
+  unmet: Unreachable[];
 }
 export function reportTarget(pattern: Pattern): TargetReport;
 ```
@@ -185,9 +204,11 @@ the at-loom view should show only what is being woven:
 
 The scrim keeps the board truthful about what will come off the loom; the slash
 survives a greyscale print and a colour-blind reader; the pip carries the wish.
-The same information is in `aria-label` — `"…wanted red, unreachable — card 7
-carries blue, white"` or `"…wanted red, press Solve"` — so the mark is never the
-only channel.
+The same information is in `aria-label` — `"…wanted red — unreachable"` or
+`"…wanted red — press Solve"` — so the mark is never the only channel. The
+label says "unreachable", not "no turn shows red": the colour may well be on
+the card and merely lose to another painted pick, and the copy must not claim
+more than the solver knows.
 
 **Summary** gains one line when a target exists: `"3 cells unreachable, 12
 unmet"`.
@@ -210,9 +231,10 @@ TDD throughout: failing test, confirm the reason, then implement.
   - all-`null` target → both lists empty
   - `targetOf(simulate(pattern))` as the target → both empty (leans on the
     existing round-trip property)
-  - a colour the card does not carry → `unreachable`
-  - the same hole two picks running → `unreachable`, pinning the sequential
-    constraint
+  - a colour the card does not carry → `unreachable` (the absolute kind)
+  - the same single-hole colour on two consecutive picks → `unreachable` (the
+    conflict kind: either pick alone is satisfiable, both together are not),
+    pinning the sequential constraint
   - solve, then flip a turn → `unmet`, not `unreachable`
 
 **Web**
