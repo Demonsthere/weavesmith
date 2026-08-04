@@ -1,8 +1,9 @@
 import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { App } from '../../src/App.js';
 import { encodePattern } from '../../src/io/share.js';
-import { autosave } from '../../src/io/storage.js';
+import { autosave, restore } from '../../src/io/storage.js';
 import { useStore } from '../../src/state/store.js';
 import { defaultPattern } from '../../src/state/defaultPattern.js';
 
@@ -45,5 +46,35 @@ describe('App boot', () => {
       () => expect(JSON.parse(localStorage.getItem('weavesmith:autosave')!).meta.name).toBe('Edited'),
       { timeout: 2000 },
     );
+  });
+});
+
+describe('reset in the running app', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    window.history.replaceState(null, '', '/');
+    useStore.getState().reset();
+  });
+
+  it('does not let the autosave subscription resurrect the discarded band', async () => {
+    // The reset clears the autosave, but resetting *is* a pattern change,
+    // so App's subscription schedules another write half a second later.
+    // What must not survive that write is the band being discarded.
+    autosave(named('Uploaded'));
+    render(<App />);
+    await waitFor(() => expect(useStore.getState().pattern.meta.name).toBe('Uploaded'));
+
+    const user = userEvent.setup();
+    await user.click(screen.getByRole('button', { name: /^reset/i }));
+    await user.click(screen.getByRole('button', { name: /discard/i }));
+
+    // Checked *before* the debounce can fire: afterwards the subscription
+    // writes the default band, which would make "not Uploaded" true whether
+    // or not the reset actually cleared anything.
+    expect(restore()).toBeNull();
+
+    await waitFor(() => expect(restore()?.meta.name ?? 'Chevron').toBe('Chevron'), {
+      timeout: 2000,
+    });
   });
 });

@@ -34,6 +34,8 @@ function writePattern(key: string, pattern: Pattern): void {
   }
 }
 
+let pending: ReturnType<typeof setTimeout> | null = null;
+
 /** Writes the working pattern immediately. */
 export function autosave(pattern: Pattern): void {
   writePattern(AUTOSAVE_KEY, pattern);
@@ -43,7 +45,22 @@ export function restore(): Pattern | null {
   return readPattern(AUTOSAVE_KEY);
 }
 
-let pending: ReturnType<typeof setTimeout> | null = null;
+/**
+ * Drops the autosave. Also cancels a debounced write already in flight —
+ * otherwise "start over" would be undone half a second later by the very
+ * edit it was discarding.
+ */
+export function clearAutosave(): void {
+  if (pending !== null) {
+    clearTimeout(pending);
+    pending = null;
+  }
+  try {
+    localStorage.removeItem(AUTOSAVE_KEY);
+  } catch {
+    // Same best-effort contract as the writes above.
+  }
+}
 
 /**
  * Trailing-edge debounce around `autosave`. The debounce lives here rather

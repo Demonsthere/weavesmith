@@ -45,6 +45,19 @@ export function loadPosition(patternName: string): number {
 }
 
 /**
+ * Forgets the saved position for one pattern. Scoped to a single name on
+ * purpose: starting over on this band must not wipe where the weaver had
+ * got to on every other band they have open.
+ */
+export function clearPosition(patternName: string): void {
+  try {
+    localStorage.removeItem(keyFor(patternName));
+  } catch {
+    // Best-effort, as above.
+  }
+}
+
+/**
  * Moves a saved position when the pattern is renamed. Without this, the
  * name-keyed store would strand the entry: a weaver who renames a band
  * mid-weave would come back to pick 1 and an orphaned key that nothing ever

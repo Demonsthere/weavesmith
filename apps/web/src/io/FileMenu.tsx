@@ -1,8 +1,11 @@
 import { useId, useRef, useState } from 'react';
 import { PatternError, fromJSON, toJSON } from '@weavesmith/core';
 import { useStore } from '../state/store.js';
+import { defaultPattern } from '../state/defaultPattern.js';
+import { clearPosition } from '../weave/position.js';
 import { PatternName } from './PatternName.js';
 import { SHARE_LIMIT, encodePattern, linkFor } from './share.js';
+import { clearAutosave } from './storage.js';
 import '../styles/controls.css';
 import './fileMenu.css';
 
@@ -27,7 +30,9 @@ const fileNameFor = (name: string): string =>
 export function FileMenu() {
   const pattern = useStore((state) => state.pattern);
   const load = useStore((state) => state.load);
+  const resetStore = useStore((state) => state.reset);
   const [report, setReport] = useState<Report | null>(null);
+  const [confirmingReset, setConfirmingReset] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
   const inputId = useId();
 
@@ -51,6 +56,30 @@ export function FileMenu() {
     // Clear the input so choosing the *same* file again still fires a change
     // event — otherwise a failed import cannot be retried after fixing it.
     if (fileInput.current) fileInput.current.value = '';
+  };
+
+  /**
+   * Back to the default band, and back to a genuinely clean slate: the
+   * autosave, the share link in the address bar and this band's loom
+   * position all have to go, or the next reload quietly restores the very
+   * thing that was just discarded.
+   *
+   * Confirmed in the UI rather than through `window.confirm` — a native
+   * modal blocks the page, which makes this unusable from a test or an
+   * automated run, and this button exists partly to serve those.
+   */
+  const reset = () => {
+    const previousName = pattern.meta.name;
+    resetStore();
+    clearAutosave();
+    clearPosition(defaultPattern().meta.name);
+    // The band being discarded, if it was not the default one.
+    clearPosition(previousName);
+    if (window.location.hash.startsWith('#p=')) {
+      window.history.replaceState(null, '', window.location.pathname + window.location.search);
+    }
+    setConfirmingReset(false);
+    setReport({ message: 'Back to the default band.', problems: [] });
   };
 
   const copyLink = async () => {
@@ -106,6 +135,28 @@ export function FileMenu() {
       <button type="button" className="btn ghost" onClick={() => void copyLink()}>
         Copy link
       </button>
+
+      {confirmingReset ? (
+        <span className="reset-confirm" role="group" aria-label="Confirm reset">
+          <button type="button" className="btn" onClick={reset}>
+            Discard and reset
+          </button>
+          <button type="button" className="btn ghost" onClick={() => setConfirmingReset(false)}>
+            Cancel
+          </button>
+        </span>
+      ) : (
+        <button
+          type="button"
+          className="btn ghost"
+          onClick={() => {
+            setReport(null);
+            setConfirmingReset(true);
+          }}
+        >
+          Reset to default
+        </button>
+      )}
 
       {report && (
         <div role="alert" className="filemenu-report">
