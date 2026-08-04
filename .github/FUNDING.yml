@@ -1,0 +1,5 @@
+# buycoffee.to is a Polish service and is not one of GitHub's built-in
+# platforms — `buy_me_a_coffee` is buymeacoffee.com, a different company, so
+# using that key would point the Sponsor button at an account that does not
+# exist. `custom` takes the URL verbatim.
+custom: ["https://buycoffee.to/demonsthere"]

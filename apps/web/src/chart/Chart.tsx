@@ -15,6 +15,18 @@ const DIRECTION = { 1: 'Forward', '-1': 'Backward' } as const;
 
 const colorName = (hex: string): string => WOOL_NAMES[hex] ?? hex;
 
+const COFFEE = 'buycoffee.to/demonsthere';
+/*
+ * Print-only, and deliberately so. A QR bridges paper to screen; a reader
+ * looking at this in the browser is already on the device and would need a
+ * second phone to scan their own monitor. On paper it is the only way
+ * across — and this sheet is made to leave the screen.
+ *
+ * Served from our own origin rather than hot-linked: the chart has to print
+ * from a laptop at a loom with no network.
+ */
+const COFFEE_QR = { src: './buycoffee-qr.png', size: 96 };
+
 /**
  * The printable sheet: turning chart, threading diagram and summary, one
  * component for screen and paper (the spec is explicit that these are not
@@ -58,6 +70,20 @@ export function Chart() {
           ))}
         </tbody>
       </table>
+
+      <aside className="chart-qr print-only" data-testid="chart-qr">
+        <img
+          src={COFFEE_QR.src}
+          width={COFFEE_QR.size}
+          height={COFFEE_QR.size}
+          alt={`QR code linking to ${COFFEE}`}
+        />
+        {/* The address in text as well as in the code: a printed sheet
+            outlives any one phone, and someone should be able to type it. */}
+        <p>
+          Made with WeaveSmith. If it was useful, <span>{COFFEE}</span>
+        </p>
+      </aside>
 
       {/* The spec asks the chart to carry a threading diagram as well as the
           grid — without it the sheet says how to turn the cards but not how

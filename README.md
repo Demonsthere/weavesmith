@@ -1,5 +1,7 @@
 # WeaveSmith
 
+[![Buy me a coffee](https://img.shields.io/badge/buycoffee.to-demonsthere-00874F?style=flat-square)](https://buycoffee.to/demonsthere)
+
 A browser-based pattern designer for **tablet weaving** — the ancient craft of
 weaving narrow decorative bands on square cards. Design a band, see it woven as
 you work, and get the turning chart you follow at the loom.
@@ -9,7 +11,7 @@ Nothing to install, nothing to sign up for, no server. Open a page and weave.
 It started as a present: I play guitar, my wife weaves, and this is her craft
 laid out the way I read music. More on that [below](#where-the-fretboard-came-from).
 
-> Status: **design complete, implementation not started.** See
+> Status: **engine and app built.** See
 > [the spec](docs/superpowers/specs/2026-08-01-weavesmith-design.md) and the
 > [interactive board prototype](docs/mockups/board.html).
 
@@ -160,6 +162,28 @@ them here too.
 - [GTT's pattern archive](https://www.guntram.co.za/tabletweaving/patterns/patterns.html) — decades of community patterns
 - [Tablet weaving on Wikipedia](https://en.wikipedia.org/wiki/Tablet_weaving)
 
+## Supporting this
+
+WeaveSmith is free, has no accounts and no server, and is not trying to become a
+business — it started as a present and stays one. Hosting costs nothing, so
+there is nothing to recover. If it saved you an evening at the loom and you feel
+like saying thanks, there is
+[a coffee link](https://buycoffee.to/demonsthere). That is the whole ask.
+
 ## Licence
 
-Not yet chosen.
+[MIT](LICENSE). Use it, fork it, build something else on
+`@weavesmith/core` — commercially or otherwise. Keep the copyright notice
+and you are fine.
+
+Two things the licence does not stretch to, because they are not mine to
+give away:
+
+- **The test fixtures** in `packages/core/test/fixtures/` are transcribed
+  from published patterns by the people named in [Credits](#credits), and
+  each records its origin in a `source` field. The licence covers this
+  project's code; those patterns belong to their authors, and anything you
+  do with them is between you and them.
+- **Third-party marks** — the buycoffee.to logo and QR code in
+  `apps/web/public/` are their trademarks, used with their own share
+  material. Trademarks travel on permission, not on this licence.

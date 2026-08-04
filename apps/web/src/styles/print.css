@@ -8,6 +8,15 @@
  * chrome is `.controls` (card stepper + screen-mode toggle), `.board-scroll`
  * and `.weavebar`, plus the screen nav — hidden by name below.
  */
+/*
+ * Anything that only makes sense on paper. Hidden by default and revealed
+ * inside the print block below — a QR code on a screen the reader is
+ * already looking at is decoration.
+ */
+.print-only {
+  display: none;
+}
+
 @media print {
   /*
    * Force the light theme on paper: a dark ground wastes ink and prints as
@@ -50,6 +59,29 @@
     border: none;
     border-radius: 0;
   }
+
+  .print-only {
+    /*
+     * `revert`, not `block`: this is a general-purpose class, and forcing
+     * `block` would flatten a print-only `<span>` or table cell into
+     * something it is not. `revert` drops the screen rule above and lets
+     * the element go back to its own natural display.
+     */
+    display: revert;
+  }
+
+  /* Kept with the sheet rather than orphaned onto a page of its own. */
+  .chart-qr {
+    break-inside: avoid;
+    margin-top: 1.2rem;
+    padding-top: 0.8rem;
+    border-top: 1px solid #999999;
+    font-size: 9pt;
+    color: #555555;
+  }
+  .chart-qr img { display: block; margin-bottom: 0.3rem; }
+  .chart-qr p { margin: 0; }
+  .chart-qr span { font-family: var(--mono); color: #000000; }
 
   .chart {
     break-inside: auto;
