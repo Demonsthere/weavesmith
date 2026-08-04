@@ -1,5 +1,7 @@
 # WeaveSmith
 
+[![Buy me a coffee](https://img.shields.io/badge/buycoffee.to-demonsthere-00874F?style=flat-square)](https://buycoffee.to/demonsthere)
+
 A browser-based pattern designer for **tablet weaving** — the ancient craft of
 weaving narrow decorative bands on square cards. Design a band, see it woven as
 you work, and get the turning chart you follow at the loom.
@@ -9,7 +11,7 @@ Nothing to install, nothing to sign up for, no server. Open a page and weave.
 It started as a present: I play guitar, my wife weaves, and this is her craft
 laid out the way I read music. More on that [below](#where-the-fretboard-came-from).
 
-> Status: **design complete, implementation not started.** See
+> Status: **engine and app built.** See
 > [the spec](docs/superpowers/specs/2026-08-01-weavesmith-design.md) and the
 > [interactive board prototype](docs/mockups/board.html).
 
@@ -159,6 +161,14 @@ them here too.
 - [Shelagh Lewins' tablet weaving pages](https://tabletweaving.shelaghlewins.com/) — historical patterns with woven photographs
 - [GTT's pattern archive](https://www.guntram.co.za/tabletweaving/patterns/patterns.html) — decades of community patterns
 - [Tablet weaving on Wikipedia](https://en.wikipedia.org/wiki/Tablet_weaving)
+
+## Supporting this
+
+WeaveSmith is free, has no accounts and no server, and is not trying to become a
+business — it started as a present and stays one. Hosting costs nothing, so
+there is nothing to recover. If it saved you an evening at the loom and you feel
+like saying thanks, there is
+[a coffee link](https://buycoffee.to/demonsthere). That is the whole ask.
 
 ## Licence
 
