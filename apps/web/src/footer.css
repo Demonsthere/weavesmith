@@ -1,0 +1,23 @@
+/*
+ * One line under everything. Muted by design: it is the last thing a weaver
+ * should notice, and the first thing that would grate if it competed with
+ * the band.
+ */
+.site-footer {
+  max-width: 940px;
+  margin: 2.5rem auto 0;
+  padding: 1rem 1.25rem 0;
+  border-top: 1px solid var(--line);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 1.25rem;
+  align-items: baseline;
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.site-footer em { font-style: normal; color: var(--accent); }
+.site-footer a { color: var(--muted); text-decoration: none; border-bottom: 1px solid var(--line); }
+.site-footer a:hover { color: var(--text); border-bottom-color: var(--accent); }
+.site-footer a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
