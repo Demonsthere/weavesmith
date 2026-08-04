@@ -1,0 +1,66 @@
+/*
+ * Print rules for the chart sheet. Page-level, not chart-level: what it
+ * mostly does is take away the app chrome the chart does not own, so it is
+ * imported once from main.tsx rather than from the Chart component.
+ *
+ * The plan's draft of this file hid `.topbar` and `.hint`; neither class
+ * exists in the app's markup (they were the mockup's names). The real
+ * chrome is `.controls` (card stepper + screen-mode toggle), `.board-scroll`
+ * and `.weavebar`, plus the screen nav — hidden by name below.
+ */
+@media print {
+  /*
+   * Force the light theme on paper: a dark ground wastes ink and prints as
+   * flat grey. All three selectors are re-declared, not just `:root` — an
+   * attribute selector out-specifies a bare `:root`, so a reader who has
+   * explicitly chosen dark would otherwise keep it in the printout.
+   */
+  :root,
+  :root[data-theme='dark'],
+  :root[data-theme='light'] {
+    color-scheme: light;
+    --ground: #FFFFFF;
+    --panel: #FFFFFF;
+    --line: #999999;
+    --string: #555555;
+    --text: #000000;
+    --muted: #555555;
+    --accent: #000000;
+  }
+
+  body {
+    background: #FFFFFF;
+    color: #000000;
+  }
+
+  .controls,
+  .board-scroll,
+  .weavebar,
+  .screen-nav,
+  .hint {
+    display: none;
+  }
+
+  /* The sheet is the page: no panel border or radius to print around it. */
+  .chart-sheet {
+    margin: 0;
+    padding: 0;
+    border: none;
+    border-radius: 0;
+  }
+
+  .chart {
+    break-inside: auto;
+  }
+  /* Repeat the card-number header on every page — a turning chart runs past
+     one sheet of paper the moment the band is long, and a body row with no
+     header above it is unreadable. */
+  .chart thead,
+  .threading thead {
+    display: table-header-group;
+  }
+  .chart tr,
+  .threading tr {
+    break-inside: avoid;
+  }
+}
