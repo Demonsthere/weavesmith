@@ -4,9 +4,12 @@
  * imported once from main.tsx rather than from the Chart component.
  *
  * The plan's draft of this file hid `.topbar` and `.hint`; neither class
- * exists in the app's markup (they were the mockup's names). The real
- * chrome is `.controls` (card stepper + screen-mode toggle), `.board-scroll`
- * and `.weavebar`, plus the screen nav — hidden by name below.
+ * exists in the app's markup (they were the mockup's names), and `.hint`
+ * lingered here as a dead selector until a review caught its neighbour.
+ * The real chrome is `.controls` (card stepper + screen-mode toggle),
+ * `.board-scroll`, `.weavebar`, the screen nav and the footer — hidden by
+ * name below, alongside the `.screen-only` class for anything that only
+ * makes sense on a display.
  */
 /*
  * Anything that only makes sense on paper. Hidden by default and revealed
@@ -34,7 +37,10 @@
     --string: #555555;
     --text: #000000;
     --muted: #555555;
-    --accent: #000000;
+    /* The light theme's accent, not black: the print block flattening
+       this to #000000 was what stripped the wordmark of its one bit of
+       identity on paper. Dark enough to print cleanly. */
+    --accent: #A9690F;
   }
 
   body {
@@ -42,13 +48,19 @@
     color: #000000;
   }
 
+  /* The chart prints its own masthead — app name, band name and the QR —
+     so the app's chrome banner would only repeat the first of those. */
+  header[role='banner'],
+  /* Anything that only makes sense on a screen — the print button first
+     among them, since a button that prints itself is a small joke at the
+     weaver's expense. */
+  .screen-only,
   .controls,
   .board-scroll,
   .weavebar,
   .screen-nav,
   .filemenu,
-  .site-footer,
-  .hint {
+  .site-footer {
     display: none;
   }
 
@@ -70,18 +82,43 @@
     display: revert;
   }
 
-  /* Kept with the sheet rather than orphaned onto a page of its own. */
-  .chart-qr {
+  /* App name and band name left, QR right, on one line at the top of the
+     first page. `avoid` so the heading is never split from the sheet. */
+  .chart-masthead {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1.5rem;
     break-inside: avoid;
-    margin-top: 1.2rem;
-    padding-top: 0.8rem;
-    border-top: 1px solid #999999;
-    font-size: 9pt;
+    break-after: avoid;
+    margin-bottom: 1rem;
+    padding-bottom: 0.6rem;
+    border-bottom: 1px solid #999999;
+  }
+  .masthead-app {
+    margin: 0;
+    font-family: var(--display);
+    font-size: 10pt;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
     color: #555555;
   }
-  .chart-qr img { display: block; margin-bottom: 0.3rem; }
-  .chart-qr p { margin: 0; }
-  .chart-qr span { font-family: var(--mono); color: #000000; }
+  .masthead-app em { font-style: normal; color: var(--accent); }
+  .masthead-band {
+    margin: 0.1rem 0 0;
+    font-family: var(--display);
+    font-size: 20pt;
+    line-height: 1.1;
+    color: #000000;
+  }
+  .masthead-coffee {
+    flex: 0 0 auto;
+    text-align: right;
+    font-size: 7pt;
+    color: #555555;
+  }
+  .masthead-coffee img { display: block; margin-left: auto; }
+  .masthead-coffee span { font-family: var(--mono); }
 
   .chart {
     break-inside: auto;

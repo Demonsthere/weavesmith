@@ -25,7 +25,7 @@ export function Summary() {
   const uniform = distinctTwist.length === 1;
 
   return (
-    <section className="summary" aria-labelledby="summary-heading">
+    <section className="summary" data-testid="chart-summary" aria-labelledby="summary-heading">
       <h2 id="summary-heading">Summary</h2>
 
       <p className="summary-line">

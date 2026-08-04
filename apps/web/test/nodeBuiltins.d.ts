@@ -14,6 +14,10 @@
 declare module 'node:fs' {
   export function readFileSync(path: string, encoding: 'utf8'): string;
 }
+// `process.cwd()` only — see printCss.ts for why paths are resolved from
+// the package root rather than from `import.meta.url`.
+declare const process: { cwd(): string };
+
 declare module 'node:url' {
   export function fileURLToPath(url: URL): string;
 }

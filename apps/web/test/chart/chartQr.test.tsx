@@ -1,13 +1,9 @@
 import { render, screen, within } from '@testing-library/react';
-import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { Chart } from '../../src/chart/Chart.js';
 import { Board } from '../../src/board/Board.js';
 import { useStore } from '../../src/state/store.js';
-
-const source = (relative: string): string =>
-  readFileSync(fileURLToPath(new URL(relative, import.meta.url)), 'utf8');
+import { printCss } from '../printCss.js';
 
 describe('the coffee QR on the chart', () => {
   beforeEach(() => useStore.getState().reset());
@@ -28,9 +24,10 @@ describe('the coffee QR on the chart', () => {
 
   it('stays off the screen, where a QR is useless', () => {
     // The reader is already on the device. A code they would have to scan
-    // with a second phone is decoration, so it is print-only.
+    // with a second phone is decoration, so it is print-only — carried by
+    // the masthead it now sits in, rather than by the image's own class.
     render(<Chart />);
-    expect(screen.getByTestId('chart-qr').className).toMatch(/print-only/);
+    expect(screen.getByTestId('chart-qr').closest('.print-only')).not.toBeNull();
   });
 
   it('never appears on the board', () => {
@@ -42,21 +39,12 @@ describe('the coffee QR on the chart', () => {
     // CSS imports are stubbed to "" under this project's vitest config, so
     // the rule cannot be observed through the DOM — read it off disk
     // instead, the same way the card editor's button styling is checked.
-    const print = source('../../src/styles/print.css');
-    expect(print).toMatch(/\.print-only\s*\{[^}]*display:\s*none/);
-
-    // Asserted before slicing: without this, losing the `@media print`
-    // block would make `indexOf` return -1, slice the last character, and
-    // fail with a message about a regex rather than about the missing
-    // block.
-    const printBlockStart = print.indexOf('@media print');
-    expect(printBlockStart).toBeGreaterThan(-1);
+    const { all, printBlock } = printCss();
+    expect(all).toMatch(/\.print-only\s*\{[^}]*display:\s*none/);
 
     // `revert` rather than `block` so the class stays safe on inline and
     // table elements; what matters is that print un-hides what screen hid.
-    expect(print.slice(printBlockStart)).toMatch(
-      /\.print-only\s*\{[^}]*display:\s*revert/,
-    );
+    expect(printBlock).toMatch(/\.print-only\s*\{[^}]*display:\s*revert/);
   });
 
   it('serves the code from our own origin', () => {
