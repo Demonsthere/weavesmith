@@ -172,4 +172,18 @@ like saying thanks, there is
 
 ## Licence
 
-Not yet chosen.
+[MIT](LICENSE). Use it, fork it, build something else on
+`@weavesmith/core` — commercially or otherwise. Keep the copyright notice
+and you are fine.
+
+Two things the licence does not stretch to, because they are not mine to
+give away:
+
+- **The test fixtures** in `packages/core/test/fixtures/` are transcribed
+  from published patterns by the people named in [Credits](#credits), and
+  each records its origin in a `source` field. The licence covers this
+  project's code; those patterns belong to their authors, and anything you
+  do with them is between you and them.
+- **Third-party marks** — the buycoffee.to logo and QR code in
+  `apps/web/public/` are their trademarks, used with their own share
+  material. Trademarks travel on permission, not on this licence.
