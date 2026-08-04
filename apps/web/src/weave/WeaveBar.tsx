@@ -27,16 +27,19 @@ export function WeaveBar() {
   const setCurrentPick = useStore((state) => state.setCurrentPick);
   const pattern = useStore((state) => state.pattern);
   const patternName = pattern.meta.name;
+  const documentId = useStore((state) => state.documentId);
 
   useEffect(() => {
     if (hasSavedPosition(patternName)) {
       setCurrentPick(loadPosition(patternName));
     }
-    // Intentionally re-runs only when the *pattern* being woven changes
-    // identity (a fresh document, or reopening the same one), not on every
-    // step — this is a one-shot hydration per pattern, not a subscription
-    // to `currentPick`, which would fight the Back/Next handlers below.
-  }, [patternName]);
+    // Intentionally re-runs only when the *document* changes — a fresh mount,
+    // or `load`/`reset` opening a different band — not on every step and not
+    // on every edit. `documentId` is the dependency that says exactly that:
+    // keying on `pattern` would re-run on each edit and fight the Back/Next
+    // handlers below, and keying on the name alone (as this did before
+    // anything called `load`) would miss two different bands sharing a name.
+  }, [documentId, patternName]);
 
   const step = (pick: number) => {
     setCurrentPick(pick);

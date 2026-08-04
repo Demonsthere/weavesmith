@@ -37,6 +37,7 @@
   .board-scroll,
   .weavebar,
   .screen-nav,
+  .filemenu,
   .hint {
     display: none;
   }

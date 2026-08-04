@@ -60,6 +60,12 @@ interface StoreState {
   // a long-press, and the `E` key can all open the same dialog without
   // routing a callback down through `Board`.
   editingCard: number | null;
+  // Bumped by `load` and `reset` — the two actions that mean "this is a
+  // different document now" — and by nothing else. Effects that must run
+  // once per document key off this rather than off `pattern`, which gets a
+  // new frozen object on every single edit, or off `pattern.meta.name`,
+  // which two different bands can share.
+  documentId: number;
   past: HistoryEntry[];
   future: HistoryEntry[];
   // The token of the gesture currently allowed to call `continueGesture`,
@@ -108,6 +114,7 @@ export const useStore = create<StoreState>((set, get) => ({
   mode: 'design',
   currentPick: 0,
   editingCard: null,
+  documentId: 0,
   past: [],
   future: [],
   openGesture: null,
@@ -221,6 +228,7 @@ export const useStore = create<StoreState>((set, get) => ({
       currentPick: 0,
       editingCard: null,
       openGesture: null,
+      documentId: get().documentId + 1,
     }),
 
   // Full reset (used between tests, and available for a "start over" action).
@@ -238,5 +246,6 @@ export const useStore = create<StoreState>((set, get) => ({
       past: [],
       future: [],
       openGesture: null,
+      documentId: get().documentId + 1,
     }),
 }));
