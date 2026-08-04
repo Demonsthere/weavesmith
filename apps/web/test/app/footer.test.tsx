@@ -26,8 +26,29 @@ describe('Footer', () => {
     render(<Footer />);
     expect(screen.getByRole('link', { name: /coffee/i })).toHaveAttribute(
       'href',
-      expect.stringContaining('buycoffee.to'),
+      'https://buycoffee.to/demonsthere',
     );
+  });
+
+  it('serves the coffee button from our own origin', () => {
+    // The official button is hot-linked in the snippet buycoffee.to hands
+    // out. This app is a PWA whose entire promise is opening at a loom with
+    // no network, where a remote image is a broken box — and it would also
+    // be a third-party request on every single page load. Same pixels,
+    // served by us and precached with everything else.
+    render(<Footer />);
+    const image = screen.getByRole('img', { name: /buycoffee/i });
+    expect(image.getAttribute('src')).not.toMatch(/^https?:/);
+    expect(image.getAttribute('src')).toMatch(/buycoffee.*\.png$/);
+  });
+
+  it('reserves space for the coffee button so the footer does not jump', () => {
+    // Width and height as attributes, not just CSS: without them the
+    // footer reflows the moment the image decodes.
+    render(<Footer />);
+    const image = screen.getByRole('img', { name: /buycoffee/i });
+    expect(image).toHaveAttribute('width');
+    expect(image).toHaveAttribute('height');
   });
 
   it('sends outbound links away safely', () => {
@@ -50,7 +71,7 @@ describe('Footer', () => {
     expect(within(screen.getByRole('contentinfo')).queryAllByRole('heading')).toHaveLength(0);
   });
 
-  it('styles the links as buttons without making them buttons', () => {
+  it('keeps every footer link an anchor, never a button', () => {
     // They navigate, so they stay anchors: middle-click, "copy link
     // address" and the browser's own focus order all come free that way,
     // and a `<button>` that calls `location.assign` throws every one of
@@ -58,21 +79,25 @@ describe('Footer', () => {
     render(<Footer />);
     for (const link of within(screen.getByRole('contentinfo')).getAllByRole('link')) {
       expect(link.tagName).toBe('A');
-      expect(link.className).toMatch(/footer-btn/);
     }
   });
 
-  it('leaves the icons out of the accessible name', () => {
-    // The glyphs are decoration; the words carry the meaning. An unlabelled
-    // inline SVG inside a link is a classic way to end up with a link whose
-    // name is empty or, worse, "svg".
+  it('gives the source link a button shape and a decorative icon', () => {
+    // The glyph decorates the words, which carry the meaning: an unlabelled
+    // inline SVG inside a link is a classic way to end up with a link named
+    // "svg", or named nothing at all.
     render(<Footer />);
-    const links = within(screen.getByRole('contentinfo')).getAllByRole('link');
-    expect(links.length).toBeGreaterThan(0);
-    for (const link of links) {
-      expect(link.querySelector('svg')).not.toBeNull();
-      expect(link.querySelector('svg')).toHaveAttribute('aria-hidden', 'true');
-      expect(link.textContent?.trim()).not.toBe('');
+    const link = screen.getByRole('link', { name: /source|github/i });
+    expect(link.className).toMatch(/footer-btn/);
+    expect(link.querySelector('svg')).toHaveAttribute('aria-hidden', 'true');
+    expect(link.textContent?.trim()).not.toBe('');
+  });
+
+  it('every footer link says where it goes', () => {
+    render(<Footer />);
+    for (const link of within(screen.getByRole('contentinfo')).getAllByRole('link')) {
+      expect((link.textContent?.trim() || link.querySelector('img')?.alt || '').length)
+        .toBeGreaterThan(0);
     }
   });
 

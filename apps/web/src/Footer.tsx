@@ -1,15 +1,24 @@
 import './footer.css';
 
 const REPO = 'https://github.com/Demonsthere/weavesmith';
-// Placeholder until the real page exists — swapping this string is the whole
-// edit, which is why it is a constant rather than inline in the markup.
-const COFFEE = 'https://buycoffee.to/foobar';
+const COFFEE = 'https://buycoffee.to/demonsthere';
 
 /*
- * Icons are inline SVG, not an icon font or a remote sprite: the app has to
- * work at a loom with no network, and a glyph that arrives over the wire is
- * a blank square offline. Both are `aria-hidden` — they decorate the words,
- * which carry the meaning.
+ * buycoffee.to's own share button, served from our origin rather than
+ * hot-linked as their snippet does. This app is a PWA whose whole promise is
+ * opening at a loom with no network, where a remote image is a broken box —
+ * and hot-linking would also mean a third-party request on every page load.
+ * The file is the same one they serve (500x131, so it stays sharp at the
+ * 195x51 it is drawn at); regenerate by re-downloading
+ * https://buycoffee.to/static/img/share/share-button-dark.png
+ */
+const COFFEE_BUTTON = { src: './buycoffee-button.png', width: 195, height: 51 };
+
+/*
+ * Inline SVG, not an icon font or a remote sprite: the app has to work at a
+ * loom with no network, and a glyph that arrives over the wire is a blank
+ * square offline. `aria-hidden` — it decorates the words, which carry the
+ * meaning.
  */
 function GitHubMark() {
   return (
@@ -28,31 +37,17 @@ function GitHubMark() {
   );
 }
 
-function CoffeeCup() {
-  return (
-    <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false">
-      <path
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.4"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M2.5 6h8v4a3 3 0 0 1-3 3h-2a3 3 0 0 1-3-3V6Zm8 .8h1.6a1.7 1.7 0 0 1 0 3.4h-1.6M4.6 1.8v1.6M7.4 1.8v1.6"
-      />
-    </svg>
-  );
-}
-
 /**
  * One line: what this is, where the source lives, and somewhere to say
  * thank you. Hosting is free, so the coffee link is goodwill and not cost
  * recovery — the plan is explicit that it stays a link rather than growing
  * into a banner, and the footer tests hold it to that.
  *
- * The two chips look like buttons and are anchors. They navigate, so the
- * browser's own behaviour — middle-click, "copy link address", focus order
- * — comes free; a `<button>` calling `location.assign` would throw all of
- * that away for a shape that is only CSS.
+ * Both are anchors, never buttons. They navigate, so the browser's own
+ * behaviour — middle-click, "copy link address", focus order — comes free;
+ * a `<button>` calling `location.assign` would throw all of that away for a
+ * shape that is only CSS. The source link is our own chip; the coffee one is
+ * buycoffee.to's official button, which is theirs to design, not ours.
  */
 export function Footer() {
   return (
@@ -65,9 +60,15 @@ export function Footer() {
           <GitHubMark />
           Source on GitHub
         </a>
-        <a className="footer-btn" href={COFFEE} target="_blank" rel="noopener noreferrer">
-          <CoffeeCup />
-          Buy me a coffee
+        <a className="footer-coffee" href={COFFEE} target="_blank" rel="noopener noreferrer">
+          {/* Width and height as attributes, not only CSS: without them the
+              footer reflows the moment the image decodes. */}
+          <img
+            src={COFFEE_BUTTON.src}
+            width={COFFEE_BUTTON.width}
+            height={COFFEE_BUTTON.height}
+            alt="Postaw kawę dla demonsthere na buycoffee.to"
+          />
         </a>
       </span>
     </footer>
