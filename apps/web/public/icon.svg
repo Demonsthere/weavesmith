@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="96" fill="#14110E"/>
+  <defs>
+    <clipPath id="band"><rect x="96" y="96" width="320" height="320" rx="8"/></clipPath>
+    <clipPath id="field"><rect x="176" y="96" width="160" height="320"/></clipPath>
+  </defs>
+  <g clip-path="url(#band)">
+    <rect x="96" y="96" width="320" height="320" fill="#4B3826"/>
+    <rect x="176" y="96" width="160" height="320" fill="#EADCC0"/>
+    <g clip-path="url(#field)" fill="none" stroke-width="34" stroke-linecap="butt">
+      <path d="M176 136L256 216L336 136M176 216L256 296L336 216" stroke="#B4402C"/>
+      <path d="M176 56L256 136L336 56" stroke="#2F5F8F"/>
+      <path d="M176 296L256 376L336 296" stroke="#D8A62B"/>
+    </g>
+  </g>
+</svg>

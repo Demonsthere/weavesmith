@@ -3,6 +3,7 @@ import { Board } from './board/Board.js';
 import { CardStepper } from './board/CardStepper.js';
 import { CardEditor } from './editor/CardEditor.js';
 import { Chart } from './chart/Chart.js';
+import { Footer } from './Footer.js';
 import { WeaveBar } from './weave/WeaveBar.js';
 import { FileMenu } from './io/FileMenu.js';
 import { bootPattern } from './io/boot.js';
@@ -57,6 +58,7 @@ export function App() {
         <FileMenu />
         {route === 'chart' ? <Chart /> : <BoardScreen />}
       </main>
+      <Footer />
     </>
   );
 }

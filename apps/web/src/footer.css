@@ -1,0 +1,82 @@
+/*
+ * One line under everything. Muted by design: it is the last thing a weaver
+ * should notice, and the first thing that would grate if it competed with
+ * the band.
+ */
+.site-footer {
+  max-width: 940px;
+  margin: 2.5rem auto 0;
+  padding: 1rem 1.25rem 0;
+  border-top: 1px solid var(--line);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem 1.25rem;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.footer-name em { font-style: normal; color: var(--accent); }
+
+.footer-links { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem; }
+
+/*
+ * Button-shaped, but an anchor — see Footer.tsx for why that matters. The
+ * shape is deliberately quieter than `.btn` in controls.css: those act on
+ * the band, these leave the app, and the footer is not the place to compete
+ * for a weaver's attention.
+ */
+.footer-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.4rem 0.8rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--panel);
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 0.6875rem;
+  letter-spacing: 0.1em;
+  line-height: 1;
+  transition: color 120ms ease, border-color 120ms ease;
+}
+.footer-btn:hover {
+  color: var(--text);
+  border-color: var(--accent);
+}
+.footer-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* The icon inherits the label's colour, so hover and focus move together. */
+.footer-btn svg { flex: 0 0 auto; }
+
+/*
+ * buycoffee.to's own logotype. Deliberately unstyled beyond the focus ring
+ * and alignment: it is their brand asset, and re-skinning someone else's
+ * mark is how you end up with one that no longer reads as theirs. The green
+ * carries itself on both the dark and light grounds, so it needs no
+ * per-theme treatment.
+ */
+.footer-coffee {
+  display: inline-flex;
+  border-radius: 999px;
+  line-height: 0;
+}
+.footer-coffee img { display: block; height: auto; max-width: 100%; }
+.footer-coffee:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .footer-btn { transition: none; }
+}
+
+@media (max-width: 30rem) {
+  /* Stacked rather than squeezed: a wordmark, a pill and a 195px brand
+     button do not share one phone line without wrapping mid-word. */
+  .site-footer { justify-content: flex-start; }
+}
