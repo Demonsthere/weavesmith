@@ -28,9 +28,10 @@ describe('the coffee QR on the chart', () => {
 
   it('stays off the screen, where a QR is useless', () => {
     // The reader is already on the device. A code they would have to scan
-    // with a second phone is decoration, so it is print-only.
+    // with a second phone is decoration, so it is print-only — carried by
+    // the masthead it now sits in, rather than by the image's own class.
     render(<Chart />);
-    expect(screen.getByTestId('chart-qr').className).toMatch(/print-only/);
+    expect(screen.getByTestId('chart-qr').closest('.print-only')).not.toBeNull();
   });
 
   it('never appears on the board', () => {

@@ -106,3 +106,10 @@
 
 .threading .thread { white-space: nowrap; }
 .threading .thread-name { font-size: 0.6875rem; }
+
+/*
+ * The masthead is for paper only — on screen the band's name sits in the
+ * file menu directly above, and the QR would be a code you cannot scan with
+ * the device you are reading it on. It carries the shared `print-only`
+ * class rather than a hide rule of its own; print.css lays it out.
+ */

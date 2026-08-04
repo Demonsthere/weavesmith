@@ -25,7 +25,7 @@ const COFFEE = 'buycoffee.to/demonsthere';
  * Served from our own origin rather than hot-linked: the chart has to print
  * from a laptop at a loom with no network.
  */
-const COFFEE_QR = { src: './buycoffee-qr.png', size: 96 };
+const COFFEE_QR = { src: './buycoffee-qr.png', size: 84 };
 
 /**
  * The printable sheet: turning chart, threading diagram and summary, one
@@ -38,57 +38,39 @@ export function Chart() {
   const { cards, picks } = pattern;
 
   return (
-    <div className="chart-sheet">
+    <div className="chart-sheet" data-testid="chart-sheet">
+      {/* Print masthead. The app chrome's banner is hidden on paper (see
+          print.css), because a printed sheet wants its own heading: what
+          made it on the left, which band it is underneath, and the QR
+          tucked into the corner where it closes nothing and interrupts
+          nothing. */}
+      <header className="chart-masthead print-only" data-testid="chart-masthead">
+        <div className="masthead-titles">
+          <p className="masthead-app">
+            Weave<em>Smith</em>
+          </p>
+          {/* The band's name is the document's real title — without it a
+              printed chart cannot be filed, handed on, or matched back to
+              the file it came from. */}
+          <h1 className="masthead-band">{pattern.meta.name}</h1>
+        </div>
+        <div className="masthead-coffee" data-testid="chart-qr">
+          <img
+            src={COFFEE_QR.src}
+            width={COFFEE_QR.size}
+            height={COFFEE_QR.size}
+            alt={`QR code linking to ${COFFEE}`}
+          />
+          <span>{COFFEE}</span>
+        </div>
+      </header>
+
       <Summary />
-
-      <table className="chart">
-        <caption>Turning chart</caption>
-        <thead>
-          <tr>
-            <th scope="col">Pick</th>
-            {cards.map((card, cardIndex) => (
-              <th key={cardIndex} scope="col">
-                {cardIndex + 1}
-                <span className="sz">{card.threading}</span>
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {picks.map((turns, pickIndex) => (
-            <tr key={pickIndex}>
-              {/* A `td`, not a row header: the pick number is an index into
-                  the band, and the brief's chart test counts it among the
-                  row's cells. */}
-              <td className="pick-no">{pickIndex + 1}</td>
-              {turns.map((turn, cardIndex) => (
-                <td key={cardIndex} className="turn" title={DIRECTION[turn]}>
-                  <span aria-hidden="true">{GLYPH[turn]}</span>
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-
-      <aside className="chart-qr print-only" data-testid="chart-qr">
-        <img
-          src={COFFEE_QR.src}
-          width={COFFEE_QR.size}
-          height={COFFEE_QR.size}
-          alt={`QR code linking to ${COFFEE}`}
-        />
-        {/* The address in text as well as in the code: a printed sheet
-            outlives any one phone, and someone should be able to type it. */}
-        <p>
-          Made with WeaveSmith. If it was useful, <span>{COFFEE}</span>
-        </p>
-      </aside>
 
       {/* The spec asks the chart to carry a threading diagram as well as the
           grid — without it the sheet says how to turn the cards but not how
           to warp them, which is the half you need first. */}
-      <table className="threading">
+      <table className="threading" data-testid="chart-threading">
         <caption>Threading</caption>
         <thead>
           <tr>
@@ -120,6 +102,36 @@ export function Chart() {
                   </td>
                 );
               })}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      <table className="chart" data-testid="chart-turning">
+        <caption>Turning chart</caption>
+        <thead>
+          <tr>
+            <th scope="col">Pick</th>
+            {cards.map((card, cardIndex) => (
+              <th key={cardIndex} scope="col">
+                {cardIndex + 1}
+                <span className="sz">{card.threading}</span>
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {picks.map((turns, pickIndex) => (
+            <tr key={pickIndex}>
+              {/* A `td`, not a row header: the pick number is an index into
+                  the band, and the brief's chart test counts it among the
+                  row's cells. */}
+              <td className="pick-no">{pickIndex + 1}</td>
+              {turns.map((turn, cardIndex) => (
+                <td key={cardIndex} className="turn" title={DIRECTION[turn]}>
+                  <span aria-hidden="true">{GLYPH[turn]}</span>
+                </td>
+              ))}
             </tr>
           ))}
         </tbody>

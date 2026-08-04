@@ -34,7 +34,10 @@
     --string: #555555;
     --text: #000000;
     --muted: #555555;
-    --accent: #000000;
+    /* The light theme's accent, not black: the print block flattening
+       this to #000000 was what stripped the wordmark of its one bit of
+       identity on paper. Dark enough to print cleanly. */
+    --accent: #A9690F;
   }
 
   body {
@@ -42,6 +45,9 @@
     color: #000000;
   }
 
+  /* The chart prints its own masthead — app name, band name and the QR —
+     so the app's chrome banner would only repeat the first of those. */
+  header[role='banner'],
   .controls,
   .board-scroll,
   .weavebar,
@@ -69,6 +75,44 @@
      */
     display: revert;
   }
+
+  /* App name and band name left, QR right, on one line at the top of the
+     first page. `avoid` so the heading is never split from the sheet. */
+  .chart-masthead {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1.5rem;
+    break-inside: avoid;
+    break-after: avoid;
+    margin-bottom: 1rem;
+    padding-bottom: 0.6rem;
+    border-bottom: 1px solid #999999;
+  }
+  .masthead-app {
+    margin: 0;
+    font-family: var(--display);
+    font-size: 10pt;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #555555;
+  }
+  .masthead-app em { font-style: normal; color: var(--accent); }
+  .masthead-band {
+    margin: 0.1rem 0 0;
+    font-family: var(--display);
+    font-size: 20pt;
+    line-height: 1.1;
+    color: #000000;
+  }
+  .masthead-coffee {
+    flex: 0 0 auto;
+    text-align: right;
+    font-size: 7pt;
+    color: #555555;
+  }
+  .masthead-coffee img { display: block; margin-left: auto; }
+  .masthead-coffee span { font-family: var(--mono); }
 
   /* Kept with the sheet rather than orphaned onto a page of its own. */
   .chart-qr {
