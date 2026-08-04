@@ -1,8 +1,12 @@
+import { useEffect, useState } from 'react';
 import { Board } from './board/Board.js';
 import { CardStepper } from './board/CardStepper.js';
 import { CardEditor } from './editor/CardEditor.js';
 import { Chart } from './chart/Chart.js';
 import { WeaveBar } from './weave/WeaveBar.js';
+import { FileMenu } from './io/FileMenu.js';
+import { bootPattern } from './io/boot.js';
+import { autosaveSoon } from './io/storage.js';
 import { useStore } from './state/store.js';
 import { useRoute } from './state/route.js';
 import type { ScreenMode } from './state/store.js';
@@ -23,6 +27,7 @@ const SCREENS: { hash: string; label: string }[] = [
 
 export function App() {
   const route = useRoute();
+  const bootProblems = useBoot();
 
   return (
     <>
@@ -38,9 +43,49 @@ export function App() {
           ))}
         </nav>
       </header>
-      <main>{route === 'chart' ? <Chart /> : <BoardScreen />}</main>
+      <main>
+        {bootProblems && (
+          <div role="alert" className="filemenu-report">
+            <p>That share link could not be opened:</p>
+            <ul>
+              {bootProblems.map((problem) => (
+                <li key={problem}>{problem}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+        <FileMenu />
+        {route === 'chart' ? <Chart /> : <BoardScreen />}
+      </main>
     </>
   );
+}
+
+/**
+ * Opens the right band on first render and keeps it saved from then on.
+ *
+ * The boot read happens once, in an effect, rather than as the store's
+ * initial state: the store is a module singleton shared by every test, and
+ * reading `location.hash` and `localStorage` at module-eval time would make
+ * importing it a side effect. Returns whatever was wrong with a share link,
+ * for the caller to show.
+ */
+function useBoot(): string[] | null {
+  const [problems, setProblems] = useState<string[] | null>(null);
+
+  useEffect(() => {
+    const booted = bootPattern(window.location.hash);
+    useStore.getState().load(booted.pattern);
+    setProblems(booted.problems);
+
+    // Autosave every subsequent change. Debounced in `autosaveSoon`, so a
+    // drag across the board costs one write rather than one per pointermove.
+    return useStore.subscribe((state, previous) => {
+      if (state.pattern !== previous.pattern) autosaveSoon(state.pattern);
+    });
+  }, []);
+
+  return problems;
 }
 
 /**

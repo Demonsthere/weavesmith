@@ -1,0 +1,100 @@
+/*
+ * Save / open / share. Buttons come from styles/controls.css — this file
+ * only lays them out and styles the report, which nothing else uses.
+ */
+
+.filemenu {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.75rem 0 0;
+}
+
+/*
+ * The real file input, kept out of sight but not out of the accessibility
+ * tree: `display: none` or `visibility: hidden` would make it unfocusable,
+ * and the styled `<label>` is only a handle for it — the input is what a
+ * keyboard and a screen reader actually operate.
+ */
+.filemenu input[type='file'] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+.filemenu .file-open { cursor: pointer; }
+/* The label is not focusable, so the focus ring belongs to the input it
+   labels — drawn on the label, which is the thing you can see. */
+.filemenu input[type='file']:focus-visible ~ .file-open {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.filemenu-report {
+  flex: 1 0 100%;
+  margin: 0.25rem 0 0;
+  padding: 0.6rem 0.85rem;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent);
+  border-radius: 8px;
+  font-size: 0.8125rem;
+}
+.filemenu-report p { margin: 0; }
+.filemenu-report ul { margin: 0.35rem 0 0; padding-left: 1.1rem; }
+
+/*
+ * The name field. It reads as part of the same row as the buttons, but it
+ * is document state (it rides along in the file and the share link), not a
+ * control, so it is styled as a field rather than as another `.btn`.
+ */
+.pattern-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-right: 0.25rem;
+}
+.pattern-name label {
+  font-size: 0.6875rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.pattern-name input {
+  font-family: var(--display);
+  font-size: 1rem;
+  letter-spacing: 0.02em;
+  color: var(--text);
+  background: var(--ground);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 0.4rem 0.6rem;
+  min-width: 10ch;
+}
+.pattern-name input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* The confirm pair replaces the Reset button in place, so the row does not
+   reflow under the pointer between the two clicks. */
+.reset-confirm { display: inline-flex; gap: 0.5rem; }
+
+/* A link to copy by hand when the Clipboard API is unavailable. Wraps and
+   scrolls rather than pushing the row wide — share payloads are long. */
+.filemenu-detail {
+  display: block;
+  margin-top: 0.35rem;
+  padding: 0.35rem 0.5rem;
+  background: var(--ground);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  overflow-wrap: anywhere;
+  user-select: all;
+}

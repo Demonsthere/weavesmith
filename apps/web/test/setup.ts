@@ -125,3 +125,14 @@ if (typeof window.matchMedia !== 'function') {
 if (typeof Element.prototype.scrollIntoView !== 'function') {
   Element.prototype.scrollIntoView = () => {};
 }
+
+// jsdom implements neither half of the object-URL pair. The download path
+// (io/FileMenu.tsx) needs both: `createObjectURL` to hand the anchor a href,
+// and `revokeObjectURL` so the blob is not leaked. Recording no-ops with a
+// distinguishable URL — there is no navigation in jsdom for the URL to
+// actually serve, so tests assert on the Blob passed in, not on the string.
+if (typeof URL.createObjectURL !== 'function') {
+  let nextId = 0;
+  URL.createObjectURL = () => `blob:weavesmith/${(nextId += 1)}`;
+  URL.revokeObjectURL = () => {};
+}
