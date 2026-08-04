@@ -188,3 +188,49 @@ describe('FileMenu naming', () => {
     vi.restoreAllMocks();
   });
 });
+
+describe('FileMenu image export', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    useStore.getState().reset();
+  });
+
+  it('exports the band as an SVG file', async () => {
+    const user = userEvent.setup();
+    const created = vi.spyOn(URL, 'createObjectURL');
+    const clicked = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+    render(<FileMenu />);
+
+    await user.click(screen.getByRole('button', { name: /svg/i }));
+
+    const blob = created.mock.calls[0]![0] as Blob;
+    expect(blob.type).toContain('image/svg+xml');
+    expect(await blob.text()).toContain('<svg');
+    expect((clicked.mock.instances[0] as HTMLAnchorElement).download).toBe('Chevron.svg');
+    vi.restoreAllMocks();
+  });
+
+  it('says so when the browser cannot rasterise a PNG, rather than failing silently', async () => {
+    // jsdom loads no resources, so a real `Image` here fires neither event
+    // and the promise would simply never settle — which would make this
+    // test time out rather than assert anything. Standing in an image that
+    // fails to decode reproduces the real browser failure (a band too large
+    // for the canvas, or a decoder that refuses) deterministically.
+    const user = userEvent.setup();
+    vi.stubGlobal(
+      'Image',
+      class {
+        onerror: (() => void) | null = null;
+        set src(_value: string) {
+          queueMicrotask(() => this.onerror?.());
+        }
+      },
+    );
+    render(<FileMenu />);
+
+    await user.click(screen.getByRole('button', { name: /png/i }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(/png could not be made/i);
+    vi.unstubAllGlobals();
+  });
+});

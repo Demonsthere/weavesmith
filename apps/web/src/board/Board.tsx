@@ -7,6 +7,8 @@ import { Cell } from './Cell.js';
 import { CardChip } from './CardChip.js';
 import { usePointerBinding } from './usePointerBinding.js';
 import { useKeyboardBinding } from './useKeyboardBinding.js';
+import { growthFactor } from './sizing.js';
+import { useAvailableWidth } from './useAvailableWidth.js';
 import { LiveRegion } from './LiveRegion.js';
 import '../styles/board.css';
 
@@ -28,6 +30,10 @@ function pickAxisSizeHorizontal(count: number): number {
   return count > 12 ? 28 : 34;
 }
 
+/** Gutter and chip columns, from tokens.css — fixed chrome the cells grow past. */
+const GUTTER = 40;
+const CHIP = 58;
+
 export function Board() {
   const { pattern, selection, orientation, render, mode, currentPick } = useStore();
   const band = useMemo(() => simulate(pattern), [pattern]);
@@ -35,6 +41,8 @@ export function Board() {
   const { handlers, preview, hover } = usePointerBinding();
   const { onKeyDown, message } = useKeyboardBinding();
   const boardRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const availableWidth = useAvailableWidth(scrollRef);
 
   const cardCount = pattern.cards.length;
   const pickCount = pattern.picks.length;
@@ -58,16 +66,31 @@ export function Board() {
   // Sizing follows the card axis: in `vertical` cards are columns, so
   // `--cell-w` shrinks with card count and `--cell-h` stays fixed; in
   // `horizontal` cards are rows, so it is `--cell-h` that shrinks.
+  const baseW = vertical ? cardAxisSize(cardCount) : 34;
+  const baseH = vertical ? 34 : pickAxisSizeHorizontal(cardCount);
+
+  // Grow the cells to use the room the board has been given, up to a
+  // ceiling. Both dimensions scale by one factor so the cell keeps its
+  // proportions — a band whose stitches change shape with the window is a
+  // different picture, not a bigger one. The gutter and chip columns are
+  // fixed chrome, so they come off the available width rather than scaling
+  // with it.
+  const naturalWidth =
+    (vertical ? GUTTER : CHIP) + (vertical ? cardCount * baseW : pickCount * baseW);
+  const grow = growthFactor(availableWidth, naturalWidth, Math.max(baseW, baseH));
+  const cellW = Math.round(baseW * grow);
+  const cellH = Math.round(baseH * grow);
+
   const sizeVars = vertical
     ? {
-        '--cell-w': `${cardAxisSize(cardCount)}px`,
-        '--cell-h': '34px',
+        '--cell-w': `${cellW}px`,
+        '--cell-h': `${cellH}px`,
         '--lean-base': '0deg',
         '--weave-angle': '58deg',
       }
     : {
-        '--cell-w': '34px',
-        '--cell-h': `${pickAxisSizeHorizontal(cardCount)}px`,
+        '--cell-w': `${cellW}px`,
+        '--cell-h': `${cellH}px`,
         '--lean-base': '90deg',
         '--weave-angle': '148deg',
       };
@@ -85,7 +108,7 @@ export function Board() {
       };
 
   return (
-    <div className="board-scroll">
+    <div className="board-scroll" ref={scrollRef}>
       <div
         ref={boardRef}
         className={`board ${vertical ? 'v' : 'h'} mode-${render}`}
