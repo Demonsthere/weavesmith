@@ -10,6 +10,7 @@ import { useKeyboardBinding } from './useKeyboardBinding.js';
 import { growthFactor } from './sizing.js';
 import { useAvailableWidth } from './useAvailableWidth.js';
 import { LiveRegion } from './LiveRegion.js';
+import { useRipple } from './useRipple.js';
 import '../styles/board.css';
 
 /**
@@ -35,8 +36,9 @@ const GUTTER = 40;
 const CHIP = 58;
 
 export function Board() {
-  const { pattern, selection, orientation, render, mode, currentPick } = useStore();
+  const { pattern, selection, orientation, render, mode, currentPick, documentId } = useStore();
   const band = useMemo(() => simulate(pattern), [pattern]);
+  const ripple = useRipple(band, documentId);
   const rect = selectionRect(selection);
   const { handlers, preview, hover } = usePointerBinding();
   const { onKeyDown, message } = useKeyboardBinding();
@@ -157,6 +159,7 @@ export function Board() {
                 focused={selection.focus.pick === t && selection.focus.card === c}
                 ghost={hover !== null && hover.pick === t && hover.card === c}
                 willChange={preview.has(`${t}:${c}`)}
+                rippleDelay={ripple.get(`${t}:${c}`) ?? null}
                 weaveState={
                   mode === 'weave'
                     ? t === currentPick ? 'current' : t < currentPick ? 'past' : 'ahead'
