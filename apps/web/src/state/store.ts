@@ -225,11 +225,15 @@ export const useStore = create<StoreState>((set, get) => ({
   },
 
   setOrientation: (orientation) => set({ orientation, orientationPinned: true }),
+  // A window being dragged fires `resize` continuously and every event
+  // repeats the same suggestion, so this returns before touching state when
+  // nothing would change. Board subscribes to the whole store, which makes a
+  // `set` per event a re-render of the largest grid on screen per event.
   suggestOrientation: (suggestedOrientation) => {
-    const pinned = get().orientationPinned;
-    set(pinned
-      ? { suggestedOrientation }
-      : { suggestedOrientation, orientation: suggestedOrientation });
+    const { orientationPinned, suggestedOrientation: current, orientation } = get();
+    const nextOrientation = orientationPinned ? orientation : suggestedOrientation;
+    if (suggestedOrientation === current && nextOrientation === orientation) return;
+    set({ suggestedOrientation, orientation: nextOrientation });
   },
   setRender: (render) => set({ render }),
   setMode: (mode) => set({ mode }),

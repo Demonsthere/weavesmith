@@ -274,6 +274,36 @@ describe('store', () => {
       expect(useStore.getState().orientationPinned).toBe(false);
     });
 
+    // A window being dragged fires `resize` continuously, and every one of
+    // those calls the same suggestion. Board subscribes to the whole store, so
+    // a `set` per event is a re-render of the largest grid on screen per
+    // event; a repeat suggestion has to be free.
+    it('does not notify subscribers when the suggestion is unchanged', () => {
+      useStore.getState().suggestOrientation('horizontal');
+
+      let notifications = 0;
+      const unsubscribe = useStore.subscribe(() => { notifications += 1; });
+      useStore.getState().suggestOrientation('horizontal');
+      useStore.getState().suggestOrientation('horizontal');
+      expect(notifications).toBe(0);
+
+      useStore.getState().suggestOrientation('vertical');
+      expect(notifications).toBe(1);
+      unsubscribe();
+    });
+
+    it('still records a repeat suggestion that the pin is hiding', () => {
+      useStore.getState().setOrientation('vertical');
+      useStore.getState().suggestOrientation('horizontal');
+
+      // The pin kept the board vertical, so the second, identical suggestion
+      // changes nothing — but dropping the pin must still land on horizontal.
+      useStore.getState().suggestOrientation('horizontal');
+      useStore.getState().reset();
+
+      expect(useStore.getState().orientation).toBe('horizontal');
+    });
+
     it('pins even when the choice matches what is already showing', () => {
       useStore.getState().suggestOrientation('horizontal');
       useStore.getState().setOrientation('horizontal');
