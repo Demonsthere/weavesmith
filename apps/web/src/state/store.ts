@@ -51,6 +51,13 @@ interface StoreState {
   pattern: Pattern;
   selection: Selection;
   orientation: Orientation;
+  // True once the weaver has chosen an orientation themselves, which stops
+  // `autoOrientation` from ever changing it again in this session. Separate
+  // from `orientation` because "showing horizontal" and "asked for
+  // horizontal" are different facts: on a phone the automatic choice is
+  // already horizontal, so a click there changes nothing visible and yet
+  // must still survive the window being widened later.
+  orientationPinned: boolean;
   render: RenderMode;
   mode: ScreenMode;
   currentPick: number;
@@ -94,7 +101,10 @@ interface StoreState {
   redo: () => string | undefined;
   setSelection: (selection: Selection) => void;
   moveFocus: (dPick: number, dCard: number, extend: boolean) => void;
+  // The weaver choosing: applies, and pins.
   setOrientation: (orientation: Orientation) => void;
+  // The viewport suggesting: applies only while nothing has been pinned.
+  autoOrientation: (orientation: Orientation) => void;
   setRender: (render: RenderMode) => void;
   setMode: (mode: ScreenMode) => void;
   setCurrentPick: (pick: number) => void;
@@ -110,6 +120,7 @@ export const useStore = create<StoreState>((set, get) => ({
   pattern: freezePattern(defaultPattern()),
   selection: defaultSelection(),
   orientation: 'vertical',
+  orientationPinned: false,
   render: 'woven',
   mode: 'design',
   currentPick: 0,
@@ -205,7 +216,11 @@ export const useStore = create<StoreState>((set, get) => ({
     set({ selection: { focus, anchor: extend ? selection.anchor : focus } });
   },
 
-  setOrientation: (orientation) => set({ orientation }),
+  setOrientation: (orientation) => set({ orientation, orientationPinned: true }),
+  autoOrientation: (orientation) => {
+    if (get().orientationPinned) return;
+    set({ orientation });
+  },
   setRender: (render) => set({ render }),
   setMode: (mode) => set({ mode }),
   setCurrentPick: (pick) =>
@@ -239,6 +254,7 @@ export const useStore = create<StoreState>((set, get) => ({
       pattern: freezePattern(defaultPattern()),
       selection: defaultSelection(),
       orientation: 'vertical',
+      orientationPinned: false,
       render: 'woven',
       mode: 'design',
       currentPick: 0,

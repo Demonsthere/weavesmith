@@ -240,6 +240,34 @@ describe('store', () => {
     expect(state.mode).toBe('design');
     expect(state.currentPick).toBe(0);
     expect(state.pattern.meta.name).toBe('Chevron');
+    expect(state.orientationPinned).toBe(false);
+  });
+
+  // The two orientation setters differ only in authority: `setOrientation` is
+  // the weaver choosing, `autoOrientation` is the viewport suggesting, and a
+  // suggestion must never overrule a choice.
+  describe('orientation', () => {
+    it('follows autoOrientation while nothing has been chosen', () => {
+      useStore.getState().autoOrientation('horizontal');
+      expect(useStore.getState().orientation).toBe('horizontal');
+      expect(useStore.getState().orientationPinned).toBe(false);
+    });
+
+    it('pins on setOrientation, so autoOrientation stops applying', () => {
+      useStore.getState().setOrientation('vertical');
+      expect(useStore.getState().orientationPinned).toBe(true);
+
+      useStore.getState().autoOrientation('horizontal');
+      expect(useStore.getState().orientation).toBe('vertical');
+    });
+
+    it('pins even when the choice matches what is already showing', () => {
+      useStore.getState().autoOrientation('horizontal');
+      useStore.getState().setOrientation('horizontal');
+
+      useStore.getState().autoOrientation('vertical');
+      expect(useStore.getState().orientation).toBe('horizontal');
+    });
   });
 });
 

@@ -26,9 +26,10 @@
 
 /*
  * `.controls` itself has no mockup source — the mockup keeps every control
- * (orientation, colour scheme, render mode, screen mode) in one topbar,
- * most of which this app doesn't have yet. This just holds the stepper and
- * the screen-mode toggle together until more controls arrive.
+ * in one topbar, and this app has all of them but the colour scheme, which
+ * the spec never adopted. It wraps rather than scrolling: on a phone the
+ * groups stack, which costs vertical space the board can spare more easily
+ * than it can spare a control it cannot reach.
  */
 .controls {
   display: flex;
