@@ -14,11 +14,18 @@ interface Props {
   ghost: boolean;
   /** This cell is in the ripple that would change if `ghost` were flipped. */
   willChange: boolean;
+  /**
+   * Milliseconds to hold this cell's pulse back for, or null when it is not
+   * rippling. Zero is a rippling cell that starts immediately, so this is
+   * deliberately nullable rather than defaulting to 0.
+   */
+  rippleDelay: number | null;
   style: CSSProperties;
 }
 
 export function Cell({
-  pick, card, cell, hex, turn, selected, focused, weaveState, ghost, willChange, style,
+  pick, card, cell, hex, turn, selected, focused, weaveState, ghost, willChange,
+  rippleDelay, style,
 }: Props) {
   const classes = [
     'cell',
@@ -28,6 +35,7 @@ export function Cell({
     weaveState === 'none' ? '' : weaveState,
     ghost ? 'ghost' : '',
     willChange ? 'willchange' : '',
+    rippleDelay === null ? '' : 'rippling',
   ].filter(Boolean).join(' ');
 
   return (
@@ -41,7 +49,12 @@ export function Cell({
       data-card={card}
       aria-label={`Card ${card + 1}, pick ${pick + 1}, turning ${turn === 1 ? 'forward' : 'backward'}`}
     >
-      <span className="note" style={{ background: hex }} />
+      <span
+        className="note"
+        style={rippleDelay === null
+          ? { background: hex }
+          : { background: hex, animationDelay: `${rippleDelay}ms` }}
+      />
     </button>
   );
 }
