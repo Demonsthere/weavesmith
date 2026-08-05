@@ -112,6 +112,23 @@ describe('Orientation toggle', () => {
     expect(board()).toHaveClass('h');
   });
 
+  // "Start over" drops the choice, and dropping the choice has to mean the
+  // viewport decides again — not that the board is stuck vertical on a phone
+  // until someone resizes a window they don't have.
+  it('hands the board back to the automatic choice after a reset', async () => {
+    const user = userEvent.setup();
+    setViewportWidth(390);
+    render(<App />);
+
+    await user.click(vertical());
+    expect(board()).toHaveClass('v');
+
+    act(() => useStore.getState().reset());
+
+    expect(useStore.getState().orientation).toBe('horizontal');
+    expect(board()).toHaveClass('h');
+  });
+
   it('remembers the choice across a reload, beating the automatic default', async () => {
     const user = userEvent.setup();
     const first = render(<App />);

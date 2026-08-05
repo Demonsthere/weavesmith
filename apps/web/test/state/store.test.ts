@@ -244,28 +244,41 @@ describe('store', () => {
   });
 
   // The two orientation setters differ only in authority: `setOrientation` is
-  // the weaver choosing, `autoOrientation` is the viewport suggesting, and a
+  // the weaver choosing, `suggestOrientation` is the viewport suggesting, and a
   // suggestion must never overrule a choice.
   describe('orientation', () => {
-    it('follows autoOrientation while nothing has been chosen', () => {
-      useStore.getState().autoOrientation('horizontal');
+    it('follows suggestOrientation while nothing has been chosen', () => {
+      useStore.getState().suggestOrientation('horizontal');
       expect(useStore.getState().orientation).toBe('horizontal');
       expect(useStore.getState().orientationPinned).toBe(false);
     });
 
-    it('pins on setOrientation, so autoOrientation stops applying', () => {
+    it('pins on setOrientation, so suggestOrientation stops applying', () => {
       useStore.getState().setOrientation('vertical');
       expect(useStore.getState().orientationPinned).toBe(true);
 
-      useStore.getState().autoOrientation('horizontal');
+      useStore.getState().suggestOrientation('horizontal');
       expect(useStore.getState().orientation).toBe('vertical');
     });
 
+    // reset() cannot read a viewport, so it falls back to the last thing the
+    // viewport asked for — which is why the suggestion is remembered rather
+    // than only applied.
+    it('falls back to the viewport last suggestion on reset, not to vertical', () => {
+      useStore.getState().suggestOrientation('horizontal');
+      useStore.getState().setOrientation('vertical');
+
+      useStore.getState().reset();
+
+      expect(useStore.getState().orientation).toBe('horizontal');
+      expect(useStore.getState().orientationPinned).toBe(false);
+    });
+
     it('pins even when the choice matches what is already showing', () => {
-      useStore.getState().autoOrientation('horizontal');
+      useStore.getState().suggestOrientation('horizontal');
       useStore.getState().setOrientation('horizontal');
 
-      useStore.getState().autoOrientation('vertical');
+      useStore.getState().suggestOrientation('vertical');
       expect(useStore.getState().orientation).toBe('horizontal');
     });
   });

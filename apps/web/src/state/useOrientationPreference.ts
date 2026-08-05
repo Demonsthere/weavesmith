@@ -26,7 +26,9 @@ export function orientationForWidth(width: number): Orientation {
  *
  * Precedence is the spec's — the override wins, and it sticks. A stored
  * choice is replayed as a real choice (so it pins), and the viewport only
- * ever speaks through `autoOrientation`, which a pin silences.
+ * ever speaks through `suggestOrientation`, which a pin silences — though the
+ * store keeps the suggestion either way, so dropping the pin (a reset) hands
+ * the board straight back to the viewport without waiting for a resize.
  *
  * A `resize` listener rather than a one-shot read at boot: a desktop window
  * dragged narrow is the same situation as a phone, and there is no reason for
@@ -50,7 +52,7 @@ export function useOrientationPreference(): void {
     if (stored) useStore.getState().setOrientation(stored);
 
     const follow = () => {
-      useStore.getState().autoOrientation(orientationForWidth(window.innerWidth));
+      useStore.getState().suggestOrientation(orientationForWidth(window.innerWidth));
     };
     follow();
     window.addEventListener('resize', follow);
