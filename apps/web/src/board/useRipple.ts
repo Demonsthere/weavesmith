@@ -73,17 +73,25 @@ export function useRipple(band: Cell[][], documentId: number): ReadonlyMap<strin
     const sameDocument = previousDocument.current === documentId;
     previousBand.current = band;
     previousDocument.current = documentId;
-    if (!sameDocument || before === band) return;
 
-    const cells = rippleCells(before, band);
+    const cells = sameDocument && before !== band ? rippleCells(before, band) : EMPTY;
+
+    // Unconditional, including on the paths that start no new ripple: this
+    // effect's cleanup has already cancelled the previous ripple's timer,
+    // so anything left marked would stay marked forever — and a class that
+    // never comes off stops the *next* edit animating those cells, because
+    // CSS only restarts an animation when the class was absent in between.
+    // `EMPTY` is a module constant, so clearing an already-clear ripple is
+    // a no-op rather than a render.
+    setRipple(cells);
     if (cells.size === 0) return;
 
-    setRipple(cells);
     // One timer for the whole ripple, cleared when the last cell's pulse
-    // ends. The class has to come off again: a second identical edit
-    // re-applies it to the same elements, and CSS only restarts an
-    // animation when the class was absent in between.
-    const last = Math.max(...cells.values());
+    // ends. Iterated rather than `Math.max(...cells.values())`: cards cap
+    // at 40 but picks do not, so a long imported band can put more cells in
+    // here than a spread can take arguments.
+    let last = 0;
+    for (const delay of cells.values()) last = Math.max(last, delay);
     const timer = setTimeout(() => setRipple(EMPTY), RIPPLE_MS + last);
     return () => clearTimeout(timer);
   }, [band, documentId]);

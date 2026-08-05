@@ -108,4 +108,39 @@ describe('the ripple on the board', () => {
 
     expect(cell(2, 1)).not.toHaveClass('rippling');
   });
+
+  it('drops a ripple still in flight when a different document is loaded', async () => {
+    const user = userEvent.setup();
+    render(<Board />);
+
+    await user.click(cell(2, 1));
+    expect(cell(2, 1)).toHaveClass('rippling');
+
+    const other = defaultPattern();
+    other.picks = other.picks.map((row) => row.map((turn) => -turn as typeof turn));
+    await act(async () => {
+      useStore.getState().load(other);
+    });
+
+    // Nothing left marked: the cells belong to a different band now, and a
+    // class that never came off would stop the *next* edit animating them.
+    expect(cell(2, 1)).not.toHaveClass('rippling');
+  });
+
+  it('drops a ripple still in flight when the band changes shape', async () => {
+    const user = userEvent.setup();
+    render(<Board />);
+
+    await user.click(cell(2, 1));
+    expect(cell(2, 1)).toHaveClass('rippling');
+
+    await act(async () => {
+      useStore.getState().apply((draft) => {
+        draft.cards.splice(1, 0, structuredClone(draft.cards[1]!));
+        for (const row of draft.picks) row.splice(1, 0, 1);
+      }, 'Add card');
+    });
+
+    expect(cell(2, 1)).not.toHaveClass('rippling');
+  });
 });
