@@ -240,6 +240,77 @@ describe('store', () => {
     expect(state.mode).toBe('design');
     expect(state.currentPick).toBe(0);
     expect(state.pattern.meta.name).toBe('Chevron');
+    expect(state.orientationPinned).toBe(false);
+  });
+
+  // The two orientation setters differ only in authority: `setOrientation` is
+  // the weaver choosing, `suggestOrientation` is the viewport suggesting, and a
+  // suggestion must never overrule a choice.
+  describe('orientation', () => {
+    it('follows suggestOrientation while nothing has been chosen', () => {
+      useStore.getState().suggestOrientation('horizontal');
+      expect(useStore.getState().orientation).toBe('horizontal');
+      expect(useStore.getState().orientationPinned).toBe(false);
+    });
+
+    it('pins on setOrientation, so suggestOrientation stops applying', () => {
+      useStore.getState().setOrientation('vertical');
+      expect(useStore.getState().orientationPinned).toBe(true);
+
+      useStore.getState().suggestOrientation('horizontal');
+      expect(useStore.getState().orientation).toBe('vertical');
+    });
+
+    // reset() cannot read a viewport, so it falls back to the last thing the
+    // viewport asked for — which is why the suggestion is remembered rather
+    // than only applied.
+    it('falls back to the viewport last suggestion on reset, not to vertical', () => {
+      useStore.getState().suggestOrientation('horizontal');
+      useStore.getState().setOrientation('vertical');
+
+      useStore.getState().reset();
+
+      expect(useStore.getState().orientation).toBe('horizontal');
+      expect(useStore.getState().orientationPinned).toBe(false);
+    });
+
+    // A window being dragged fires `resize` continuously, and every one of
+    // those calls the same suggestion. Board subscribes to the whole store, so
+    // a `set` per event is a re-render of the largest grid on screen per
+    // event; a repeat suggestion has to be free.
+    it('does not notify subscribers when the suggestion is unchanged', () => {
+      useStore.getState().suggestOrientation('horizontal');
+
+      let notifications = 0;
+      const unsubscribe = useStore.subscribe(() => { notifications += 1; });
+      useStore.getState().suggestOrientation('horizontal');
+      useStore.getState().suggestOrientation('horizontal');
+      expect(notifications).toBe(0);
+
+      useStore.getState().suggestOrientation('vertical');
+      expect(notifications).toBe(1);
+      unsubscribe();
+    });
+
+    it('still records a repeat suggestion that the pin is hiding', () => {
+      useStore.getState().setOrientation('vertical');
+      useStore.getState().suggestOrientation('horizontal');
+
+      // The pin kept the board vertical, so the second, identical suggestion
+      // changes nothing — but dropping the pin must still land on horizontal.
+      useStore.getState().suggestOrientation('horizontal');
+      useStore.getState().reset();
+
+      expect(useStore.getState().orientation).toBe('horizontal');
+    });
+
+    it('pins even when the choice matches what is already showing', () => {
+      useStore.getState().suggestOrientation('horizontal');
+      useStore.getState().setOrientation('horizontal');
+
+      useStore.getState().suggestOrientation('vertical');
+      expect(useStore.getState().orientation).toBe('horizontal');
+    });
   });
 });
 

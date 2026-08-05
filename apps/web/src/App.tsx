@@ -10,12 +10,22 @@ import { bootPattern } from './io/boot.js';
 import { autosaveSoon } from './io/storage.js';
 import { useStore } from './state/store.js';
 import { useRoute } from './state/route.js';
-import type { RenderMode, ScreenMode } from './state/store.js';
+import { useOrientationPreference } from './state/useOrientationPreference.js';
+import type { Orientation, RenderMode, ScreenMode } from './state/store.js';
 import './screenMode.css';
 
 const SCREEN_MODES: { value: ScreenMode; label: string }[] = [
   { value: 'design', label: 'Design' },
   { value: 'weave', label: 'Weave' },
+];
+
+// The arrow shows which way the band grows, as in the mockup
+// (board.html:394). It is a glyph rather than a word, so each button carries
+// an `aria-label` that reads as speech — and one that still contains the
+// visible word, so voice control can hit it by what it says.
+const ORIENTATIONS: { value: Orientation; label: string; name: string }[] = [
+  { value: 'vertical', label: '↓ Band', name: 'Vertical band' },
+  { value: 'horizontal', label: '→ Band', name: 'Horizontal band' },
 ];
 
 // Woven first, matching the store's default and the mockup's order: the
@@ -111,11 +121,27 @@ function BoardScreen() {
   const setMode = useStore((state) => state.setMode);
   const render = useStore((state) => state.render);
   const setRender = useStore((state) => state.setRender);
+  const orientation = useStore((state) => state.orientation);
+  const setOrientation = useStore((state) => state.setOrientation);
+  useOrientationPreference();
 
   return (
     <>
       <div className="controls">
         <CardStepper onAdded={openEditor} />
+        <div className="segmented" role="group" aria-label="Orientation">
+          {ORIENTATIONS.map(({ value, label, name }) => (
+            <button
+              key={value}
+              type="button"
+              aria-label={name}
+              aria-pressed={orientation === value}
+              onClick={() => setOrientation(value)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
         <div className="segmented" role="group" aria-label="Render mode">
           {RENDER_MODES.map(({ value, label }) => (
             <button
