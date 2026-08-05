@@ -10,12 +10,19 @@ import { bootPattern } from './io/boot.js';
 import { autosaveSoon } from './io/storage.js';
 import { useStore } from './state/store.js';
 import { useRoute } from './state/route.js';
-import type { ScreenMode } from './state/store.js';
+import type { RenderMode, ScreenMode } from './state/store.js';
 import './screenMode.css';
 
 const SCREEN_MODES: { value: ScreenMode; label: string }[] = [
   { value: 'design', label: 'Design' },
   { value: 'weave', label: 'Weave' },
+];
+
+// Woven first, matching the store's default and the mockup's order: the
+// woven view is the band, and dots is the aiming aid you switch to.
+const RENDER_MODES: { value: RenderMode; label: string }[] = [
+  { value: 'woven', label: 'Woven' },
+  { value: 'dots', label: 'Dots' },
 ];
 
 // Real anchors, not buttons: they are navigation, so they get the browser's
@@ -102,11 +109,25 @@ function BoardScreen() {
   const openEditor = useStore((state) => state.openEditor);
   const mode = useStore((state) => state.mode);
   const setMode = useStore((state) => state.setMode);
+  const render = useStore((state) => state.render);
+  const setRender = useStore((state) => state.setRender);
 
   return (
     <>
       <div className="controls">
         <CardStepper onAdded={openEditor} />
+        <div className="segmented" role="group" aria-label="Render mode">
+          {RENDER_MODES.map(({ value, label }) => (
+            <button
+              key={value}
+              type="button"
+              aria-pressed={render === value}
+              onClick={() => setRender(value)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
         <div className="segmented" role="group" aria-label="Screen mode">
           {SCREEN_MODES.map(({ value, label }) => (
             <button
