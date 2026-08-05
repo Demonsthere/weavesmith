@@ -20,6 +20,16 @@ describe('rippleCells', () => {
     expect(rippleCells(band(4, 3), band(4, 3)).size).toBe(0);
   });
 
+  it('returns one shared empty map, whatever the reason for it', () => {
+    // Identity, not just emptiness: the caller feeds this straight to
+    // `setRipple`, and React only skips the render if the value is the same
+    // object as last time. An edit that changes no cell — a turn set to the
+    // direction it already had, a colour assigned to a hole that isn't
+    // showing — must not re-render the board.
+    expect(rippleCells(band(4, 3), band(4, 3))).toBe(rippleCells(band(2, 2), band(2, 2)));
+    expect(rippleCells(band(4, 3), band(4, 4))).toBe(rippleCells(band(4, 3), band(4, 3)));
+  });
+
   it('marks a changed cell, and staggers by distance from the first change', () => {
     const before = band(4, 3);
     const after = band(4, 3);

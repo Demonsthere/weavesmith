@@ -45,7 +45,13 @@ export function rippleCells(before: Cell[][], after: Cell[][]): ReadonlyMap<stri
     }
   }
 
-  return changed;
+  // The sentinel, not an equivalent empty map: the caller passes this
+  // straight to `setRipple`, and React only skips the re-render when the
+  // value is identical to the last one. An edit that changes no cell — a
+  // turn set to the direction it already had, a colour assigned to a hole
+  // that isn't showing — still produces a new pattern and a new band, so
+  // this path is walked often enough to matter.
+  return changed.size === 0 ? EMPTY : changed;
 }
 
 /**
