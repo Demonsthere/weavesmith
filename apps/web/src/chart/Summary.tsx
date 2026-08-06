@@ -1,8 +1,10 @@
-import { netTwist, threadCounts } from '@weavesmith/core';
+import { netTwist, reportTarget, threadCounts } from '@weavesmith/core';
 import { useStore } from '../state/store.js';
 import { WOOL_NAMES } from '../editor/palette.js';
 
 const signed = (turns: number): string => (turns > 0 ? `+${turns}` : `${turns}`);
+
+const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
 
 /** A palette entry's name if it is one of the dyed-wool presets, else its hex. */
 const colorName = (hex: string): string => WOOL_NAMES[hex] ?? hex;
@@ -20,6 +22,8 @@ export function Summary() {
   const pattern = useStore((state) => state.pattern);
   const counts = threadCounts(pattern);
   const twist = netTwist(pattern);
+  const report = reportTarget(pattern);
+  const painted = report.unreachable.length + report.unmet.length > 0;
 
   const distinctTwist = [...new Set(twist)];
   const uniform = distinctTwist.length === 1;
@@ -68,6 +72,16 @@ export function Summary() {
               </li>
             ))}
           </ul>
+        </>
+      )}
+
+      {painted && (
+        <>
+          <h3>Against the target</h3>
+          <p className="summary-line">
+            {plural(report.unreachable.length, 'cell')} unreachable,{' '}
+            {plural(report.unmet.length, 'cell')} unmet.
+          </p>
         </>
       )}
     </section>
