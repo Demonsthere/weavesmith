@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it } from 'vitest';
+import { validatePattern } from '@weavesmith/core';
 import { CardEditor } from '../../src/editor/CardEditor.js';
 import { useStore } from '../../src/state/store.js';
 
@@ -170,6 +171,81 @@ describe('CardEditor', () => {
     // Exact match: no wool name string has snuck in alongside the hex.
     const custom = screen.getByRole('button', { name: 'Set the selected hole to #123456' });
     expect(custom).toBeInTheDocument();
+  });
+
+  // Dragging the native colour wheel fires an `input` event per pointer move,
+  // and React's onChange rides `input`, not `change`. One drag is therefore
+  // dozens of events; if each one is its own edit, the palette fills with the
+  // colours the pointer merely passed over and undo fills with steps nobody
+  // took. Observed in the wild: a band whose palette had grown to 113 entries.
+  describe('the colour wheel, dragged', () => {
+    const drag = (wheel: HTMLElement, hexes: string[]) => {
+      for (const hex of hexes) fireEvent.input(wheel, { target: { value: hex } });
+    };
+
+    it('leaves only the colour the drag ended on in the palette', () => {
+      render(<CardEditor cardIndex={1} onClose={() => {}} />);
+      const before = useStore.getState().pattern.palette.length;
+
+      drag(screen.getByLabelText(/custom colour/i), ['#112233', '#112244', '#112255']);
+
+      const { pattern } = useStore.getState();
+      expect(pattern.palette.length).toBe(before + 1);
+      expect(pattern.palette).toContain('#112255');
+      expect(pattern.palette).not.toContain('#112233');
+      expect(pattern.palette).not.toContain('#112244');
+      expect(pattern.palette[pattern.cards[1]!.colors[0]!]).toBe('#112255');
+    });
+
+    it('costs one undo entry, and one undo puts the hole back', () => {
+      render(<CardEditor cardIndex={1} onClose={() => {}} />);
+      const before = useStore.getState().pattern;
+      const undoBefore = before.palette.length;
+
+      drag(screen.getByLabelText(/custom colour/i), ['#112233', '#112244', '#112255']);
+
+      expect(useStore.getState().past.length).toBe(1);
+
+      useStore.getState().undo();
+      const after = useStore.getState().pattern;
+      expect(after.palette.length).toBe(undoBefore);
+      expect(after.cards[1]!.colors[0]).toBe(before.cards[1]!.colors[0]);
+    });
+
+    // The truncation that keeps the palette clean must not reach back past
+    // the colours an *earlier* hole was given, or that hole's index would
+    // dangle past the end of the palette.
+    it('does not eat the colour a previously edited hole points at', async () => {
+      const user = userEvent.setup();
+      render(<CardEditor cardIndex={1} onClose={() => {}} />);
+      const wheel = screen.getByLabelText(/custom colour/i);
+
+      await user.click(screen.getByRole('button', { name: /hole A/i }));
+      drag(wheel, ['#AA0000', '#AA1111']);
+      await user.click(screen.getByRole('button', { name: /hole B/i }));
+      drag(wheel, ['#00BB00', '#11BB11']);
+
+      const { pattern } = useStore.getState();
+      expect(pattern.palette[pattern.cards[1]!.colors[0]!]).toBe('#AA1111');
+      expect(pattern.palette[pattern.cards[1]!.colors[1]!]).toBe('#11BB11');
+      expect(validatePattern(pattern)).toEqual([]);
+    });
+
+    // A drag that wanders over a colour already in the palette must not
+    // renumber or drop it — other cards point at those indices.
+    it('reuses an existing entry the drag passes over, without disturbing it', () => {
+      render(<CardEditor cardIndex={1} onClose={() => {}} />);
+      const before = useStore.getState().pattern;
+      const woad = before.palette.indexOf('#2F5F8F');
+      expect(woad).toBeGreaterThanOrEqual(0);
+
+      drag(screen.getByLabelText(/custom colour/i), ['#112233', '#2F5F8F']);
+
+      const { pattern } = useStore.getState();
+      expect(pattern.palette.length).toBe(before.palette.length);
+      expect(pattern.palette.indexOf('#2F5F8F')).toBe(woad);
+      expect(pattern.cards[1]!.colors[0]).toBe(woad);
+    });
   });
 
   it('Escape closes the dialog without applying a pending change', async () => {

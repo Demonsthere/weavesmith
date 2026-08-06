@@ -4,6 +4,7 @@ import { HOLE_LABELS, MIN_CARDS } from '@weavesmith/core';
 import type { Hole, Threading } from '@weavesmith/core';
 import { removeCard, runCommand, setHoleColor, setThreading } from '../state/commands.js';
 import { useStore } from '../state/store.js';
+import type { GestureToken } from '../state/store.js';
 import { WOOL_NAMES, WOOL_PRESETS } from './palette.js';
 import '../styles/controls.css';
 import './cardEditor.css';
@@ -41,6 +42,9 @@ export function CardEditor({ cardIndex, onClose }: CardEditorProps) {
   const [selectedHole, setSelectedHole] = useState<Hole>(0);
   const pattern = useStore((state) => state.pattern);
   const apply = useStore((state) => state.apply);
+  // The open colour-wheel drag, with the palette length it started from.
+  // Null between drags. See `handleWheelChange` for why both halves matter.
+  const wheelRef = useRef<{ token: GestureToken; baseLen: number } | null>(null);
 
   // `App` renders this component unconditionally (no `key`), so the
   // component instance — and its `useState` — survives across a change in
@@ -53,6 +57,14 @@ export function CardEditor({ cardIndex, onClose }: CardEditorProps) {
   useEffect(() => {
     setSelectedHole(0);
   }, [cardIndex]);
+
+  // A drag belongs to one hole of one card. Ending it here is what keeps
+  // `baseLen` honest: the truncation below must never reach back past a
+  // colour an earlier hole was given, or that hole's index would dangle past
+  // the end of the palette.
+  useEffect(() => {
+    wheelRef.current = null;
+  }, [cardIndex, selectedHole]);
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -86,8 +98,46 @@ export function CardEditor({ cardIndex, onClose }: CardEditorProps) {
     dialogRef.current?.close();
   };
 
+  /**
+   * One drag of the native colour wheel, not one edit per pointer move.
+   *
+   * React's `onChange` rides the DOM `input` event, which the picker fires
+   * continuously while the pointer moves — so a single drag arrives here
+   * dozens of times. Treated as dozens of edits (which it was), every colour
+   * the pointer merely passed over became a permanent palette entry and its
+   * own undo step; a band in the wild reached 113 entries that way.
+   *
+   * So the drag is one gesture — one undo entry — and each step first winds
+   * the palette back to the length it had when the drag began, discarding the
+   * entry the previous step appended before adding this one. Only colours at
+   * or above `baseLen` are ever dropped, and the only thing pointing there is
+   * the hole being edited.
+   *
+   * Re-checking `openGesture` rather than trusting the ref is what makes this
+   * self-healing: anything else touching history (a preset swatch, an undo)
+   * closes the gesture, and the next move simply opens a fresh one instead of
+   * throwing.
+   */
   const handleWheelChange = (event: ChangeEvent<HTMLInputElement>) => {
-    applyColor(event.target.value.toUpperCase());
+    const hex = event.target.value.toUpperCase();
+    const store = useStore.getState();
+    const open = wheelRef.current;
+
+    if (open !== null && store.openGesture === open.token) {
+      store.continueGesture(open.token, (draft) => {
+        draft.palette.length = open.baseLen;
+        runCommand(draft, setHoleColor, cardIndex, selectedHole, hex);
+      });
+      return;
+    }
+
+    const baseLen = store.pattern.palette.length;
+    const token = store.beginGesture((draft) => {
+      runCommand(draft, setHoleColor, cardIndex, selectedHole, hex);
+      // Label without the hex: it is fixed when the drag starts, and the
+      // colour it started on is not the one the weaver chose.
+    }, `Set card ${cardIndex + 1} hole ${HOLE_LABELS[selectedHole]} colour`);
+    wheelRef.current = { token, baseLen };
   };
 
   return (
