@@ -38,7 +38,7 @@ export function runCommand<Args extends unknown[]>(
   // gesture would leave the old painting behind in the draft — the command
   // would be correct and the binding still wrong.
   for (const key of Object.keys(draft)) {
-    if (!(key in result.pattern)) delete (draft as Record<string, unknown>)[key];
+    if (!(key in result.pattern)) delete (draft as unknown as Record<string, unknown>)[key];
   }
   return result.message;
 }
