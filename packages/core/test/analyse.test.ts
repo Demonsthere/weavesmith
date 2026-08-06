@@ -178,6 +178,26 @@ describe('gcPalette', () => {
     expect(problems).toContain('palette entry 2 must be a string, found undefined');
   });
 
+  // A row that is not an array must fail here, as a PatternError, and not
+  // later as a TypeError out of gc's own `for (const color of row)`. Callers
+  // (the share link, the file menu) are written against the documented
+  // PatternError contract; a TypeError is a different failure wearing the
+  // same trigger.
+  it('refuses a target row that is not an array', () => {
+    const pattern = buildPattern([card([0, 1, 2, 3])], 1);
+    (pattern as { target?: unknown }).target = [null];
+    const problems = problemsThrownBy(() => gcPalette(pattern));
+    expect(problems).toContain('target pick 1 must be an array of colours');
+  });
+
+  it('refuses a sparse target', () => {
+    const pattern = buildPattern([card([0, 1, 2, 3])], 1);
+    (pattern as { target?: unknown }).target = Array.from({ length: 2 }, () => [null]);
+    delete ((pattern as { target: unknown[] }).target)[0];
+    const problems = problemsThrownBy(() => gcPalette(pattern));
+    expect(problems).toContain('target pick 1 must be an array of colours');
+  });
+
   describe('always produces a pattern that still validates clean', () => {
     // MIN_CARDS is 4, so every shape here needs at least four cards for
     // `validatePattern(pattern)` to be [] in the first place — this property

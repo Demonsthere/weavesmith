@@ -74,7 +74,16 @@ function paletteIntegrityProblems(pattern: Pattern): string[] {
   // `undefined` for an out-of-range target index and launder a corrupt
   // pattern into one that validates clean.
   Array.from(pattern.target ?? []).forEach((row, pick) => {
-    Array.from(row ?? []).forEach((color, cardIndex) => {
+    // Not `row ?? []`: that reads a hole or a non-array as "nothing to
+    // check", and gc then walks it with `for (const color of row)` and dies
+    // of a TypeError. This function's whole job is that gc fails as a
+    // PatternError instead. Same wording as validate.ts, so a band rejected
+    // on the way out of a share link says what it said on the way in.
+    if (!Array.isArray(row)) {
+      problems.push(`target pick ${pick + 1} must be an array of colours`);
+      return;
+    }
+    Array.from(row).forEach((color, cardIndex) => {
       if (color === null) return;
       if (!Number.isInteger(color) || color < 0 || color >= pattern.palette.length) {
         problems.push(
