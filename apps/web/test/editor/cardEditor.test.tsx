@@ -231,6 +231,38 @@ describe('CardEditor', () => {
       expect(validatePattern(pattern)).toEqual([]);
     });
 
+    // A gesture is one drag, not one editor session. Closing the native
+    // picker commits with a DOM `change`, which React's `onChange` never
+    // sees — its input-value tracker drops a `change` carrying the value the
+    // last `input` already delivered, which is exactly the commit case. So
+    // the end of a session has to be observed on the node itself; without
+    // that, reopening the picker on the same hole joins the previous gesture
+    // and two deliberate choices collapse into one undo entry.
+    it('starts a fresh gesture when the picker is closed and reopened', () => {
+      render(<CardEditor cardIndex={1} onClose={() => {}} />);
+      const wheel = screen.getByLabelText(/custom colour/i);
+      const before = useStore.getState().pattern.palette.length;
+
+      drag(wheel, ['#AA0000', '#AA1111']);
+      fireEvent.change(wheel, { target: { value: '#AA1111' } }); // picker closed
+      drag(wheel, ['#00BB00', '#11BB11']);
+
+      expect(useStore.getState().past.length).toBe(2);
+
+      // The second session keeps the first session's colour rather than
+      // truncating over it: it is a committed choice, and undo has to have
+      // somewhere to land. It is an orphan until `gcPalette`, not junk the
+      // pointer merely passed over.
+      const settled = useStore.getState().pattern;
+      expect(settled.palette.length).toBe(before + 2);
+      expect(settled.palette[settled.cards[1]!.colors[0]!]).toBe('#11BB11');
+
+      useStore.getState().undo();
+      const after = useStore.getState().pattern;
+      expect(after.palette[after.cards[1]!.colors[0]!]).toBe('#AA1111');
+      expect(validatePattern(after)).toEqual([]);
+    });
+
     // A drag that wanders over a colour already in the palette must not
     // renumber or drop it — other cards point at those indices.
     it('reuses an existing entry the drag passes over, without disturbing it', () => {

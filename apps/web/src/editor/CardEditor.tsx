@@ -45,6 +45,7 @@ export function CardEditor({ cardIndex, onClose }: CardEditorProps) {
   // The open colour-wheel drag, with the palette length it started from.
   // Null between drags. See `handleWheelChange` for why both halves matter.
   const wheelRef = useRef<{ token: GestureToken; baseLen: number } | null>(null);
+  const wheelInputRef = useRef<HTMLInputElement>(null);
 
   // `App` renders this component unconditionally (no `key`), so the
   // component instance — and its `useState` — survives across a change in
@@ -65,6 +66,23 @@ export function CardEditor({ cardIndex, onClose }: CardEditorProps) {
   useEffect(() => {
     wheelRef.current = null;
   }, [cardIndex, selectedHole]);
+
+  // Closing the native picker ends the drag too. The DOM fires `change` on
+  // commit, but React's `onChange` never delivers it: React tracks an input's
+  // value and drops a `change` carrying the value the last `input` already
+  // delivered — which is exactly the commit. So the listener goes on the node
+  // itself, where no tracker sits in front of it. Without this the ref would
+  // survive between picker sessions on one hole, and two deliberate choices
+  // would collapse into a single undo entry.
+  useEffect(() => {
+    const input = wheelInputRef.current;
+    if (!input) return undefined;
+    const endDrag = () => {
+      wheelRef.current = null;
+    };
+    input.addEventListener('change', endDrag);
+    return () => input.removeEventListener('change', endDrag);
+  }, [cardIndex]);
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -117,6 +135,10 @@ export function CardEditor({ cardIndex, onClose }: CardEditorProps) {
    * self-healing: anything else touching history (a preset swatch, an undo)
    * closes the gesture, and the next move simply opens a fresh one instead of
    * throwing.
+   *
+   * A gesture is one drag, not one editor session: the `change` listener above
+   * ends it when the picker is dismissed, so reopening the picker on the same
+   * hole is a second choice with its own undo entry.
    */
   const handleWheelChange = (event: ChangeEvent<HTMLInputElement>) => {
     const hex = event.target.value.toUpperCase();
@@ -228,6 +250,7 @@ export function CardEditor({ cardIndex, onClose }: CardEditorProps) {
 
       <div className="wheel-row">
         <input
+          ref={wheelInputRef}
           type="color"
           aria-label="Custom colour"
           value={pattern.palette[card.colors[selectedHole]]!}
