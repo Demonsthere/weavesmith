@@ -1,4 +1,4 @@
-import { advance, holeAt, HOLE_LABELS, MAX_CARDS, MIN_CARDS } from '@weavesmith/core';
+import { advance, holeAt, HOLE_LABELS, MAX_CARDS, MIN_CARDS, solveTurns } from '@weavesmith/core';
 import type { Card, Hole, Pattern, Rotation, Threading, Turn } from '@weavesmith/core';
 import { cellsIn, selectionRect } from './selection.js';
 import type { Selection } from './selection.js';
@@ -33,6 +33,13 @@ export function runCommand<Args extends unknown[]>(
 ): string {
   const result = command(draft, ...args);
   Object.assign(draft, result.pattern);
+  // Object.assign copies keys; it cannot remove one. `target` is optional and
+  // `clearTarget` drops it once nothing is painted, so without this an erase
+  // gesture would leave the old painting behind in the draft — the command
+  // would be correct and the binding still wrong.
+  for (const key of Object.keys(draft)) {
+    if (!(key in result.pattern)) delete (draft as Record<string, unknown>)[key];
+  }
   return result.message;
 }
 
@@ -151,6 +158,7 @@ export function addCard(
       start: 0,
     });
     for (const row of draft.picks) row.splice(index, 0, 1);
+    if (draft.target) for (const row of draft.target) row.splice(index, 0, null);
   });
   return {
     result: { pattern: next, message: `Card ${index + 1} added, threaded ${threading}` },
@@ -179,6 +187,7 @@ export function removeCard(pattern: Pattern, index: number): CommandResult {
   const next = edit(pattern, (draft) => {
     draft.cards.splice(index, 1);
     for (const row of draft.picks) row.splice(index, 1);
+    if (draft.target) for (const row of draft.target) row.splice(index, 1);
   });
   return { pattern: next, message: `Card ${index + 1} removed` };
 }
@@ -208,4 +217,76 @@ export function setHoleColor(
     pattern: next,
     message: `Card ${card + 1} hole ${HOLE_LABELS[hole]} set to ${hex}`,
   };
+}
+
+/** A fully-null target of the pattern's dimensions. */
+function emptyTarget(pattern: Pattern): (number | null)[][] {
+  return pattern.picks.map(() => pattern.cards.map(() => null));
+}
+
+/**
+ * Ask for a colour on every cell in the selection.
+ *
+ * The target is created on first use rather than carried empty: an all-null
+ * grid and no grid mean the same thing, and only one of them belongs in a
+ * saved file.
+ */
+export function paintTarget(
+  pattern: Pattern,
+  selection: Selection,
+  color: number,
+): CommandResult {
+  const cells = cellsIn(selectionRect(selection));
+  const next = edit(pattern, (draft) => {
+    const target = draft.target ?? emptyTarget(draft);
+    for (const { pick, card } of cells) target[pick]![card] = color;
+    draft.target = target;
+  });
+  return { pattern: next, message: `Painted ${plural(cells.length, 'cell')}` };
+}
+
+/** Take the selection back to "any colour will do". */
+export function clearTarget(pattern: Pattern, selection: Selection): CommandResult {
+  const cells = cellsIn(selectionRect(selection));
+  const next = edit(pattern, (draft) => {
+    if (!draft.target) return;
+    for (const { pick, card } of cells) draft.target[pick]![card] = null;
+    if (draft.target.every((row) => row.every((color) => color === null))) {
+      delete draft.target;
+    }
+  });
+  return { pattern: next, message: `Cleared ${plural(cells.length, 'cell')}` };
+}
+
+/**
+ * Solve the whole band for the painted target.
+ *
+ * Whole band, not "affected columns": unpainted cells are null, which costs
+ * the solver nothing, and `previous` breaks ties toward the turns the weaver
+ * already has — so untouched columns come back exactly as they went in.
+ */
+export function solveTarget(pattern: Pattern): CommandResult {
+  const target = pattern.target;
+  if (!target) return { pattern, message: 'Nothing painted yet' };
+
+  const { picks, unreachable } = solveTurns(pattern.cards, target, {
+    previous: pattern.picks,
+  });
+  const next = edit(pattern, (draft) => {
+    draft.picks = picks;
+  });
+
+  const painted = target.reduce(
+    (count, row) => count + row.filter((color) => color !== null).length,
+    0,
+  );
+  let message = `Solved ${plural(painted - unreachable.length, 'cell')}`;
+  if (unreachable.length > 0) {
+    const named = unreachable
+      .slice(0, 3)
+      .map((cell) => `card ${cell.card + 1} pick ${cell.pick + 1}`)
+      .join(', ');
+    message += `; ${unreachable.length} unreachable (${named})`;
+  }
+  return { pattern: next, message };
 }
