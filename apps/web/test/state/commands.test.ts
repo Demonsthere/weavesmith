@@ -325,6 +325,19 @@ describe('clearTarget', () => {
     expect(after.target).toBeUndefined();
   });
 
+  it('says nothing was painted rather than claiming to have cleared', () => {
+    const { message } = clearTarget(defaultPattern(), cell(0, 0));
+    expect(message).toBe('Nothing painted yet');
+  });
+
+  // Counts what changed, not what was selected — the same contract setTurn
+  // reports against. A selection that is mostly bare should not read as work.
+  it('counts only the cells that were actually painted', () => {
+    const painted = paintTarget(defaultPattern(), cell(0, 0), MADDER).pattern;
+    const { message } = clearTarget(painted, rect(0, 0, 1, 1));
+    expect(message).toBe('Cleared 1 cell');
+  });
+
   // Object.assign copies keys, it cannot remove one — so a command that drops
   // an optional field needs runCommand's help, or an erase gesture silently
   // leaves the old painting in the draft the bindings are editing.
@@ -383,5 +396,26 @@ describe('card add/remove with a target', () => {
 
     const shrunk = removeCard(grown, removalIndex(grown.cards)).pattern;
     expect(shrunk.target![0]!).toHaveLength(shrunk.picks[0]!.length);
+  });
+
+  // An all-null grid and no grid mean the same thing, and only one of them
+  // belongs in a saved file — the invariant paintTarget states and clearTarget
+  // maintains. Removing the last painted column has to honour it too, or an
+  // empty painting rides along in every autosave and share link.
+  it('drops the target when removing a card empties it', () => {
+    const painted = paintTarget(defaultPattern(), cell(0, 1), MADDER).pattern;
+
+    const after = removeCard(painted, 1).pattern;
+
+    expect(after.target).toBeUndefined();
+  });
+
+  it('keeps the target when removing a card leaves something painted', () => {
+    let painted = paintTarget(defaultPattern(), cell(0, 1), MADDER).pattern;
+    painted = paintTarget(painted, cell(0, 3), MADDER).pattern;
+
+    const after = removeCard(painted, 1).pattern;
+
+    expect(after.target![0]![2]).toBe(MADDER);
   });
 });

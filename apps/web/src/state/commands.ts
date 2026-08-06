@@ -187,7 +187,10 @@ export function removeCard(pattern: Pattern, index: number): CommandResult {
   const next = edit(pattern, (draft) => {
     draft.cards.splice(index, 1);
     for (const row of draft.picks) row.splice(index, 1);
-    if (draft.target) for (const row of draft.target) row.splice(index, 1);
+    if (draft.target) {
+      for (const row of draft.target) row.splice(index, 1);
+      dropEmptyTarget(draft);
+    }
   });
   return { pattern: next, message: `Card ${index + 1} removed` };
 }
@@ -225,6 +228,22 @@ function emptyTarget(pattern: Pattern): (number | null)[][] {
 }
 
 /**
+ * Delete a target that has nothing left in it.
+ *
+ * An all-null grid and no grid mean the same thing, so only one of them may
+ * exist — otherwise an empty painting rides along in every autosave and share
+ * link, and the two supposedly-identical states take different branches in
+ * every `if (pattern.target)` in the codebase. Every command that can take the
+ * last colour out of a target has to call this: clearing cells, and removing
+ * the card whose column held them.
+ */
+function dropEmptyTarget(draft: Pattern): void {
+  if (draft.target?.every((row) => row.every((color) => color === null))) {
+    delete draft.target;
+  }
+}
+
+/**
  * Ask for a colour on every cell in the selection.
  *
  * The target is created on first use rather than carried empty: an all-null
@@ -245,17 +264,28 @@ export function paintTarget(
   return { pattern: next, message: `Painted ${plural(cells.length, 'cell')}` };
 }
 
-/** Take the selection back to "any colour will do". */
+/**
+ * Take the selection back to "any colour will do".
+ *
+ * Reports what it changed rather than what was selected, the same contract
+ * `setTurn` reports against: a selection that was mostly bare should not read
+ * as work, and Backspace on a band nobody has painted should not claim to have
+ * cleared anything.
+ */
 export function clearTarget(pattern: Pattern, selection: Selection): CommandResult {
+  if (!pattern.target) return { pattern, message: 'Nothing painted yet' };
+
   const cells = cellsIn(selectionRect(selection));
+  let cleared = 0;
   const next = edit(pattern, (draft) => {
-    if (!draft.target) return;
-    for (const { pick, card } of cells) draft.target[pick]![card] = null;
-    if (draft.target.every((row) => row.every((color) => color === null))) {
-      delete draft.target;
+    for (const { pick, card } of cells) {
+      if (draft.target![pick]![card] === null) continue;
+      draft.target![pick]![card] = null;
+      cleared++;
     }
+    dropEmptyTarget(draft);
   });
-  return { pattern: next, message: `Cleared ${plural(cells.length, 'cell')}` };
+  return { pattern: next, message: `Cleared ${plural(cleared, 'cell')}` };
 }
 
 /**
