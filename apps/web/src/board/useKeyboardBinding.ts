@@ -185,11 +185,17 @@ export function useKeyboardBinding(): KeyboardBinding {
     // Digits mean different things per mode: a hole in Design, a brush in
     // Paint. Accepted deliberately — a second keyset for painting runs out
     // of both keys and muscle memory.
+    //
+    // preventDefault sits inside each branch rather than above them, because
+    // the range that means something is narrower in Design: a card has four
+    // holes, so 5-9 there are not ours. Swallowing them anyway would take
+    // find-as-you-type and a screen reader's own digit shortcuts away in
+    // exchange for doing nothing.
     if (event.key >= '1' && event.key <= '9') {
-      event.preventDefault();
       const index = Number(event.key) - 1;
 
       if (mode === 'paint') {
+        event.preventDefault();
         if (index >= pattern.palette.length) {
           setMessage(`The palette has ${pattern.palette.length} colours`);
           return;
@@ -200,6 +206,7 @@ export function useKeyboardBinding(): KeyboardBinding {
       }
 
       if (event.key <= '4') {
+        event.preventDefault();
         run(`Show hole ${event.key}`, setHole, selection, index as Hole);
       }
       return;

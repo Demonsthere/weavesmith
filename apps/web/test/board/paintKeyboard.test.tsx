@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { simulate } from '@weavesmith/core';
@@ -70,6 +70,20 @@ describe('painting with the keyboard', () => {
     expect(useStore.getState().pattern.picks).not.toEqual(before.picks);
     expect(simulate(useStore.getState().pattern)[1]![3]!.color).toBe(wanted);
     expect(screen.getByRole('status')).toHaveTextContent(/Solved/);
+  });
+
+  // In Paint mode every digit is answered — with a brush, or with the message
+  // saying the palette is smaller than that. Both are ours, so both are taken
+  // from the browser.
+  it('takes every digit, including the ones past the palette', () => {
+    render(<Board />);
+    const target = cell(0, 0);
+    target.focus();
+
+    for (const key of ['1', '2', '3', '4', '5', '6', '7', '8', '9']) {
+      const notPrevented = fireEvent.keyDown(target, { key });
+      expect(notPrevented).toBe(false);
+    }
   });
 
   it('leaves the Design-mode keys alone', async () => {
