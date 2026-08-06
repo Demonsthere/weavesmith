@@ -23,7 +23,14 @@ export function Summary() {
   const counts = threadCounts(pattern);
   const twist = netTwist(pattern);
   const report = reportTarget(pattern);
-  const painted = report.unreachable.length + report.unmet.length > 0;
+  // Whether anything is painted, not whether anything is wrong with it. A
+  // fully-solved painting still has an answer worth reading — and a section
+  // that disappears on success looks identical to one that was never painted.
+  //
+  // Checks the cells rather than trusting `target` to be absent when empty:
+  // the commands maintain that, but an imported file is free to carry a grid
+  // of nulls and validate clean.
+  const painted = pattern.target?.some((row) => row.some((color) => color !== null)) ?? false;
 
   const distinctTwist = [...new Set(twist)];
   const uniform = distinctTwist.length === 1;
