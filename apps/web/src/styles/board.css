@@ -124,10 +124,14 @@
   border: 1px dashed color-mix(in srgb, var(--accent) 70%, transparent);
   border-radius: 3px; pointer-events: none; z-index: 4;
 }
-/* Band and target disagree here. The note keeps the colour that will
-   actually be woven — desaturated, not replaced, because the board must not
-   lie about the loom's output. The slash is currentColor so it survives a
-   greyscale print; the pip carries the colour that was asked for.
+/* Band and target disagree here. The note is desaturated rather than
+   replaced, so whichever colour the mode is showing stays legible as itself:
+   in Design and Weave that is the colour the loom will actually produce —
+   the board must not lie about its output — and in Paint it is the target,
+   because that is what Paint mode is a view of. The slash is currentColor so
+   it survives a greyscale print; the pip carries the colour that was asked
+   for, which is why it has nothing to add in Paint mode (see .board.paint
+   below).
 
    After .cell.willchange::after deliberately: both use ::after at equal
    specificity, so source order decides, and on a cell that is both
