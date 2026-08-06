@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { simulate, solveTurns, targetOf } from '../src/index.js';
+import { reportTarget, simulate, solveTurns, targetOf } from '../src/index.js';
 import type { Pattern, TargetGrid, Turn } from '../src/index.js';
 import { buildPattern, card, MADDER, WALNUT, WELD, WOAD } from './helpers/build.js';
 
@@ -120,5 +120,94 @@ describe('solveTurns minimum change', () => {
 
     expect(result.unreachable).toEqual([]);
     expect(result.picks).toEqual([[-1], [-1], [-1]]);
+  });
+});
+
+describe('reportTarget', () => {
+  const band = () =>
+    buildPattern(
+      [
+        card([WALNUT, MADDER, WOAD, WELD], 'S'),
+        card([WALNUT, MADDER, WOAD, WELD], 'Z'),
+        card([WALNUT, MADDER, WOAD, WELD], 'S'),
+        card([WALNUT, MADDER, WOAD, WELD], 'Z'),
+      ],
+      6,
+    );
+
+  it('reports nothing when there is no target', () => {
+    expect(reportTarget(band())).toEqual({ unreachable: [], unmet: [] });
+  });
+
+  it('reports nothing for an all-null target', () => {
+    const pattern = band();
+    pattern.target = pattern.picks.map((row) => row.map(() => null));
+    expect(reportTarget(pattern)).toEqual({ unreachable: [], unmet: [] });
+  });
+
+  it('reports nothing when the target is the band itself', () => {
+    const pattern = band();
+    pattern.target = targetOf(simulate(pattern));
+    expect(reportTarget(pattern)).toEqual({ unreachable: [], unmet: [] });
+  });
+
+  it('reports a colour the card does not carry as unreachable', () => {
+    const pattern = buildPattern(
+      [
+        card([WALNUT, WALNUT, MADDER, MADDER], 'S'),
+        card([WALNUT, WALNUT, MADDER, MADDER], 'S'),
+        card([WALNUT, WALNUT, MADDER, MADDER], 'S'),
+        card([WALNUT, WALNUT, MADDER, MADDER], 'Z'),
+      ],
+      2,
+    );
+    pattern.target = [
+      [WOAD, null, null, null],
+      [null, null, null, null],
+    ];
+
+    const report = reportTarget(pattern);
+
+    expect(report.unreachable).toEqual([{ card: 0, pick: 0, wanted: WOAD }]);
+    expect(report.unmet).toEqual([]);
+  });
+
+  it('reports the same hole two picks running as unreachable', () => {
+    // Rotation must change every pick, so a colour carried by exactly one
+    // hole cannot show twice in a row. This is the constraint that makes the
+    // feature honest rather than decorative.
+    const pattern = buildPattern(
+      [
+        card([WALNUT, MADDER, WOAD, WELD], 'S'),
+        card([WALNUT, MADDER, WOAD, WELD], 'S'),
+        card([WALNUT, MADDER, WOAD, WELD], 'S'),
+        card([WALNUT, MADDER, WOAD, WELD], 'Z'),
+      ],
+      2,
+    );
+    pattern.target = [
+      [MADDER, null, null, null],
+      [MADDER, null, null, null],
+    ];
+
+    const report = reportTarget(pattern);
+
+    expect(report.unreachable).toHaveLength(1);
+    expect(report.unreachable[0]!.wanted).toBe(MADDER);
+    expect(report.unreachable[0]!.card).toBe(0);
+  });
+
+  it('reports a solvable disagreement as unmet, not unreachable', () => {
+    const pattern = band();
+    pattern.target = targetOf(simulate(pattern));
+    // Flip one turn, as a Design-mode edit after a solve would.
+    pattern.picks[2]![0] = -pattern.picks[2]![0]! as Turn;
+
+    const report = reportTarget(pattern);
+
+    expect(report.unreachable).toEqual([]);
+    expect(report.unmet.length).toBeGreaterThan(0);
+    expect(report.unmet.every((cell) => cell.card === 0)).toBe(true);
+    expect(report.unmet.some((cell) => cell.pick === 2)).toBe(true);
   });
 });

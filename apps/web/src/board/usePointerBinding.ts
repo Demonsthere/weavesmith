@@ -2,7 +2,7 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 import type { PointerEvent as ReactPointerEvent } from 'react';
 import { simulate } from '@weavesmith/core';
 import type { Pattern, Turn } from '@weavesmith/core';
-import { runCommand, setTurn } from '../state/commands.js';
+import { clearTarget, paintTarget, runCommand, setTurn } from '../state/commands.js';
 import { useStore } from '../state/store.js';
 import type { GestureToken } from '../state/store.js';
 import type { CellRef, Selection } from '../state/selection.js';
@@ -72,6 +72,14 @@ export interface PointerBinding {
   hover: CellRef | null;
 }
 
+// The gesture in progress, or null. `kind` says which command the drag is
+// repeating: a turn drag carries the direction taken from the first cell,
+// a paint drag carries the brush the stroke started with — so changing the
+// brush mid-drag cannot split a stroke into two colours.
+type Gesture =
+  | { kind: 'turn'; dir: Turn; token: GestureToken }
+  | { kind: 'paint'; brush: number | null; token: GestureToken };
+
 /**
  * Translates pointer events into calls on Task 3's command set and Task 2's
  * store. Contains no editing logic of its own: every mutation is computed
@@ -81,12 +89,11 @@ export interface PointerBinding {
 export function usePointerBinding(): PointerBinding {
   const [hover, setHover] = useState<CellRef | null>(null);
   const [preview, setPreview] = useState<Set<string>>(EMPTY_PREVIEW);
-  // The direction being painted and the store's gesture token for the
-  // current drag, or null when not dragging. A ref, not state: it drives
-  // no render, only the logic below. The token is what makes every
-  // `continueGesture` call during this drag provably belong to the entry
-  // `beginGesture` pushed — the store throws if it doesn't.
-  const gestureRef = useRef<{ dir: Turn; token: GestureToken } | null>(null);
+  // What the current drag is repeating, or null when not dragging. A ref,
+  // not state: it drives no render, only the logic below. The token is what
+  // makes every `continueGesture` call during this drag provably belong to
+  // the entry `beginGesture` pushed — the store throws if it doesn't.
+  const gestureRef = useRef<Gesture | null>(null);
 
   const clearHover = useCallback(() => {
     setHover(null);
@@ -108,11 +115,23 @@ export function usePointerBinding(): PointerBinding {
 
     clearHover();
 
-    const current = pattern.picks[target.pick]![target.card]!;
-    const dir = -current as Turn;
+    const { mode, brush } = useStore.getState();
 
     const singleCell: Selection = { anchor: target, focus: target };
     setSelection(singleCell);
+
+    if (mode === 'paint') {
+      const token = beginGesture((draft) => {
+        if (brush === null) runCommand(draft, clearTarget, singleCell);
+        else runCommand(draft, paintTarget, singleCell, brush);
+      }, brush === null ? 'Clear target' : 'Paint target');
+      gestureRef.current = { kind: 'paint', brush, token };
+      e.currentTarget.setPointerCapture(e.pointerId);
+      return;
+    }
+
+    const current = pattern.picks[target.pick]![target.card]!;
+    const dir = -current as Turn;
 
     // One undo entry for the whole gesture: this is the only entry-pushing
     // call in the drag. Every subsequent pointermove uses `continueGesture`
@@ -121,7 +140,7 @@ export function usePointerBinding(): PointerBinding {
     const token = beginGesture((draft) => {
       runCommand(draft, setTurn, singleCell, dir);
     }, `Set turn ${dir === 1 ? 'forward' : 'backward'}`);
-    gestureRef.current = { dir, token };
+    gestureRef.current = { kind: 'turn', dir, token };
 
     e.currentTarget.setPointerCapture(e.pointerId);
   }, [clearHover]);
@@ -140,13 +159,20 @@ export function usePointerBinding(): PointerBinding {
       // visited earlier in the same drag) changes nothing, so dragging
       // back and forth over already-painted cells costs nothing.
       continueGesture(gesture.token, (draft) => {
-        runCommand(draft, setTurn, grown, gesture.dir);
+        if (gesture.kind === 'paint') {
+          if (gesture.brush === null) runCommand(draft, clearTarget, grown);
+          else runCommand(draft, paintTarget, grown, gesture.brush);
+        } else {
+          runCommand(draft, setTurn, grown, gesture.dir);
+        }
       });
       setSelection(grown);
       return;
     }
 
-    if (!canHover() || useStore.getState().mode === 'weave') return;
+    // Hover previews the *ripple*, which only Design mode can cause: a
+    // target does not ripple, and Weave mode is not editing at all.
+    if (!canHover() || useStore.getState().mode !== 'design') return;
 
     const target = cellUnderPointer(e);
     if (!target) {

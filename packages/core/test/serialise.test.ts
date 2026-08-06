@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { fromJSON, PatternError, toJSON } from '../src/index.js';
-import { buildPattern, card } from './helpers/build.js';
+import { buildPattern, card, MADDER, WALNUT, WELD, WOAD } from './helpers/build.js';
 
 const valid = () => buildPattern([card([0, 1, 2, 3]), card([0, 1, 2, 3]),
                                   card([0, 1, 2, 3]), card([0, 1, 2, 3])], 4);
@@ -38,5 +38,23 @@ describe('toJSON / fromJSON', () => {
 
   it('throws PatternError on text that is not JSON at all', () => {
     expect(() => fromJSON('not json')).toThrow(PatternError);
+  });
+
+  it('round-trips a target', () => {
+    const pattern = buildPattern(
+      [
+        card([WALNUT, MADDER, WOAD, WELD]),
+        card([WALNUT, MADDER, WOAD, WELD]),
+        card([WALNUT, MADDER, WOAD, WELD]),
+        card([WALNUT, MADDER, WOAD, WELD], 'Z'),
+      ],
+      2,
+    );
+    pattern.target = [
+      [MADDER, null, null, null],
+      [null, null, WOAD, null],
+    ];
+
+    expect(fromJSON(toJSON(pattern))).toEqual(pattern);
   });
 });

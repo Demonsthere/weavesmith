@@ -164,6 +164,25 @@ describe('keyboard binding', () => {
     }
   });
 
+  // A card has four holes, so only 1-4 mean anything in Design mode.
+  // Swallowing 5-9 as well would take them from the browser and from assistive
+  // tech — Firefox's find-as-you-type, a screen reader's own digit
+  // shortcuts — in exchange for doing nothing at all.
+  it('leaves digits it has no command for to the browser', () => {
+    render(<Board />);
+    const target = cell(0, 0);
+    target.focus();
+
+    for (const key of ['5', '6', '7', '8', '9']) {
+      const notPrevented = fireEvent.keyDown(target, { key });
+      expect(notPrevented).toBe(true);
+    }
+    for (const key of ['1', '2', '3', '4']) {
+      const notPrevented = fireEvent.keyDown(target, { key });
+      expect(notPrevented).toBe(false);
+    }
+  });
+
   it('keeps exactly one tabbable cell after a keyboard move (roving tabindex)', async () => {
     const user = userEvent.setup();
     const { container } = render(<Board />);

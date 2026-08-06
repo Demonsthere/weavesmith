@@ -86,6 +86,9 @@ Two places where weaving is *not* a guitar, both of which shaped the design:
   desktop.
 - **Simulate** the woven band live, with stitches leaning the way the twist
   actually falls.
+- **Solve backwards.** Paint the band you want and get the turn sequence that
+  produces it — with the cells the cards cannot deliver marked honestly rather
+  than quietly approximated.
 - **Print** a turning chart, with a threading diagram and warp summary.
 - **Weave** from it: an at-loom mode that walks pick by pick and remembers where
   you stopped.

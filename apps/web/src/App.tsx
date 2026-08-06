@@ -5,6 +5,7 @@ import { CardEditor } from './editor/CardEditor.js';
 import { Chart } from './chart/Chart.js';
 import { Footer } from './Footer.js';
 import { WeaveBar } from './weave/WeaveBar.js';
+import { BrushStrip } from './paint/BrushStrip.js';
 import { FileMenu } from './io/FileMenu.js';
 import { bootPattern } from './io/boot.js';
 import { autosaveSoon } from './io/storage.js';
@@ -16,6 +17,7 @@ import './screenMode.css';
 
 const SCREEN_MODES: { value: ScreenMode; label: string }[] = [
   { value: 'design', label: 'Design' },
+  { value: 'paint', label: 'Paint' },
   { value: 'weave', label: 'Weave' },
 ];
 
@@ -172,6 +174,7 @@ function BoardScreen() {
           4); WeaveBar is only mounted, not switched to, so it never holds
           stale state from a mode it isn't currently in. */}
       {mode === 'weave' && <WeaveBar />}
+      {mode === 'paint' && <BrushStrip />}
       <Board />
       {/* `key` forces a remount on every change of which card is being
           edited — belt and braces alongside CardEditor's own

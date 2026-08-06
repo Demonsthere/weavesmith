@@ -1,7 +1,9 @@
 import { useCallback, useState } from 'react';
 import type { KeyboardEvent as ReactKeyboardEvent } from 'react';
 import type { Hole, Pattern, Threading, Turn } from '@weavesmith/core';
-import { runCommand, setHole, setThreading, setTurn, toggleTurn } from '../state/commands.js';
+import {
+  clearTarget, paintTarget, runCommand, setHole, setThreading, setTurn, solveTarget, toggleTurn,
+} from '../state/commands.js';
 import type { CommandResult } from '../state/commands.js';
 import { useStore } from '../state/store.js';
 
@@ -40,7 +42,8 @@ export function useKeyboardBinding(): KeyboardBinding {
   const onKeyDown = useCallback((event: ReactKeyboardEvent<HTMLDivElement>) => {
     const container = event.currentTarget;
     const {
-      selection, pattern, orientation, moveFocus, setSelection, apply, undo, redo,
+      selection, pattern, orientation, mode, brush,
+      moveFocus, setSelection, apply, undo, redo,
     } = useStore.getState();
     const cardCount = pattern.cards.length;
     const vertical = orientation === 'vertical';
@@ -78,6 +81,15 @@ export function useKeyboardBinding(): KeyboardBinding {
       const label = event.shiftKey ? redo() : undo();
       setMessage(label ? `${event.shiftKey ? 'Redo' : 'Undo'}: ${label}` : 'Nothing to undo');
       refocus();
+      return;
+    }
+
+    // Before the "any modifier means the browser's" guard below: this is one
+    // of ours, and it is a chord because Enter alone already paints.
+    if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
+      if (mode !== 'paint') return;
+      event.preventDefault();
+      run('Solve target', solveTarget);
       return;
     }
 
@@ -123,7 +135,18 @@ export function useKeyboardBinding(): KeyboardBinding {
       case ' ':
       case 'Enter':
         event.preventDefault();
+        if (mode === 'paint') {
+          if (brush === null) run('Clear target', clearTarget, selection);
+          else run('Paint target', paintTarget, selection, brush);
+          return;
+        }
         run('Toggle turn', toggleTurn, selection);
+        return;
+      case 'Backspace':
+      case 'Delete':
+        if (mode !== 'paint') return;
+        event.preventDefault();
+        run('Clear target', clearTarget, selection);
         return;
     }
 
@@ -159,10 +182,33 @@ export function useKeyboardBinding(): KeyboardBinding {
       return;
     }
 
-    if (event.key >= '1' && event.key <= '4') {
-      event.preventDefault();
-      const hole = (Number(event.key) - 1) as Hole;
-      run(`Show hole ${event.key}`, setHole, selection, hole);
+    // Digits mean different things per mode: a hole in Design, a brush in
+    // Paint. Accepted deliberately — a second keyset for painting runs out
+    // of both keys and muscle memory.
+    //
+    // preventDefault sits inside each branch rather than above them, because
+    // the range that means something is narrower in Design: a card has four
+    // holes, so 5-9 there are not ours. Swallowing them anyway would take
+    // find-as-you-type and a screen reader's own digit shortcuts away in
+    // exchange for doing nothing.
+    if (event.key >= '1' && event.key <= '9') {
+      const index = Number(event.key) - 1;
+
+      if (mode === 'paint') {
+        event.preventDefault();
+        if (index >= pattern.palette.length) {
+          setMessage(`The palette has ${pattern.palette.length} colours`);
+          return;
+        }
+        useStore.getState().setBrush(index);
+        setMessage(`Brush ${index + 1}`);
+        return;
+      }
+
+      if (event.key <= '4') {
+        event.preventDefault();
+        run(`Show hole ${event.key}`, setHole, selection, index as Hole);
+      }
       return;
     }
   }, []);

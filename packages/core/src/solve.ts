@@ -1,9 +1,7 @@
 import { advance, holeAt } from './conventions.js';
+import { simulate } from './simulate.js';
 import { HOLE_COUNT } from './types.js';
-import type { Card, Cell, Rotation, Turn } from './types.js';
-
-/** Desired colour per cell, [pick][card]. null means "any colour will do". */
-export type TargetGrid = (number | null)[][];
+import type { Card, Cell, Pattern, Rotation, TargetGrid, Turn } from './types.js';
 
 /**
  * Turn a simulated band into a solver target.
@@ -182,4 +180,50 @@ function stepCost(
     cost += 1;
   }
   return cost;
+}
+
+export interface TargetReport {
+  /**
+   * Cells the card's minimum-mismatch turn sequence does not satisfy —
+   * either the card carries no hole in that colour, or showing it here
+   * would cost a mismatch at another painted pick on the same card and the
+   * solver took the cheaper trade. This is a claim about the column, not
+   * about the cell in isolation: in the second case the colour *is*
+   * showable there, just not alongside everything else asked of that card.
+   * Re-solving will not help either way; the fix is a different hole
+   * colour, a different threading, or asking for less.
+   */
+  unreachable: Unreachable[];
+  /** Cells where the band simply disagrees with the target. Solve fixes these. */
+  unmet: Unreachable[];
+}
+
+/**
+ * Split every band-vs-target disagreement into the two kinds a weaver can
+ * act on.
+ *
+ * The two look identical on the board and are not the same problem: after a
+ * solve they coincide, but flipping a turn in Design mode afterwards makes a
+ * cell unmet without making it unreachable. Linear in cells, so callers
+ * recompute it rather than caching an answer that can go stale.
+ */
+export function reportTarget(pattern: Pattern): TargetReport {
+  const target = pattern.target;
+  if (target === undefined) return { unreachable: [], unmet: [] };
+
+  const band = simulate(pattern);
+  const solved = solveTurns(pattern.cards, target, { previous: pattern.picks });
+  const blocked = new Set(solved.unreachable.map((cell) => `${cell.pick}:${cell.card}`));
+
+  const unmet: Unreachable[] = [];
+  target.forEach((row, pick) => {
+    row.forEach((wanted, card) => {
+      if (wanted === null) return;
+      if (blocked.has(`${pick}:${card}`)) return;
+      if (band[pick]?.[card]?.color === wanted) return;
+      unmet.push({ card, pick, wanted });
+    });
+  });
+
+  return { unreachable: solved.unreachable, unmet };
 }

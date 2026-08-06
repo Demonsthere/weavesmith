@@ -1,0 +1,19 @@
+.brushstrip {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 8px 0;
+}
+.swatches { display: flex; gap: 6px; }
+.swatch {
+  width: 28px; height: 28px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  cursor: pointer;
+  padding: 0;
+}
+.swatch[aria-pressed='true'] { outline: 2px solid var(--accent); outline-offset: 2px; }
+.swatch:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.swatch.erase { background: transparent; color: var(--text); }
+.brush-report { margin: 0; font-size: 0.9rem; color: var(--text); min-height: 1.2em; }

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, type CSSProperties } from 'react';
-import { simulate } from '@weavesmith/core';
+import { reportTarget, simulate } from '@weavesmith/core';
 import { useStore } from '../state/store.js';
 import { rectContains, selectionRect } from '../state/selection.js';
 import { identityColor, isLandmark } from './identity.js';
@@ -39,6 +39,27 @@ export function Board() {
   const { pattern, selection, orientation, render, mode, currentPick, documentId } = useStore();
   const band = useMemo(() => simulate(pattern), [pattern]);
   const ripple = useRipple(band, documentId);
+  // Recomputed rather than cached: reportTarget is linear in cells, and a
+  // stale answer here would be a board that lies about what the loom will
+  // produce. Weave mode is the at-loom view and carries no marks at all.
+  const marks = useMemo(() => {
+    if (mode === 'weave') return new Map<string, { hex: string; reachable: boolean }>();
+    const report = reportTarget(pattern);
+    const entries = new Map<string, { hex: string; reachable: boolean }>();
+    for (const cell of report.unreachable) {
+      entries.set(`${cell.pick}:${cell.card}`, {
+        hex: pattern.palette[cell.wanted]!,
+        reachable: false,
+      });
+    }
+    for (const cell of report.unmet) {
+      entries.set(`${cell.pick}:${cell.card}`, {
+        hex: pattern.palette[cell.wanted]!,
+        reachable: true,
+      });
+    }
+    return entries;
+  }, [pattern, mode]);
   const rect = selectionRect(selection);
   const { handlers, preview, hover } = usePointerBinding();
   const { onKeyDown, message } = useKeyboardBinding();
@@ -113,7 +134,7 @@ export function Board() {
     <div className="board-scroll" ref={scrollRef}>
       <div
         ref={boardRef}
-        className={`board ${vertical ? 'v' : 'h'} mode-${render}`}
+        className={`board ${vertical ? 'v' : 'h'} mode-${render}${mode === 'paint' ? ' paint' : ''}`}
         role="grid"
         aria-label="Weaving board"
         style={style}
@@ -160,6 +181,12 @@ export function Board() {
                 ghost={hover !== null && hover.pick === t && hover.card === c}
                 willChange={preview.has(`${t}:${c}`)}
                 rippleDelay={ripple.get(`${t}:${c}`) ?? null}
+                unmet={marks.get(`${t}:${c}`) ?? null}
+                targetHex={
+                  mode === 'paint' && pattern.target?.[t]?.[c] != null
+                    ? pattern.palette[pattern.target[t]![c]!]!
+                    : null
+                }
                 weaveState={
                   mode === 'weave'
                     ? t === currentPick ? 'current' : t < currentPick ? 'past' : 'ahead'

@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { simulate, validatePattern } from '@weavesmith/core';
-import type { Card, Threading } from '@weavesmith/core';
+import type { Card, Threading, Turn } from '@weavesmith/core';
 import {
-  addCard, removeCard, removalIndex, setHole, setHoleColor, setThreading, setTurn, toggleTurn,
+  addCard, clearTarget, paintTarget, removeCard, removalIndex, runCommand, setHole, setHoleColor,
+  setThreading, setTurn, solveTarget, toggleTurn,
 } from '../../src/state/commands.js';
 import { defaultPattern } from '../../src/state/defaultPattern.js';
 
@@ -274,5 +275,147 @@ describe('every command leaves the pattern valid', () => {
     let small = defaultPattern();
     while (small.cards.length > 4) small = removeCard(small, 1).pattern;
     expect(validatePattern(removeCard(small, 1).pattern)).toEqual([]);
+  });
+});
+
+const MADDER = 1;
+
+describe('paintTarget', () => {
+  it('creates the target lazily, filled with null', () => {
+    const before = defaultPattern();
+    expect(before.target).toBeUndefined();
+
+    const { pattern: after, message } = paintTarget(before, cell(1, 2), MADDER);
+
+    expect(after.target).toHaveLength(before.picks.length);
+    expect(after.target![0]!).toHaveLength(before.cards.length);
+    expect(after.target![1]![2]).toBe(MADDER);
+    expect(after.target![0]![0]).toBeNull();
+    expect(message).toBe('Painted 1 cell');
+    // The command is pure: the pattern it was handed is untouched.
+    expect(before.target).toBeUndefined();
+  });
+
+  it('paints every cell in the selection', () => {
+    const { pattern: after } = paintTarget(defaultPattern(), rect(0, 0, 1, 1), MADDER);
+    expect(after.target![0]![0]).toBe(MADDER);
+    expect(after.target![0]![1]).toBe(MADDER);
+    expect(after.target![1]![0]).toBe(MADDER);
+    expect(after.target![1]![1]).toBe(MADDER);
+  });
+});
+
+describe('clearTarget', () => {
+  it('clears the selection back to null', () => {
+    const painted = paintTarget(defaultPattern(), rect(0, 0, 1, 1), MADDER).pattern;
+    const { pattern: after, message } = clearTarget(painted, cell(0, 0));
+    expect(after.target![0]![0]).toBeNull();
+    expect(after.target![1]![1]).toBe(MADDER);
+    expect(message).toBe('Cleared 1 cell');
+  });
+
+  it('drops the target entirely once nothing is painted', () => {
+    const painted = paintTarget(defaultPattern(), cell(0, 0), MADDER).pattern;
+    const { pattern: after } = clearTarget(painted, cell(0, 0));
+    expect(after.target).toBeUndefined();
+  });
+
+  it('is a no-op when nothing was ever painted', () => {
+    const { pattern: after } = clearTarget(defaultPattern(), cell(0, 0));
+    expect(after.target).toBeUndefined();
+  });
+
+  it('says nothing was painted rather than claiming to have cleared', () => {
+    const { message } = clearTarget(defaultPattern(), cell(0, 0));
+    expect(message).toBe('Nothing painted yet');
+  });
+
+  // Counts what changed, not what was selected — the same contract setTurn
+  // reports against. A selection that is mostly bare should not read as work.
+  it('counts only the cells that were actually painted', () => {
+    const painted = paintTarget(defaultPattern(), cell(0, 0), MADDER).pattern;
+    const { message } = clearTarget(painted, rect(0, 0, 1, 1));
+    expect(message).toBe('Cleared 1 cell');
+  });
+
+  // Object.assign copies keys, it cannot remove one — so a command that drops
+  // an optional field needs runCommand's help, or an erase gesture silently
+  // leaves the old painting in the draft the bindings are editing.
+  it('drops the target through runCommand too, not only when called directly', () => {
+    const draft = paintTarget(defaultPattern(), cell(0, 0), MADDER).pattern;
+    runCommand(draft, clearTarget, cell(0, 0));
+    expect(draft.target).toBeUndefined();
+  });
+});
+
+describe('solveTarget', () => {
+  it('says so when nothing is painted', () => {
+    const before = defaultPattern();
+    const { pattern: after, message } = solveTarget(before);
+    expect(message).toBe('Nothing painted yet');
+    expect(after.picks).toEqual(before.picks);
+  });
+
+  it('writes the turns that produce the painted colour', () => {
+    const before = defaultPattern();
+    // The colour card 3 would show at pick 1 if that turn were the other
+    // way. Reachable by construction — no assumption about which hole is
+    // where — and different from what the band shows now, because card 3
+    // carries four distinct colours.
+    const flipped = structuredClone(before);
+    flipped.picks[1]![3] = -flipped.picks[1]![3]! as Turn;
+    const wanted = simulate(flipped)[1]![3]!.color;
+    expect(wanted).not.toBe(simulate(before)[1]![3]!.color);
+
+    const { pattern: after, message } = solveTarget(
+      paintTarget(before, cell(1, 3), wanted).pattern,
+    );
+
+    expect(simulate(after)[1]![3]!.color).toBe(wanted);
+    expect(message).toMatch(/^Solved 1 cell/);
+  });
+
+  it('names the cells it could not reach', () => {
+    // Card 0 is all walnut (palette 0), so madder can never show on it.
+    const painted = paintTarget(defaultPattern(), cell(0, 0), MADDER).pattern;
+
+    const { message } = solveTarget(painted);
+
+    expect(message).toContain('1 unreachable');
+    expect(message).toContain('card 1 pick 1');
+    expect(message).toMatch(/^Solved 0 cells/);
+  });
+});
+
+describe('card add/remove with a target', () => {
+  it('keeps target rows the same width as pick rows', () => {
+    const painted = paintTarget(defaultPattern(), cell(0, 0), MADDER).pattern;
+
+    const grown = addCard(painted, 'S').result.pattern;
+    expect(grown.target![0]!).toHaveLength(grown.picks[0]!.length);
+
+    const shrunk = removeCard(grown, removalIndex(grown.cards)).pattern;
+    expect(shrunk.target![0]!).toHaveLength(shrunk.picks[0]!.length);
+  });
+
+  // An all-null grid and no grid mean the same thing, and only one of them
+  // belongs in a saved file — the invariant paintTarget states and clearTarget
+  // maintains. Removing the last painted column has to honour it too, or an
+  // empty painting rides along in every autosave and share link.
+  it('drops the target when removing a card empties it', () => {
+    const painted = paintTarget(defaultPattern(), cell(0, 1), MADDER).pattern;
+
+    const after = removeCard(painted, 1).pattern;
+
+    expect(after.target).toBeUndefined();
+  });
+
+  it('keeps the target when removing a card leaves something painted', () => {
+    let painted = paintTarget(defaultPattern(), cell(0, 1), MADDER).pattern;
+    painted = paintTarget(painted, cell(0, 3), MADDER).pattern;
+
+    const after = removeCard(painted, 1).pattern;
+
+    expect(after.target![0]![2]).toBe(MADDER);
   });
 });

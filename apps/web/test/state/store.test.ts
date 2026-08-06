@@ -243,6 +243,30 @@ describe('store', () => {
     expect(state.orientationPinned).toBe(false);
   });
 
+  it('starts with the first palette entry as the brush', () => {
+    expect(useStore.getState().brush).toBe(0);
+  });
+
+  it('sets the brush, including the erase brush', () => {
+    useStore.getState().setBrush(3);
+    expect(useStore.getState().brush).toBe(3);
+    useStore.getState().setBrush(null);
+    expect(useStore.getState().brush).toBeNull();
+  });
+
+  it('takes paint as a screen mode', () => {
+    useStore.getState().setMode('paint');
+    expect(useStore.getState().mode).toBe('paint');
+  });
+
+  it('restores the brush and the mode on reset', () => {
+    useStore.getState().setBrush(null);
+    useStore.getState().setMode('paint');
+    useStore.getState().reset();
+    expect(useStore.getState().brush).toBe(0);
+    expect(useStore.getState().mode).toBe('design');
+  });
+
   // The two orientation setters differ only in authority: `setOrientation` is
   // the weaver choosing, `suggestOrientation` is the viewport suggesting, and a
   // suggestion must never overrule a choice.

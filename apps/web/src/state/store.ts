@@ -5,7 +5,7 @@ import { defaultPattern } from './defaultPattern.js';
 
 export type Orientation = 'vertical' | 'horizontal';
 export type RenderMode = 'woven' | 'dots';
-export type ScreenMode = 'design' | 'weave';
+export type ScreenMode = 'design' | 'paint' | 'weave';
 
 const UNDO_LIMIT = 100;
 
@@ -65,6 +65,10 @@ interface StoreState {
   // until the weaver resizes a window they do not have.
   suggestedOrientation: Orientation;
   render: RenderMode;
+  // Which palette entry the paint brush lays down, or null for erase. UI
+  // state like `orientation`/`render`/`mode` — the painting itself lives on
+  // the pattern, this is only which colour the next stroke uses.
+  brush: number | null;
   mode: ScreenMode;
   currentPick: number;
   // The card the editor dialog is open for, or null when it is closed. UI
@@ -113,6 +117,7 @@ interface StoreState {
   // been pinned.
   suggestOrientation: (orientation: Orientation) => void;
   setRender: (render: RenderMode) => void;
+  setBrush: (brush: number | null) => void;
   setMode: (mode: ScreenMode) => void;
   setCurrentPick: (pick: number) => void;
   openEditor: (index: number) => void;
@@ -130,6 +135,7 @@ export const useStore = create<StoreState>((set, get) => ({
   orientationPinned: false,
   suggestedOrientation: 'vertical',
   render: 'woven',
+  brush: 0,
   mode: 'design',
   currentPick: 0,
   editingCard: null,
@@ -236,6 +242,7 @@ export const useStore = create<StoreState>((set, get) => ({
     set({ suggestedOrientation, orientation: nextOrientation });
   },
   setRender: (render) => set({ render }),
+  setBrush: (brush) => set({ brush }),
   setMode: (mode) => set({ mode }),
   setCurrentPick: (pick) =>
     set({ currentPick: clamp(pick, get().pattern.picks.length - 1) }),
@@ -276,6 +283,7 @@ export const useStore = create<StoreState>((set, get) => ({
       orientation: get().suggestedOrientation,
       orientationPinned: false,
       render: 'woven',
+      brush: 0,
       mode: 'design',
       currentPick: 0,
       editingCard: null,

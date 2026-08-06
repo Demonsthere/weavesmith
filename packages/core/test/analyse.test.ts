@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { gcPalette, netTwist, PatternError, threadCounts, validatePattern } from '../src/index.js';
-import { buildPattern, card, CREAM, MADDER, WALNUT } from './helpers/build.js';
+import { buildPattern, card, CREAM, MADDER, PALETTE, WALNUT } from './helpers/build.js';
 import type { Pattern, Turn } from '../src/index.js';
 
 describe('netTwist', () => {
@@ -95,6 +95,42 @@ describe('gcPalette', () => {
     expect(pattern.meta.name).toBe('test');
   });
 
+  it('keeps a colour only the target uses, and renumbers the target with it', () => {
+    const pattern = buildPattern(
+      [
+        card([WALNUT, WALNUT, WALNUT, WALNUT]),
+        card([WALNUT, WALNUT, WALNUT, WALNUT]),
+        card([WALNUT, WALNUT, WALNUT, WALNUT]),
+        card([WALNUT, WALNUT, WALNUT, WALNUT], 'Z'),
+      ],
+      1,
+    );
+    // CREAM (index 4) is used by nothing but the target.
+    pattern.target = [[CREAM, null, null, null]];
+
+    const collected = gcPalette(pattern);
+
+    // WALNUT and CREAM survive, in ascending order of their old indices.
+    expect(collected.palette).toEqual([PALETTE[WALNUT], PALETTE[CREAM]]);
+    expect(collected.cards[0]!.colors).toEqual([0, 0, 0, 0]);
+    expect(collected.target).toEqual([[1, null, null, null]]);
+  });
+
+  it('refuses a target index that is not in the palette', () => {
+    const pattern = buildPattern(
+      [
+        card([WALNUT, WALNUT, WALNUT, WALNUT]),
+        card([WALNUT, WALNUT, WALNUT, WALNUT]),
+        card([WALNUT, WALNUT, WALNUT, WALNUT]),
+        card([WALNUT, WALNUT, WALNUT, WALNUT], 'Z'),
+      ],
+      1,
+    );
+    pattern.target = [[99, null, null, null]];
+
+    expect(() => gcPalette(pattern)).toThrow(PatternError);
+  });
+
   /** Grabs the thrown PatternError's `.problems`, or fails if nothing threw. */
   function problemsThrownBy(run: () => unknown): string[] {
     try {
@@ -140,6 +176,26 @@ describe('gcPalette', () => {
     delete (pattern.palette as unknown[])[1];
     const problems = problemsThrownBy(() => gcPalette(pattern));
     expect(problems).toContain('palette entry 2 must be a string, found undefined');
+  });
+
+  // A row that is not an array must fail here, as a PatternError, and not
+  // later as a TypeError out of gc's own `for (const color of row)`. Callers
+  // (the share link, the file menu) are written against the documented
+  // PatternError contract; a TypeError is a different failure wearing the
+  // same trigger.
+  it('refuses a target row that is not an array', () => {
+    const pattern = buildPattern([card([0, 1, 2, 3])], 1);
+    (pattern as { target?: unknown }).target = [null];
+    const problems = problemsThrownBy(() => gcPalette(pattern));
+    expect(problems).toContain('target pick 1 must be an array of colours');
+  });
+
+  it('refuses a sparse target', () => {
+    const pattern = buildPattern([card([0, 1, 2, 3])], 1);
+    (pattern as { target?: unknown }).target = Array.from({ length: 2 }, () => [null]);
+    delete ((pattern as { target: unknown[] }).target)[0];
+    const problems = problemsThrownBy(() => gcPalette(pattern));
+    expect(problems).toContain('target pick 1 must be an array of colours');
   });
 
   describe('always produces a pattern that still validates clean', () => {
