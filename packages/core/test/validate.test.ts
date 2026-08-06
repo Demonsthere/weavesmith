@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { validatePattern } from '../src/index.js';
-import { buildPattern, card } from './helpers/build.js';
+import { buildPattern, card, MADDER, WALNUT, WELD, WOAD } from './helpers/build.js';
 
 const valid = () => buildPattern([card([0, 1, 2, 3]), card([0, 1, 2, 3]),
                                   card([0, 1, 2, 3]), card([0, 1, 2, 3])], 4);
@@ -301,5 +301,54 @@ describe('validatePattern', () => {
     it('still returns [] for a genuinely valid pattern', () => {
       expect(validatePattern(valid())).toEqual([]);
     });
+  });
+
+  const FOUR = () =>
+    buildPattern(
+      [
+        card([WALNUT, MADDER, WOAD, WELD]),
+        card([WALNUT, MADDER, WOAD, WELD]),
+        card([WALNUT, MADDER, WOAD, WELD]),
+        card([WALNUT, MADDER, WOAD, WELD], 'Z'),
+      ],
+      2,
+    );
+  /** One target row: `first` on card 1, don't-care on the rest. */
+  const ROW = (first: number | null = null): (number | null)[] => [first, null, null, null];
+
+  it('accepts a pattern with no target', () => {
+    expect(validatePattern(FOUR())).toEqual([]);
+  });
+
+  it('accepts a target of the right shape', () => {
+    expect(validatePattern({ ...FOUR(), target: [ROW(WALNUT), ROW()] })).toEqual([]);
+  });
+
+  it('rejects a target whose pick count differs from picks', () => {
+    expect(validatePattern({ ...FOUR(), target: [ROW(WALNUT)] })).toEqual([
+      'target has 1 picks but the band has 2',
+    ]);
+  });
+
+  it('rejects a target row whose length differs from the card count', () => {
+    expect(validatePattern({ ...FOUR(), target: [[WALNUT, null], ROW()] })).toEqual([
+      'target pick 1 has 2 cells but the band has 4 cards',
+    ]);
+  });
+
+  it('rejects a target colour that is not in the palette', () => {
+    expect(validatePattern({ ...FOUR(), target: [ROW(99), ROW()] })).toEqual([
+      'target pick 1, card 1: colour 99 is not in the palette',
+    ]);
+  });
+
+  it('rejects a sparse target row rather than skipping its holes', () => {
+    const sparse: (number | null)[] = [];
+    sparse.length = 4; // four cells, not one of them actually present
+
+    const problems = validatePattern({ ...FOUR(), target: [sparse, ROW()] });
+
+    expect(problems).toHaveLength(4);
+    expect(problems[0]).toBe('target pick 1, card 1: colour undefined is not in the palette');
   });
 });

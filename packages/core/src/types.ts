@@ -27,6 +27,9 @@ export interface PatternMeta {
   notes?: string;
 }
 
+/** Desired colour per cell, [pick][card]. null means "any colour will do". */
+export type TargetGrid = (number | null)[][];
+
 export interface Pattern {
   version: 1;
   meta: PatternMeta;
@@ -35,6 +38,14 @@ export interface Pattern {
   cards: Card[];
   /** picks[pick][card] — must be rectangular. */
   picks: Turn[][];
+  /**
+   * What the weaver asked for, when they have painted anything — a palette
+   * index per cell, or null for "any colour will do". Same dimensions as
+   * `picks`. Absent, not empty, when nothing is painted: an all-null grid
+   * and no grid mean the same thing, and only one of them should ever be
+   * written to a file.
+   */
+  target?: TargetGrid;
 }
 
 /** One woven cell: the thread showing, and the way it leans. */

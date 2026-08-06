@@ -1,9 +1,6 @@
 import { advance, holeAt } from './conventions.js';
 import { HOLE_COUNT } from './types.js';
-import type { Card, Cell, Rotation, Turn } from './types.js';
-
-/** Desired colour per cell, [pick][card]. null means "any colour will do". */
-export type TargetGrid = (number | null)[][];
+import type { Card, Cell, Rotation, TargetGrid, Turn } from './types.js';
 
 /**
  * Turn a simulated band into a solver target.

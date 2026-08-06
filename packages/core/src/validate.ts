@@ -182,5 +182,44 @@ function inspect(value: unknown): string[] {
     });
   });
 
+  const target = pattern.target;
+  if (target !== undefined) {
+    if (!Array.isArray(target)) {
+      problems.push('target must be an array');
+    } else {
+      if (target.length !== picks.length) {
+        problems.push(`target has ${target.length} picks but the band has ${picks.length}`);
+      }
+      // Array.from: see the palette loop above — a sparse target must not
+      // skip a hole's checks entirely.
+      Array.from(target).forEach((raw, pick) => {
+        if (!Array.isArray(raw)) {
+          problems.push(`target pick ${pick + 1} must be an array of colours`);
+          return;
+        }
+        if (raw.length !== cards.length) {
+          problems.push(
+            `target pick ${pick + 1} has ${raw.length} cells but the band has ` +
+            `${cards.length} cards`,
+          );
+        }
+        Array.from(raw).forEach((color, cardIndex) => {
+          if (color === null) return;
+          if (
+            typeof color !== 'number' ||
+            !Number.isInteger(color) ||
+            color < 0 ||
+            (palette !== null && color >= palette.length)
+          ) {
+            problems.push(
+              `target pick ${pick + 1}, card ${cardIndex + 1}: ` +
+              `colour ${describe(color)} is not in the palette`,
+            );
+          }
+        });
+      });
+    }
+  }
+
   return problems;
 }
