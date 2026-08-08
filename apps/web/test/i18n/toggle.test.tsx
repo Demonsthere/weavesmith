@@ -196,9 +196,10 @@ describe('language toggle', () => {
     await userEvent.click(screen.getByRole('link', { name: 'Schemat' }));
     expect(screen.getByRole('heading', { name: 'Podsumowanie' })).toBeInTheDocument();
     expect(screen.getByRole('table', { name: 'Tabela obrotów' })).toBeInTheDocument();
-    // The default band is 8 cards, 32 warp ends, 24 picks. Each lands in a
-    // different Polish plural category, which is exactly why this assertion
-    // is worth making: 8 -> many, 32 -> few, 24 -> few.
+    // The default band is 8 cards, 32 warp ends, 24 picks. 8 is Polish's
+    // `many` category; 32 and 24 both land in `few` but take different
+    // nouns ("nitki osnowy" vs "przeploty"), so this still exercises two
+    // distinct categories and three distinct inflected nouns.
     const summary = screen.getByTestId('chart-summary');
     expect(summary).toHaveTextContent('8 tabliczek');
     expect(summary).toHaveTextContent('32 nitki osnowy');

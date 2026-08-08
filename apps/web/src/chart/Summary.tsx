@@ -38,10 +38,9 @@ export function Summary() {
       <h2 id="summary-heading">{t('summary.heading')}</h2>
 
       <p className="summary-line">
-        {t('summary.counts', {
-          cards: t('summary.cards', { count: counts.cards }),
-          ends: t('summary.warpEnds', { count: counts.warpEnds }),
-        })}
+        <strong>{t('summary.cards', { count: counts.cards })}</strong>,{' '}
+        <strong>{t('summary.warpEnds', { count: counts.warpEnds })}</strong>{' '}
+        {t('summary.perCard')}
       </p>
 
       <h3>{t('summary.warpThreads')}</h3>

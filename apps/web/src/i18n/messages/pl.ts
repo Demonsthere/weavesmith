@@ -151,8 +151,7 @@ export const pl: Messages = {
   'chart.forward': 'Do przodu',
   'chart.backward': 'Do tyłu',
   'summary.heading': 'Podsumowanie',
-  'summary.counts': (a: { cards: string; ends: string }) =>
-    `${a.cards}, ${a.ends} (cztery na tabliczkę).`,
+  'summary.perCard': '(cztery na tabliczkę).',
   'summary.warpThreads': 'Nitki osnowy',
   'summary.twistHeading': 'Skumulowany skręt',
   'summary.twistUniform': (a: { turns: string; picks: string }) =>

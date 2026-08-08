@@ -5,6 +5,19 @@ import { Summary } from '../../src/chart/Summary.js';
 import { useStore } from '../../src/state/store.js';
 
 describe('Summary', () => {
+  // Regression: the translated `summary.counts` key used to flatten both
+  // counted phrases into one plain string, silently dropping the <strong>
+  // that distinguishes "measure these two numbers" from the surrounding
+  // prose on the printed sheet's first, most load-bearing line. Nothing
+  // asserted on the markup before, only the text, which is exactly how that
+  // went unnoticed.
+  it('bolds the two counted numbers on the summary line', () => {
+    useStore.getState().reset();
+    render(<Summary />);
+    expect(screen.getByText('8 cards', { selector: 'strong' })).toBeInTheDocument();
+    expect(screen.getByText('32 warp ends', { selector: 'strong' })).toBeInTheDocument();
+  });
+
   it('counts unreachable and unmet cells when a target exists', () => {
     useStore.getState().reset();
     // Madder on card 0, which is threaded all-walnut: unreachable by

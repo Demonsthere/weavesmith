@@ -116,8 +116,7 @@ export const en = {
   'chart.forward': 'Forward',
   'chart.backward': 'Backward',
   'summary.heading': 'Summary',
-  'summary.counts': (a: { cards: string; ends: string }) =>
-    `${a.cards}, ${a.ends} (four per card).`,
+  'summary.perCard': '(four per card).',
   'summary.warpThreads': 'Warp threads',
   'summary.twistHeading': 'Accumulated twist',
   'summary.twistUniform': (a: { turns: string; picks: string }) =>
