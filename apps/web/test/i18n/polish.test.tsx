@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { App } from '../../src/App.js';
@@ -27,19 +27,24 @@ describe('the app in Polish', () => {
     expect(screen.getByRole('link', { name: 'Źródło na GitHubie' })).toBeInTheDocument();
   });
 
-  // Two different destructive actions, both reachable at once, and a screen
-  // reader or voice-control user has nothing but the accessible name to tell
-  // them apart. Both were 'Usuń tabliczkę' in Polish while English
-  // distinguished "Remove a card" from "Delete card". `getByRole` with an
-  // exact name is the assertion: it throws on an ambiguous match.
-  it('names the two destructive actions distinguishably', async () => {
+  // The stepper's − and the editor's delete share one Polish label, which is a
+  // decision rather than a collision: English distinguishes "Remove a card"
+  // from "Delete card" because it has no case to lean on, and Polish says the
+  // plain thing once. What makes that safe is the editor being a modal
+  // `<dialog>` — while its button exists, the stepper's is inert, so the two
+  // names are never live in the same breath. This test holds both halves of
+  // that: each button carries the plain label, and the only reason a
+  // document-wide query would be ambiguous is the dialog, so each is asserted
+  // in its own scope.
+  it('gives both destructive actions the same plain Polish label', async () => {
     const user = userEvent.setup();
     render(<App />);
+    // Before the dialog opens, the stepper's is the only one in the document.
+    expect(screen.getByRole('button', { name: 'Usuń tabliczkę' })).toBeInTheDocument();
+
     await user.click(screen.getByRole('button', { name: /^Tabliczka 1, przewleczona/ }));
-    // The stepper's −, which removes a card the code chooses.
-    expect(screen.getByRole('button', { name: 'Usuń jedną tabliczkę' })).toBeInTheDocument();
-    // The editor's, which deletes the card being edited.
-    expect(screen.getByRole('button', { name: 'Usuń tę tabliczkę' })).toBeInTheDocument();
+    const dialog = screen.getByRole('dialog');
+    expect(within(dialog).getByRole('button', { name: 'Usuń tabliczkę' })).toBeInTheDocument();
   });
 
   // A documented gap, pinned rather than described: commands.ts is out of

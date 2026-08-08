@@ -97,11 +97,13 @@ export const pl: Messages = {
     }),
   'board.label': 'Plansza tkania',
   'stepper.group': 'Liczba tabliczek',
-  // Deliberately different from `editor.deleteCard` ('Usuń tę tabliczkę'):
-  // both were 'Usuń tabliczkę', which left a screen-reader or voice-control
-  // user with one name for two different destructive actions. This one removes
-  // *a* card, chosen by `removalIndex`; the editor's deletes *this* card.
-  'stepper.remove': 'Usuń jedną tabliczkę',
+  // Same words as `editor.deleteCard`, on purpose. English needs "Remove a
+  // card" vs "Delete card" because it has no case to lean on; Polish says the
+  // plain thing once and lets context carry the rest — and the context is
+  // never ambiguous, because the editor is a modal `<dialog>`, so while its
+  // delete button exists this one is inert. Padding the label to
+  // 'Usuń jedną tabliczkę' bought a distinction no user was missing.
+  'stepper.remove': 'Usuń tabliczkę',
   // The noun beside the stepper's number. An invariant 'tabliczek' was wrong
   // for every `few` count the stepper can reach — 4, 22, 23, 24, 32… — which
   // is about nine of the 37 counts between MIN_CARDS and MAX_CARDS.
@@ -133,8 +135,10 @@ export const pl: Messages = {
     `Ustaw wybrany otwór na ${a.color}`,
   'editor.customColour': 'Własny kolor',
   'editor.customHint': 'Własny — dotyczy wybranego otworu',
-  // "this card" — the one the editor is open for. See `stepper.remove`.
-  'editor.deleteCard': 'Usuń tę tabliczkę',
+  // Deliberately the same as `stepper.remove` — see the note there. Prefer the
+  // plain form in Polish; only reach for a longer label when two of them are
+  // reachable in the same breath, which these two are not.
+  'editor.deleteCard': 'Usuń tabliczkę',
   'editor.done': 'Gotowe',
   'brush.group': 'Kolor pędzla',
   'brush.swatch': (a: { index: number; color: string }) => `Pędzel ${a.index}, ${a.color}`,

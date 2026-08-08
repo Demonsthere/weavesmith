@@ -47,7 +47,7 @@ describe('CardStepper', () => {
     render(<CardStepper onAdded={() => {}} />);
     expect(screen.getByText('tabliczek')).toBeInTheDocument();
 
-    const remove = screen.getByRole('button', { name: 'Usuń jedną tabliczkę' });
+    const remove = screen.getByRole('button', { name: 'Usuń tabliczkę' });
     for (let i = 0; i < 4; i++) await user.click(remove);
 
     expect(useStore.getState().pattern.cards).toHaveLength(4);
