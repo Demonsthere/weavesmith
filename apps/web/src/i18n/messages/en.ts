@@ -86,6 +86,27 @@ export const en = {
     `Card ${a.index} turning ${a.forward ? 'forward' : 'backward'}`,
   'weave.back': 'Back',
   'weave.nextPick': 'Next pick',
+  'file.download': 'Download',
+  'file.open': 'Open a pattern file',
+  'file.exportSVG': 'Export SVG',
+  'file.exportPNG': 'Export PNG',
+  'file.copyLink': 'Copy link',
+  'file.resetToDefault': 'Reset to default',
+  'file.confirmResetGroup': 'Confirm reset',
+  'file.discardAndReset': 'Discard and reset',
+  'file.cancel': 'Cancel',
+  'file.unreadable': 'this file could not be read',
+  'file.unknownReason': 'unknown reason',
+  'file.pngFailed':
+    'The PNG could not be made. The SVG export works everywhere and prints better:',
+  'file.notAPattern': (a: { name: string }) => `${a.name} is not a WeaveSmith pattern:`,
+  'file.backToDefault': 'Back to the default band.',
+  'file.cannotShare': 'This band cannot be shared yet:',
+  'file.tooLargeToShare':
+    'This band is too large to put in a link. Use Download and send the file instead.',
+  'file.noClipboard': 'The clipboard is not available here. Copy this link by hand:',
+  'file.linkCopied': 'Share link copied.',
+  'name.label': 'Pattern name',
 };
 
 export type Messages = typeof en;

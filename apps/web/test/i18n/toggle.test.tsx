@@ -132,4 +132,19 @@ describe('language toggle', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Tkanie' }));
     expect(screen.getByRole('button', { name: 'Następny przeplot' })).toBeInTheDocument();
   });
+
+  it('translates the file menu', async () => {
+    render(<App />);
+    await userEvent.click(screen.getByRole('button', { name: 'Polski' }));
+    expect(screen.getByRole('button', { name: 'Pobierz' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Nazwa wzoru')).toBeInTheDocument();
+  });
+
+  it('translates a report sentence but not core problems', async () => {
+    render(<App />);
+    await userEvent.click(screen.getByRole('button', { name: 'Polski' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Przywróć domyślną' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Odrzuć i zacznij od nowa' }));
+    expect(screen.getByRole('alert')).toHaveTextContent('Powrót do domyślnej krajki.');
+  });
 });

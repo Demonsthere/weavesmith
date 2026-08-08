@@ -1,6 +1,7 @@
 import { useEffect, useId, useState } from 'react';
 import { useStore } from '../state/store.js';
 import { renamePosition } from '../weave/position.js';
+import { useT } from '../i18n/useT.js';
 
 /**
  * The band's name, editable in place. It is document state — it rides along
@@ -19,6 +20,7 @@ export function PatternName() {
   const apply = useStore((state) => state.apply);
   const [draft, setDraft] = useState(name);
   const inputId = useId();
+  const t = useT();
 
   useEffect(() => setDraft(name), [name]);
 
@@ -41,7 +43,7 @@ export function PatternName() {
 
   return (
     <span className="pattern-name">
-      <label htmlFor={inputId}>Pattern name</label>
+      <label htmlFor={inputId}>{t('name.label')}</label>
       <input
         id={inputId}
         type="text"
