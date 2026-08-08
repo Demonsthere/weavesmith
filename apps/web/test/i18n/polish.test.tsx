@@ -27,6 +27,21 @@ describe('the app in Polish', () => {
     expect(screen.getByRole('link', { name: 'Źródło na GitHubie' })).toBeInTheDocument();
   });
 
+  // Two different destructive actions, both reachable at once, and a screen
+  // reader or voice-control user has nothing but the accessible name to tell
+  // them apart. Both were 'Usuń tabliczkę' in Polish while English
+  // distinguished "Remove a card" from "Delete card". `getByRole` with an
+  // exact name is the assertion: it throws on an ambiguous match.
+  it('names the two destructive actions distinguishably', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole('button', { name: /^Tabliczka 1, przewleczona/ }));
+    // The stepper's −, which removes a card the code chooses.
+    expect(screen.getByRole('button', { name: 'Usuń jedną tabliczkę' })).toBeInTheDocument();
+    // The editor's, which deletes the card being edited.
+    expect(screen.getByRole('button', { name: 'Usuń tę tabliczkę' })).toBeInTheDocument();
+  });
+
   // A documented gap, pinned rather than described: commands.ts is out of
   // scope, so the live region still announces English under a Polish board.
   // Closing that later must fail this test loudly — that is the whole point

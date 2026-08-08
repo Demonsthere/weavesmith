@@ -81,7 +81,11 @@ export const pl: Messages = {
     }),
   'board.label': 'Plansza tkania',
   'stepper.group': 'Liczba tabliczek',
-  'stepper.remove': 'Usuń tabliczkę',
+  // Deliberately different from `editor.deleteCard` ('Usuń tę tabliczkę'):
+  // both were 'Usuń tabliczkę', which left a screen-reader or voice-control
+  // user with one name for two different destructive actions. This one removes
+  // *a* card, chosen by `removalIndex`; the editor's deletes *this* card.
+  'stepper.remove': 'Usuń jedną tabliczkę',
   'stepper.cards': 'tabliczek',
   'stepper.addS': 'Dodaj tabliczkę przewleczoną S',
   'stepper.addZ': 'Dodaj tabliczkę przewleczoną Z',
@@ -109,7 +113,8 @@ export const pl: Messages = {
     `Ustaw wybrany otwór na ${a.color}`,
   'editor.customColour': 'Własny kolor',
   'editor.customHint': 'Własny — dotyczy wybranego otworu',
-  'editor.deleteCard': 'Usuń tabliczkę',
+  // "this card" — the one the editor is open for. See `stepper.remove`.
+  'editor.deleteCard': 'Usuń tę tabliczkę',
   'editor.done': 'Gotowe',
   'brush.group': 'Kolor pędzla',
   'brush.swatch': (a: { index: number; color: string }) => `Pędzel ${a.index}, ${a.color}`,
