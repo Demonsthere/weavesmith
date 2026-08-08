@@ -1,11 +1,9 @@
 import { netTwist, reportTarget, threadCounts } from '@weavesmith/core';
 import { useStore } from '../state/store.js';
 import { useT } from '../i18n/useT.js';
-import { WOOL_NAME_KEYS } from '../editor/palette.js';
+import { useColorName } from '../i18n/useColorName.js';
 
 const signed = (turns: number): string => (turns > 0 ? `+${turns}` : `${turns}`);
-
-const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
 
 /**
  * What to measure out before warping the loom, plus how far the warp will
@@ -19,10 +17,7 @@ const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
 export function Summary() {
   const t = useT();
   const pattern = useStore((state) => state.pattern);
-  const colorName = (hex: string): string => {
-    const key = WOOL_NAME_KEYS[hex];
-    return key ? t(key) : hex;
-  };
+  const colorName = useColorName();
   const counts = threadCounts(pattern);
   const twist = netTwist(pattern);
   const report = reportTarget(pattern);
@@ -40,14 +35,16 @@ export function Summary() {
 
   return (
     <section className="summary" data-testid="chart-summary" aria-labelledby="summary-heading">
-      <h2 id="summary-heading">Summary</h2>
+      <h2 id="summary-heading">{t('summary.heading')}</h2>
 
       <p className="summary-line">
-        <strong>{counts.cards} cards</strong>, <strong>{counts.warpEnds} warp ends</strong>{' '}
-        (four per card).
+        {t('summary.counts', {
+          cards: t('summary.cards', { count: counts.cards }),
+          ends: t('summary.warpEnds', { count: counts.warpEnds }),
+        })}
       </p>
 
-      <h3>Warp threads</h3>
+      <h3>{t('summary.warpThreads')}</h3>
       <ul className="thread-counts">
         {Object.entries(counts.perColor)
           .map(([index, ends]) => [Number(index), ends] as const)
@@ -59,26 +56,31 @@ export function Summary() {
                 style={{ background: pattern.palette[index] }}
                 aria-hidden="true"
               />
-              {colorName(pattern.palette[index] ?? String(index))}: {ends} ends
+              {colorName(pattern.palette[index] ?? String(index))}:{' '}
+              {t('summary.ends', { count: ends })}
             </li>
           ))}
       </ul>
 
-      <h3>Accumulated twist</h3>
+      <h3>{t('summary.twistHeading')}</h3>
       {uniform ? (
         <p className="summary-line">
-          Every card ends at {signed(distinctTwist[0]!)} turns after{' '}
-          {pattern.picks.length} picks.
+          {t('summary.twistUniform', {
+            turns: signed(distinctTwist[0]!),
+            picks: t('summary.picks', { count: pattern.picks.length }),
+          })}
         </p>
       ) : (
         <>
           <p className="summary-line">
-            Cards end at different twists after {pattern.picks.length} picks:
+            {t('summary.twistVaries', {
+              picks: t('summary.picks', { count: pattern.picks.length }),
+            })}
           </p>
           <ul className="twist-list">
             {twist.map((turns, cardIndex) => (
               <li key={cardIndex}>
-                Card {cardIndex + 1}: {signed(turns)}
+                {t('summary.twistCard', { index: cardIndex + 1, turns: signed(turns) })}
               </li>
             ))}
           </ul>
@@ -87,10 +89,12 @@ export function Summary() {
 
       {painted && (
         <>
-          <h3>Against the target</h3>
+          <h3>{t('summary.againstTarget')}</h3>
           <p className="summary-line">
-            {plural(report.unreachable.length, 'cell')} unreachable,{' '}
-            {plural(report.unmet.length, 'cell')} unmet.
+            {t('summary.targetLine', {
+              unreachable: t('summary.cellsUnreachable', { count: report.unreachable.length }),
+              unmet: t('summary.cellsUnmet', { count: report.unmet.length }),
+            })}
           </p>
         </>
       )}

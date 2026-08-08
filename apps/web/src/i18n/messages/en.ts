@@ -107,6 +107,27 @@ export const en = {
   'file.noClipboard': 'The clipboard is not available here. Copy this link by hand:',
   'file.linkCopied': 'Share link copied.',
   'name.label': 'Pattern name',
+  'chart.print': 'Print or save as PDF',
+  'chart.qrAlt': (a: { url: string }) => `QR code linking to ${a.url}`,
+  'chart.threading': 'Threading',
+  'chart.hole': 'Hole',
+  'chart.turningChart': 'Turning chart',
+  'chart.pick': 'Pick',
+  'chart.forward': 'Forward',
+  'chart.backward': 'Backward',
+  'summary.heading': 'Summary',
+  'summary.counts': (a: { cards: string; ends: string }) =>
+    `${a.cards}, ${a.ends} (four per card).`,
+  'summary.warpThreads': 'Warp threads',
+  'summary.twistHeading': 'Accumulated twist',
+  'summary.twistUniform': (a: { turns: string; picks: string }) =>
+    `Every card ends at ${a.turns} turns after ${a.picks}.`,
+  'summary.twistVaries': (a: { picks: string }) =>
+    `Cards end at different twists after ${a.picks}:`,
+  'summary.twistCard': (a: { index: number; turns: string }) => `Card ${a.index}: ${a.turns}`,
+  'summary.againstTarget': 'Against the target',
+  'summary.targetLine': (a: { unreachable: string; unmet: string }) =>
+    `${a.unreachable}, ${a.unmet}.`,
 };
 
 export type Messages = typeof en;

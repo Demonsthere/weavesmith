@@ -142,4 +142,26 @@ export const pl: Messages = {
   'file.noClipboard': 'Schowek jest tu niedostępny. Skopiuj ten link ręcznie:',
   'file.linkCopied': 'Link do udostępnienia skopiowany.',
   'name.label': 'Nazwa wzoru',
+  'chart.print': 'Wydrukuj lub zapisz jako PDF',
+  'chart.qrAlt': (a: { url: string }) => `Kod QR prowadzący do ${a.url}`,
+  'chart.threading': 'Przewleczenie',
+  'chart.hole': 'Otwór',
+  'chart.turningChart': 'Tabela obrotów',
+  'chart.pick': 'Przeplot',
+  'chart.forward': 'Do przodu',
+  'chart.backward': 'Do tyłu',
+  'summary.heading': 'Podsumowanie',
+  'summary.counts': (a: { cards: string; ends: string }) =>
+    `${a.cards}, ${a.ends} (cztery na tabliczkę).`,
+  'summary.warpThreads': 'Nitki osnowy',
+  'summary.twistHeading': 'Skumulowany skręt',
+  'summary.twistUniform': (a: { turns: string; picks: string }) =>
+    `Każda tabliczka kończy na ${a.turns} po ${a.picks}.`,
+  'summary.twistVaries': (a: { picks: string }) =>
+    `Tabliczki kończą z różnym skrętem po ${a.picks}:`,
+  'summary.twistCard': (a: { index: number; turns: string }) =>
+    `Tabliczka ${a.index}: ${a.turns}`,
+  'summary.againstTarget': 'Wobec wzorca',
+  'summary.targetLine': (a: { unreachable: string; unmet: string }) =>
+    `${a.unreachable}, ${a.unmet}.`,
 };

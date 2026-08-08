@@ -6,18 +6,10 @@ import { removeCard, runCommand, setHoleColor, setThreading } from '../state/com
 import { useStore } from '../state/store.js';
 import type { GestureToken } from '../state/store.js';
 import { useT } from '../i18n/useT.js';
-import { WOOL_NAME_KEYS, WOOL_PRESETS } from './palette.js';
+import { useDescribeColor } from '../i18n/useColorName.js';
+import { WOOL_PRESETS } from './palette.js';
 import '../styles/controls.css';
 import './cardEditor.css';
-
-/** A wool name plus its hex where one is known (the dyed presets and
- *  anything else that happens to match one), otherwise just the hex —
- *  used for swatch accessible names so a screen-reader user hears "woad
- *  #2F5F8F" rather than a bare, indistinguishable colour code. */
-function describeColor(t: ReturnType<typeof useT>, hex: string): string {
-  const key = WOOL_NAME_KEYS[hex];
-  return key ? `${t(key)} ${hex}` : hex;
-}
 
 export interface CardEditorProps {
   /** The card this dialog is open for, or null to render nothing. */
@@ -40,6 +32,7 @@ export interface CardEditorProps {
  */
 export function CardEditor({ cardIndex, onClose }: CardEditorProps) {
   const t = useT();
+  const describeColor = useDescribeColor();
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [selectedHole, setSelectedHole] = useState<Hole>(0);
   const pattern = useStore((state) => state.pattern);
@@ -227,7 +220,7 @@ export function CardEditor({ cardIndex, onClose }: CardEditorProps) {
             key={hex}
             type="button"
             style={{ background: hex }}
-            aria-label={t('editor.setHoleTo', { color: describeColor(t, hex) })}
+            aria-label={t('editor.setHoleTo', { color: describeColor(hex) })}
             onClick={() => applyColor(hex)}
           />
         ))}
@@ -242,7 +235,7 @@ export function CardEditor({ cardIndex, onClose }: CardEditorProps) {
                 key={hex}
                 type="button"
                 style={{ background: hex }}
-                aria-label={t('editor.setHoleTo', { color: describeColor(t, hex) })}
+                aria-label={t('editor.setHoleTo', { color: describeColor(hex) })}
                 onClick={() => applyColor(hex)}
               />
             ))}

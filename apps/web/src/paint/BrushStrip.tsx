@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { runCommand, clearTarget, paintTarget, solveTarget } from '../state/commands.js';
 import { useStore } from '../state/store.js';
 import { useT } from '../i18n/useT.js';
-import { WOOL_NAME_KEYS } from '../editor/palette.js';
+import { useColorName } from '../i18n/useColorName.js';
 import '../styles/controls.css';
 import './brushStrip.css';
 
@@ -24,11 +24,7 @@ export function BrushStrip() {
   const brush = useStore((state) => state.brush);
   const setBrush = useStore((state) => state.setBrush);
   const [report, setReport] = useState('');
-
-  const colorName = (hex: string): string => {
-    const key = WOOL_NAME_KEYS[hex];
-    return key ? t(key) : hex;
-  };
+  const colorName = useColorName();
 
   const pick = (index: number | null) => {
     setBrush(index);

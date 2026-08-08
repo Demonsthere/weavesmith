@@ -189,4 +189,19 @@ describe('language toggle', () => {
     expect(within(alert).getByText('nie udało się odczytać tego pliku')).toBeInTheDocument();
     expect(within(alert).queryByText('this file could not be read')).not.toBeInTheDocument();
   });
+
+  it('translates the chart sheet, with Polish plural forms', async () => {
+    render(<App />);
+    await userEvent.click(screen.getByRole('button', { name: 'Polski' }));
+    await userEvent.click(screen.getByRole('link', { name: 'Schemat' }));
+    expect(screen.getByRole('heading', { name: 'Podsumowanie' })).toBeInTheDocument();
+    expect(screen.getByRole('table', { name: 'Tabela obrotów' })).toBeInTheDocument();
+    // The default band is 8 cards, 32 warp ends, 24 picks. Each lands in a
+    // different Polish plural category, which is exactly why this assertion
+    // is worth making: 8 -> many, 32 -> few, 24 -> few.
+    const summary = screen.getByTestId('chart-summary');
+    expect(summary).toHaveTextContent('8 tabliczek');
+    expect(summary).toHaveTextContent('32 nitki osnowy');
+    expect(summary).toHaveTextContent('24 przeploty');
+  });
 });
