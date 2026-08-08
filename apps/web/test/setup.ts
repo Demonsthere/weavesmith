@@ -1,6 +1,8 @@
 import { cleanup } from '@testing-library/react';
 import { afterEach, beforeEach } from 'vitest';
 import '@testing-library/jest-dom/vitest';
+import { detectLocale } from '../src/i18n/detect.js';
+import { clearLocale } from '../src/io/preferences.js';
 import { useStore } from '../src/state/store.js';
 
 // @testing-library/react's auto-cleanup relies on detecting a global
@@ -12,13 +14,36 @@ afterEach(() => {
 });
 
 // Every existing web test queries English labels — around 256 assertions
-// across 43 files. Pinning the locale per test keeps all of them meaningful
-// and independent of a previous test's toggle, and keeps this feature from
-// becoming a 43-file rewrite that would bury its own diff. Tests that want
-// Polish set it themselves.
+// across 43 files. Keeping them all meaningful, without turning this feature
+// into a 43-file rewrite that would bury its own diff, rests on three facts,
+// and it is worth being exact about which:
+//
+//   1. The store starts each test on English. That is this `setLocale` call,
+//      and it is what tests that render a component directly rely on.
+//   2. Nothing is stored under `weavesmith:locale`. `App`'s boot effect
+//      (`useBoot`) calls `setLocale(stored ?? detectLocale(...))` on *every*
+//      mount, so for any test that renders <App /> a leftover stored choice
+//      would silently override (1) — hence `clearLocale`.
+//   3. `navigator.languages` detects as English. With (2) true, this — not the
+//      pin — is what an <App />-mounting test actually ends up in, and it
+//      holds only because jsdom hardcodes `en-US`.
+//
+// (3) is an assumption about someone else's library, so it is asserted rather
+// than trusted: if jsdom ever reports something else, this throws once, here,
+// instead of failing forty tests with mystifying Polish labels. Tests that
+// want Polish set the store (and, for <App />, the stored key) themselves.
 beforeEach(() => {
+  clearLocale();
   useStore.getState().setLocale('en');
 });
+
+if (detectLocale(navigator.languages) !== 'en') {
+  throw new Error(
+    `test/setup.ts: this suite's English assertions assume the environment detects English, ` +
+      `but navigator.languages is [${navigator.languages.join(', ')}]. Pin the locale in the ` +
+      `affected tests, or stub navigator.languages here.`,
+  );
+}
 
 // jsdom (as of 25.x) does not implement the Pointer Events capture trio at
 // all — not even as no-op stubs — so any code that calls

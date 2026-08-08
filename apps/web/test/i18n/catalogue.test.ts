@@ -2,6 +2,41 @@ import { describe, expect, it } from 'vitest';
 import { CATALOGUES, LOCALES } from '../../src/i18n/catalogues.js';
 import { en } from '../../src/i18n/messages/en.js';
 
+/**
+ * One argument object carrying every field any interpolating key asks for, so
+ * a single probe can invoke all of them. The values only have to make a
+ * plausible sentence — what the checks below look at is the shape of the
+ * output, not its content.
+ */
+const PROBE = {
+  count: 2,
+  index: 1,
+  threading: 'S',
+  card: 1,
+  pick: 1,
+  forward: true,
+  hex: '#B4402C',
+  hole: 'A',
+  color: 'marzanna',
+  display: '+2',
+  turns: '+2 turns',
+  after: 'after 2 picks',
+  name: 'band.json',
+  url: 'https://example.test/#p=abc',
+  unreachable: '0 cells unreachable',
+  unmet: '0 cells unmet',
+};
+
+/**
+ * A catalogue value as words. Roughly half the catalogue is function-valued,
+ * and the value-shape checks below used to skip every one of those — which is
+ * how a key that renders a phrase with a word missing (`summary.twistUniform`
+ * in Polish) got past them. The `as never` lands on the argument, never on the
+ * value, exactly as `useT`'s `resolve` does it.
+ */
+const rendered = (value: string | ((a: never) => string)): string =>
+  typeof value === 'function' ? value(PROBE as never) : value;
+
 describe('message catalogues', () => {
   // Belt and braces behind `const pl: Messages`, which a future `as any`
   // could defeat. This test cannot be defeated that way.
@@ -12,20 +47,32 @@ describe('message catalogues', () => {
     }
   });
 
-  it('no value is empty', () => {
+  it('no value renders empty', () => {
     for (const locale of LOCALES) {
       for (const [key, value] of Object.entries(CATALOGUES[locale])) {
-        if (typeof value === 'string') expect(value.trim(), `${locale} ${key}`).not.toBe('');
+        expect(rendered(value).trim(), `${locale} ${key}`).not.toBe('');
       }
     }
   });
 
   // What a half-finished translation looks like: the key copied into the
   // value slot so it typechecks and reads as gibberish on screen.
-  it('no value is its own key', () => {
+  it('no value renders as its own key', () => {
     for (const locale of LOCALES) {
       for (const [key, value] of Object.entries(CATALOGUES[locale])) {
-        expect(value, `${locale} ${key}`).not.toBe(key);
+        expect(rendered(value), `${locale} ${key}`).not.toBe(key);
+      }
+    }
+  });
+
+  // Guards the probe as much as the catalogue: a key that interpolates a field
+  // `PROBE` does not carry renders the literal "undefined" into the middle of
+  // a sentence, which is neither empty nor equal to its key and would sail
+  // through both checks above.
+  it('every interpolating key gets every argument it asks for', () => {
+    for (const locale of LOCALES) {
+      for (const [key, value] of Object.entries(CATALOGUES[locale])) {
+        expect(rendered(value), `${locale} ${key}`).not.toContain('undefined');
       }
     }
   });

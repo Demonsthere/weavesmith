@@ -457,9 +457,12 @@ describe('locale', () => {
 
   // Display state, not document state. A band shared with a friend must not
   // arrive in the language of the machine that made it.
+  // Asserted structurally rather than by searching the serialised pattern for
+  // 'pl': any future default band name containing those two letters ("Simple")
+  // would have failed that for no reason, while saying nothing more than this.
   it('is not part of the pattern', () => {
     useStore.getState().setLocale('pl');
-    expect(JSON.stringify(useStore.getState().pattern)).not.toContain('pl');
+    expect('locale' in useStore.getState().pattern).toBe(false);
     useStore.getState().setLocale('en');
   });
 });
