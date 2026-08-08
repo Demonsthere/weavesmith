@@ -10,6 +10,19 @@ import { useStore } from '../state/store.js';
  */
 type Args<K extends MessageKey> = Messages[K] extends (a: infer A) => string ? [A] : [];
 
+// `catalogue[key]`, typed as `Messages[K]`, resolves to plain `string` today
+// — every key in the current catalogue is a plain string, so there is no
+// interpolating message yet for the union to be visible in. Indexing
+// directly at the call site loses that union for `typeof`-narrowing purposes
+// under this compiler (typescript@7.0.2); taking the same union as a
+// *parameter* narrows correctly, so resolution is factored out into a
+// helper that receives `catalogue[key]` by value rather than re-deriving it
+// from `key`. No cast lands on the value itself — only the interpolation
+// argument, exactly as the brief's `args[0] as never` already allowed.
+function resolve(value: string | ((a: never) => string), arg: unknown): string {
+  return typeof value === 'function' ? value(arg as never) : value;
+}
+
 /**
  * Reads strings in the current locale. Subscribing to `locale` through the
  * store is also what re-renders a component when the language changes —
@@ -20,18 +33,6 @@ export function useT() {
   const catalogue = CATALOGUES[locale];
 
   return <K extends MessageKey>(key: K, ...args: Args<K>): string => {
-    const value = catalogue[key];
-    // `value` typed as `Messages[K]` currently resolves to plain `string`,
-    // because every key in today's catalogue is a plain string — there is
-    // no interpolating message yet. That makes the function branch below
-    // provably unreachable *today*, and this compiler (typescript@7.0.2)
-    // narrows the `typeof value === 'function'` branch to `never` as a
-    // result, refusing to let it be called at all — a stricter reading than
-    // the brief's plan verified against. The cast is required until a real
-    // interpolating key exists to keep the union honest; `Args<K>` (the
-    // caller-facing contract this hook exists to enforce) is unaffected.
-    return typeof value === 'function'
-      ? (value as (a: never) => string)(args[0] as never)
-      : value;
+    return resolve(catalogue[key], args[0]);
   };
 }
