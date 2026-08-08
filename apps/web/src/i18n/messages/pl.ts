@@ -164,7 +164,10 @@ export const pl: Messages = {
   'file.pngFailed':
     'Nie udało się utworzyć PNG. Eksport SVG działa wszędzie i lepiej się drukuje:',
   'export.notAnSVG': 'To nie wygląda na dokument SVG.',
-  'export.noCanvas': 'Ta przeglądarka nie potrafi rysować na kanwie.',
+  // Not a literal rendering of the English: "kanwa" for the canvas element is
+  // jargon a weaver has no reason to know, and naming the element buys nothing
+  // — what matters is that this browser cannot do it, so try the SVG export.
+  'export.noCanvas': 'Ta przeglądarka nie wspiera rysowania.',
   'export.tooSlow': 'Rysowanie krajki trwało za długo. Spróbuj eksportu SVG.',
   'export.noPNG': 'Ta przeglądarka nie potrafi zamienić krajki w PNG.',
   'export.notDrawable': 'Nie udało się narysować krajki jako obrazu.',
