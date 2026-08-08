@@ -12,6 +12,10 @@
  * declaration widens each value to `string`, which is what the annotation
  * needs, while `keyof` keeps the keys literal.
  */
+
+/** English has two forms, and `n === 1` is the whole rule. */
+const plural = (n: number, one: string, other: string) => `${n} ${n === 1 ? one : other}`;
+
 export const en = {
   'app.nav.screens': 'Screens',
   'app.nav.board': 'Board',
@@ -19,6 +23,14 @@ export const en = {
   'lang.group': 'Language',
   'lang.en': 'English',
   'lang.pl': 'Polski',
+  'summary.cards': (a: { count: number }) => plural(a.count, 'card', 'cards'),
+  'summary.warpEnds': (a: { count: number }) => plural(a.count, 'warp end', 'warp ends'),
+  'summary.ends': (a: { count: number }) => plural(a.count, 'end', 'ends'),
+  'summary.picks': (a: { count: number }) => plural(a.count, 'pick', 'picks'),
+  'summary.turns': (a: { count: number }) => plural(a.count, 'turn', 'turns'),
+  'summary.cellsUnreachable': (a: { count: number }) =>
+    `${plural(a.count, 'cell', 'cells')} unreachable`,
+  'summary.cellsUnmet': (a: { count: number }) => `${plural(a.count, 'cell', 'cells')} unmet`,
 };
 
 export type Messages = typeof en;
