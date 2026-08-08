@@ -1,7 +1,8 @@
 import { HOLE_LABELS } from '@weavesmith/core';
 import { useStore } from '../state/store.js';
 import { Summary } from './Summary.js';
-import { WOOL_NAMES } from '../editor/palette.js';
+import { useT } from '../i18n/useT.js';
+import { WOOL_NAME_KEYS } from '../editor/palette.js';
 import '../styles/controls.css';
 import './chart.css';
 
@@ -13,8 +14,6 @@ import './chart.css';
  */
 const GLYPH = { 1: '↑', '-1': '↓' } as const;
 const DIRECTION = { 1: 'Forward', '-1': 'Backward' } as const;
-
-const colorName = (hex: string): string => WOOL_NAMES[hex] ?? hex;
 
 const COFFEE = 'buycoffee.to/demonsthere';
 /*
@@ -35,8 +34,13 @@ const COFFEE_QR = { src: './buycoffee-qr.png', size: 84 };
  * decides layout, never weaving.
  */
 export function Chart() {
+  const t = useT();
   const pattern = useStore((state) => state.pattern);
   const { cards, picks } = pattern;
+  const colorName = (hex: string): string => {
+    const key = WOOL_NAME_KEYS[hex];
+    return key ? t(key) : hex;
+  };
 
   return (
     <div className="chart-sheet" data-testid="chart-sheet">

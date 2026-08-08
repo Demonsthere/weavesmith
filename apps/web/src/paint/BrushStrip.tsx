@@ -1,12 +1,10 @@
 import { useState } from 'react';
 import { runCommand, clearTarget, paintTarget, solveTarget } from '../state/commands.js';
 import { useStore } from '../state/store.js';
-import { WOOL_NAMES } from '../editor/palette.js';
+import { useT } from '../i18n/useT.js';
+import { WOOL_NAME_KEYS } from '../editor/palette.js';
 import '../styles/controls.css';
 import './brushStrip.css';
-
-/** A palette entry's name if it is one of the dyed-wool presets, else its hex. */
-const colorName = (hex: string): string => WOOL_NAMES[hex] ?? hex;
 
 /**
  * Paint mode's chrome: which colour the brush lays down, and the Solve that
@@ -21,10 +19,16 @@ const colorName = (hex: string): string => WOOL_NAMES[hex] ?? hex;
  * about it, not something that should flash past.
  */
 export function BrushStrip() {
+  const t = useT();
   const pattern = useStore((state) => state.pattern);
   const brush = useStore((state) => state.brush);
   const setBrush = useStore((state) => state.setBrush);
   const [report, setReport] = useState('');
+
+  const colorName = (hex: string): string => {
+    const key = WOOL_NAME_KEYS[hex];
+    return key ? t(key) : hex;
+  };
 
   const pick = (index: number | null) => {
     setBrush(index);
@@ -48,7 +52,7 @@ export function BrushStrip() {
 
   return (
     <div className="brushstrip">
-      <div className="swatches" role="group" aria-label="Brush colour">
+      <div className="swatches" role="group" aria-label={t('brush.group')}>
         {/* Keyed by index, not by hex: nothing forbids a palette from
             carrying the same colour twice — validate only requires strings,
             and gcPalette dedupes by index rather than by value — so a hex
@@ -60,7 +64,7 @@ export function BrushStrip() {
             className="swatch"
             style={{ background: hex }}
             aria-pressed={brush === index}
-            aria-label={`Brush ${index + 1}, ${colorName(hex)}`}
+            aria-label={t('brush.swatch', { index: index + 1, color: colorName(hex) })}
             onClick={() => pick(index)}
           />
         ))}
@@ -68,14 +72,14 @@ export function BrushStrip() {
           type="button"
           className="swatch erase"
           aria-pressed={brush === null}
-          aria-label="Erase brush"
+          aria-label={t('brush.erase')}
           onClick={() => pick(null)}
         >
           ⌧
         </button>
       </div>
       <button type="button" className="btn" onClick={solve}>
-        Solve
+        {t('brush.solve')}
       </button>
       <p className="brush-report" role="status">
         {report}

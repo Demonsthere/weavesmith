@@ -115,4 +115,21 @@ describe('language toggle', () => {
       screen.getByRole('gridcell', { name: 'Tabliczka 1, przeplot 1, obrót do przodu' }),
     ).toBeInTheDocument();
   });
+
+  it('translates the card editor, including the dye names', async () => {
+    render(<App />);
+    await userEvent.click(screen.getByRole('button', { name: 'Polski' }));
+    await userEvent.click(screen.getByRole('button', { name: /^Tabliczka 1, przewleczona/ }));
+    expect(screen.getByRole('button', { name: 'Gotowe' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Ustaw wybrany otwór na marzanna #B4402C' }),
+    ).toBeInTheDocument();
+  });
+
+  it('translates the weave bar', async () => {
+    render(<App />);
+    await userEvent.click(screen.getByRole('button', { name: 'Polski' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Tkanie' }));
+    expect(screen.getByRole('button', { name: 'Następny przeplot' })).toBeInTheDocument();
+  });
 });

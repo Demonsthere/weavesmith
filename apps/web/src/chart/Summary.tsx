@@ -1,13 +1,11 @@
 import { netTwist, reportTarget, threadCounts } from '@weavesmith/core';
 import { useStore } from '../state/store.js';
-import { WOOL_NAMES } from '../editor/palette.js';
+import { useT } from '../i18n/useT.js';
+import { WOOL_NAME_KEYS } from '../editor/palette.js';
 
 const signed = (turns: number): string => (turns > 0 ? `+${turns}` : `${turns}`);
 
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
-
-/** A palette entry's name if it is one of the dyed-wool presets, else its hex. */
-const colorName = (hex: string): string => WOOL_NAMES[hex] ?? hex;
 
 /**
  * What to measure out before warping the loom, plus how far the warp will
@@ -19,7 +17,12 @@ const colorName = (hex: string): string => WOOL_NAMES[hex] ?? hex;
  * honest version — the weaver knows their warp.
  */
 export function Summary() {
+  const t = useT();
   const pattern = useStore((state) => state.pattern);
+  const colorName = (hex: string): string => {
+    const key = WOOL_NAME_KEYS[hex];
+    return key ? t(key) : hex;
+  };
   const counts = threadCounts(pattern);
   const twist = netTwist(pattern);
   const report = reportTarget(pattern);
