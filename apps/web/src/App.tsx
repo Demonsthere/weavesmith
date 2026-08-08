@@ -8,6 +8,7 @@ import { WeaveBar } from './weave/WeaveBar.js';
 import { BrushStrip } from './paint/BrushStrip.js';
 import { FileMenu } from './io/FileMenu.js';
 import { bootPattern } from './io/boot.js';
+import type { Booted } from './io/boot.js';
 import { autosaveSoon } from './io/storage.js';
 import { detectLocale } from './i18n/detect.js';
 import { LanguageToggle } from './i18n/LanguageToggle.js';
@@ -53,7 +54,7 @@ const SCREENS: { hash: string; key: MessageKey }[] = [
 export function App() {
   const route = useRoute();
   const t = useT();
-  const bootProblems = useBoot(t('boot.unreadable'));
+  const boot = useBoot();
 
   return (
     <>
@@ -71,13 +72,19 @@ export function App() {
         <LanguageToggle />
       </header>
       <main>
-        {bootProblems && (
+        {(boot.problems !== null || boot.unreadable) && (
           <div role="alert" className="filemenu-report">
             <p>{t('boot.shareFailed')}</p>
             <ul>
-              {bootProblems.map((problem) => (
-                <li key={problem}>{problem}</li>
-              ))}
+              {boot.unreadable ? (
+                // Our own fact, not core's — resolved here, at render time,
+                // so it is correct on first paint and follows a later
+                // EN/PL switch rather than freezing whatever locale was
+                // active when the boot effect ran.
+                <li>{t('boot.unreadable')}</li>
+              ) : (
+                boot.problems!.map((problem) => <li key={problem}>{problem}</li>)
+              )}
             </ul>
           </div>
         )}
@@ -96,15 +103,22 @@ export function App() {
  * initial state: the store is a module singleton shared by every test, and
  * reading `location.hash` and `localStorage` at module-eval time would make
  * importing it a side effect. Returns whatever was wrong with a share link,
- * for the caller to show.
+ * for the caller to show — as facts (`problems`, `unreadable`), never as
+ * already-translated prose: this effect runs, and calls `setLocale`, before
+ * the caller's next render, so any string resolved here would be stuck in
+ * whichever locale was active when the effect fired rather than the one the
+ * weaver actually reads in.
  */
-function useBoot(unreadable: string): string[] | null {
-  const [problems, setProblems] = useState<string[] | null>(null);
+function useBoot(): Pick<Booted, 'problems' | 'unreadable'> {
+  const [boot, setBoot] = useState<Pick<Booted, 'problems' | 'unreadable'>>({
+    problems: null,
+    unreadable: false,
+  });
 
   useEffect(() => {
-    const booted = bootPattern(window.location.hash, unreadable);
+    const booted = bootPattern(window.location.hash);
     useStore.getState().load(booted.pattern);
-    setProblems(booted.problems);
+    setBoot({ problems: booted.problems, unreadable: booted.unreadable });
 
     // Stored override first, then the browser's own preference, then
     // English. A stored value naming no catalogue reads as null (validated
@@ -120,7 +134,7 @@ function useBoot(unreadable: string): string[] | null {
     });
   }, []);
 
-  return problems;
+  return boot;
 }
 
 /**
