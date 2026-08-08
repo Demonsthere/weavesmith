@@ -443,3 +443,23 @@ describe('gesture token API (beginGesture / continueGesture)', () => {
     expect(() => { (entry.pattern.picks[0] as (-1 | 1)[])[0] = 1; }).toThrow(TypeError);
   });
 });
+
+describe('locale', () => {
+  it('defaults to en', () => {
+    expect(useStore.getState().locale).toBe('en');
+  });
+
+  it('setLocale changes it', () => {
+    useStore.getState().setLocale('pl');
+    expect(useStore.getState().locale).toBe('pl');
+    useStore.getState().setLocale('en');
+  });
+
+  // Display state, not document state. A band shared with a friend must not
+  // arrive in the language of the machine that made it.
+  it('is not part of the pattern', () => {
+    useStore.getState().setLocale('pl');
+    expect(JSON.stringify(useStore.getState().pattern)).not.toContain('pl');
+    useStore.getState().setLocale('en');
+  });
+});

@@ -1,6 +1,7 @@
 import { cleanup } from '@testing-library/react';
-import { afterEach } from 'vitest';
+import { afterEach, beforeEach } from 'vitest';
 import '@testing-library/jest-dom/vitest';
+import { useStore } from '../src/state/store.js';
 
 // @testing-library/react's auto-cleanup relies on detecting a global
 // `afterEach` (e.g. via vitest's `test.globals: true`). This project uses
@@ -8,6 +9,15 @@ import '@testing-library/jest-dom/vitest';
 // it, DOM from one test's render() leaks into the next.
 afterEach(() => {
   cleanup();
+});
+
+// Every existing web test queries English labels — around 256 assertions
+// across 43 files. Pinning the locale per test keeps all of them meaningful
+// and independent of a previous test's toggle, and keeps this feature from
+// becoming a 43-file rewrite that would bury its own diff. Tests that want
+// Polish set it themselves.
+beforeEach(() => {
+  useStore.getState().setLocale('en');
 });
 
 // jsdom (as of 25.x) does not implement the Pointer Events capture trio at
