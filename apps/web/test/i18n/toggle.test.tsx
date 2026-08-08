@@ -55,4 +55,12 @@ describe('language toggle', () => {
     render(<App />);
     expect(screen.getByRole('link', { name: 'Plansza' })).toBeInTheDocument();
   });
+
+  it('translates the control groups', async () => {
+    render(<App />);
+    await userEvent.click(screen.getByRole('button', { name: 'Polski' }));
+    expect(screen.getByRole('group', { name: 'Orientacja' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Krajka pionowa' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Tkanie' })).toBeInTheDocument();
+  });
 });

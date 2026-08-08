@@ -22,7 +22,7 @@ const SHARE_PREFIX = '#p=';
  * problem and still falls back, because a blank screen tells the weaver
  * nothing about what to do next.
  */
-export function bootPattern(hash: string): Booted {
+export function bootPattern(hash: string, unreadable: string): Booted {
   const fallback = (): Pattern => restore() ?? defaultPattern();
 
   if (!hash.startsWith(SHARE_PREFIX)) return { pattern: fallback(), problems: null };
@@ -30,8 +30,7 @@ export function bootPattern(hash: string): Booted {
   try {
     return { pattern: decodePattern(hash.slice(SHARE_PREFIX.length)), problems: null };
   } catch (error) {
-    const problems =
-      error instanceof PatternError ? error.problems : ['this link could not be read'];
+    const problems = error instanceof PatternError ? error.problems : [unreadable];
     return { pattern: fallback(), problems };
   }
 }

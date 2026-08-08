@@ -20,26 +20,26 @@ import { useOrientationPreference } from './state/useOrientationPreference.js';
 import type { Orientation, RenderMode, ScreenMode } from './state/store.js';
 import './screenMode.css';
 
-const SCREEN_MODES: { value: ScreenMode; label: string }[] = [
-  { value: 'design', label: 'Design' },
-  { value: 'paint', label: 'Paint' },
-  { value: 'weave', label: 'Weave' },
+const SCREEN_MODES: { value: ScreenMode; key: MessageKey }[] = [
+  { value: 'design', key: 'mode.design' },
+  { value: 'paint', key: 'mode.paint' },
+  { value: 'weave', key: 'mode.weave' },
 ];
 
 // The arrow shows which way the band grows, as in the mockup
 // (board.html:394). It is a glyph rather than a word, so each button carries
 // an `aria-label` that reads as speech — and one that still contains the
 // visible word, so voice control can hit it by what it says.
-const ORIENTATIONS: { value: Orientation; label: string; name: string }[] = [
-  { value: 'vertical', label: '↓ Band', name: 'Vertical band' },
-  { value: 'horizontal', label: '→ Band', name: 'Horizontal band' },
+const ORIENTATIONS: { value: Orientation; key: MessageKey; nameKey: MessageKey }[] = [
+  { value: 'vertical', key: 'orientation.vertical', nameKey: 'orientation.verticalName' },
+  { value: 'horizontal', key: 'orientation.horizontal', nameKey: 'orientation.horizontalName' },
 ];
 
 // Woven first, matching the store's default and the mockup's order: the
 // woven view is the band, and dots is the aiming aid you switch to.
-const RENDER_MODES: { value: RenderMode; label: string }[] = [
-  { value: 'woven', label: 'Woven' },
-  { value: 'dots', label: 'Dots' },
+const RENDER_MODES: { value: RenderMode; key: MessageKey }[] = [
+  { value: 'woven', key: 'render.woven' },
+  { value: 'dots', key: 'render.dots' },
 ];
 
 // Real anchors, not buttons: they are navigation, so they get the browser's
@@ -52,8 +52,8 @@ const SCREENS: { hash: string; key: MessageKey }[] = [
 
 export function App() {
   const route = useRoute();
-  const bootProblems = useBoot();
   const t = useT();
+  const bootProblems = useBoot(t('boot.unreadable'));
 
   return (
     <>
@@ -73,7 +73,7 @@ export function App() {
       <main>
         {bootProblems && (
           <div role="alert" className="filemenu-report">
-            <p>That share link could not be opened:</p>
+            <p>{t('boot.shareFailed')}</p>
             <ul>
               {bootProblems.map((problem) => (
                 <li key={problem}>{problem}</li>
@@ -98,11 +98,11 @@ export function App() {
  * importing it a side effect. Returns whatever was wrong with a share link,
  * for the caller to show.
  */
-function useBoot(): string[] | null {
+function useBoot(unreadable: string): string[] | null {
   const [problems, setProblems] = useState<string[] | null>(null);
 
   useEffect(() => {
-    const booted = bootPattern(window.location.hash);
+    const booted = bootPattern(window.location.hash, unreadable);
     useStore.getState().load(booted.pattern);
     setProblems(booted.problems);
 
@@ -130,6 +130,7 @@ function useBoot(): string[] | null {
  * screen otherwise.
  */
 function BoardScreen() {
+  const t = useT();
   const editingCard = useStore((state) => state.editingCard);
   const closeEditor = useStore((state) => state.closeEditor);
   const openEditor = useStore((state) => state.openEditor);
@@ -145,40 +146,40 @@ function BoardScreen() {
     <>
       <div className="controls">
         <CardStepper onAdded={openEditor} />
-        <div className="segmented" role="group" aria-label="Orientation">
-          {ORIENTATIONS.map(({ value, label, name }) => (
+        <div className="segmented" role="group" aria-label={t('orientation.group')}>
+          {ORIENTATIONS.map(({ value, key, nameKey }) => (
             <button
               key={value}
               type="button"
-              aria-label={name}
+              aria-label={t(nameKey)}
               aria-pressed={orientation === value}
               onClick={() => setOrientation(value)}
             >
-              {label}
+              {t(key)}
             </button>
           ))}
         </div>
-        <div className="segmented" role="group" aria-label="Render mode">
-          {RENDER_MODES.map(({ value, label }) => (
+        <div className="segmented" role="group" aria-label={t('render.group')}>
+          {RENDER_MODES.map(({ value, key }) => (
             <button
               key={value}
               type="button"
               aria-pressed={render === value}
               onClick={() => setRender(value)}
             >
-              {label}
+              {t(key)}
             </button>
           ))}
         </div>
-        <div className="segmented" role="group" aria-label="Screen mode">
-          {SCREEN_MODES.map(({ value, label }) => (
+        <div className="segmented" role="group" aria-label={t('mode.group')}>
+          {SCREEN_MODES.map(({ value, key }) => (
             <button
               key={value}
               type="button"
               aria-pressed={mode === value}
               onClick={() => setMode(value)}
             >
-              {label}
+              {t(key)}
             </button>
           ))}
         </div>
