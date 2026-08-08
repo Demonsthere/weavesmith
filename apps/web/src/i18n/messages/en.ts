@@ -127,6 +127,8 @@ export const en = {
   'summary.againstTarget': 'Against the target',
   'summary.targetLine': (a: { unreachable: string; unmet: string }) =>
     `${a.unreachable}, ${a.unmet}.`,
+  'footer.source': 'Source on GitHub',
+  'footer.coffeeAlt': 'Buy demonsthere a coffee on buycoffee.to',
 };
 
 export type Messages = typeof en;

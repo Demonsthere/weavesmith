@@ -1,3 +1,4 @@
+import { useT } from './i18n/useT.js';
 import './footer.css';
 
 const REPO = 'https://github.com/Demonsthere/weavesmith';
@@ -51,6 +52,7 @@ function GitHubMark() {
  * carries buycoffee.to's own logotype, which is theirs to design, not ours.
  */
 export function Footer() {
+  const t = useT();
   return (
     <footer className="site-footer">
       <span className="footer-name">
@@ -59,7 +61,7 @@ export function Footer() {
       <span className="footer-links">
         <a className="footer-btn" href={REPO} target="_blank" rel="noopener noreferrer">
           <GitHubMark />
-          Source on GitHub
+          {t('footer.source')}
         </a>
         <a className="footer-coffee" href={COFFEE} target="_blank" rel="noopener noreferrer">
           {/* Width and height as attributes, not only CSS: without them the
@@ -68,7 +70,7 @@ export function Footer() {
             src={COFFEE_LOGO.src}
             width={COFFEE_LOGO.width}
             height={COFFEE_LOGO.height}
-            alt="Postaw kawę dla demonsthere na buycoffee.to"
+            alt={t('footer.coffeeAlt')}
           />
         </a>
       </span>

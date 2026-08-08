@@ -163,4 +163,6 @@ export const pl: Messages = {
   'summary.againstTarget': 'Wobec wzorca',
   'summary.targetLine': (a: { unreachable: string; unmet: string }) =>
     `${a.unreachable}, ${a.unmet}.`,
+  'footer.source': 'Źródło na GitHubie',
+  'footer.coffeeAlt': 'Postaw kawę dla demonsthere na buycoffee.to',
 };
