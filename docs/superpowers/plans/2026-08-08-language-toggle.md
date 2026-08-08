@@ -1513,15 +1513,23 @@ describe('the app in Polish', () => {
     expect(screen.getByRole('link', { name: 'Źródło na GitHubie' })).toBeInTheDocument();
   });
 
-  // The two documented gaps. Asserted so that closing them is a deliberate
-  // change to this test rather than a surprise, and so nobody reads the
-  // suite as claiming full coverage.
-  it('leaves the live region and core problems in English (known gaps)', () => {
+  // A documented gap, pinned rather than described: commands.ts is out of
+  // scope, so the live region still announces English under a Polish board.
+  // Closing that later must fail this test loudly — that is the whole point
+  // of asserting it. The coupling to commands.ts wording is deliberate: the
+  // wording IS the gap.
+  it('still announces the live region in English (known gap)', async () => {
+    const user = userEvent.setup();
     render(<App />);
-    expect(screen.getByRole('status')).toBeInTheDocument();
+    // Space flips the focused cell; toggleTurn's message is English-only.
+    await user.click(screen.getByLabelText(/Tabliczka 1, przeplot 1,/));
+    await user.keyboard(' ');
+    expect(screen.getByRole('status')).toHaveTextContent('Flipped 1 cell');
   });
 });
 ```
+
+`userEvent` and the board's Polish cell label are both needed here, so import `userEvent from '@testing-library/user-event'` in this file. If `getByRole('status')` matches more than one element (`BrushStrip` also renders one, but only in Paint mode — Design is the default), narrow with the board's own container rather than loosening the assertion.
 
 - [ ] **Step 3: Run test to verify it fails**
 
