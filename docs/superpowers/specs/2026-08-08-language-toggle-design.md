@@ -158,21 +158,39 @@ mockup's ordering, which is not a translation concern.
 
 ### Known gaps in v1
 
-Both are visible English in an otherwise Polish app. Recorded here so a later
-reader does not mistake this feature for finished.
+Two areas stay visible English in an otherwise Polish app. Recorded here so a
+later reader does not mistake this feature for finished — and scoped honestly,
+because the first of them reaches further than the one file it is named after.
 
-**The live region.** `state/commands.ts` builds its messages by string
-concatenation — `Flipped ${plural(cells.length, 'cell')}`, `hole C unreachable
-on 3` — and `LiveRegion` renders them into a `<p className="live">` that has no
-CSS rule anywhere, so it is ordinary visible text under the board, not a
-screen-reader-only region. Out of scope for v1 by decision.
+**The live region, and everything else that announces an edit.**
+`state/commands.ts` builds its messages by string concatenation — `Flipped
+${plural(cells.length, 'cell')}`, `hole C unreachable on 3` — and `LiveRegion`
+renders them into a `<p className="live">` that has no CSS rule anywhere, so it
+is ordinary visible text under the board, not a screen-reader-only region. Out
+of scope for v1 by decision.
 
-Finishing it later means: keys with count arguments, and a locale-aware plural
-helper, because `plural()` at `commands.ts:12` appends `s` and Polish needs
-three forms (1 komórka, 2–4 komórki, 5+ komórek, and 22 komórki again).
-`Intl.PluralRules('pl')` gives `one/few/many/other` and is in every target
-browser, so the helper is short — but the noun table and the message-by-message
-rewrite are not, and neither is re-pinning `state/commands.test.ts`.
+`commands.ts` is not the whole of it, though, and the gap is wider than a first
+reading of this paragraph suggests. Two other sources feed the same announcement
+path and are equally English:
+
+- `board/useKeyboardBinding.ts` composes its own strings around an undo label —
+  `'Undo: …'`, `'Redo: …'`, `'Nothing to undo'` — none of which come from
+  `commands.ts`.
+- Every `apply(…, label)` call site passes an English undo label, and those
+  labels are what the two above interpolate. They are written in components that
+  are otherwise fully translated (`Add S-threaded card` in `CardStepper.tsx`,
+  and so on), which is exactly why they are easy to miss: the component reads as
+  done.
+
+So closing this gap is not one file. It means: keys with count arguments; a
+locale-aware plural helper, because `plural()` at `commands.ts:12` appends `s`
+and Polish needs three forms (1 komórka, 2–4 komórki, 5+ komórek, and 22 komórki
+again); a decision about what an undo label *is* — a translated string, or a
+fact resolved at render like `ReportMessage`, which is the pattern the rest of
+this feature settled on and the only one that survives a language switch with
+history on the stack; and re-pinning `state/commands.test.ts` plus the keyboard
+binding's tests. `Intl.PluralRules('pl')` gives `one/few/many/other` and is in
+every target browser, so the helper itself is the short part.
 
 **Share-link error details.** `boot.ts:34` surfaces `PatternError.problems`,
 English sentences built inside `@weavesmith/core`. Core is zero-dependency and

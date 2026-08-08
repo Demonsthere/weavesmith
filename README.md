@@ -96,6 +96,8 @@ Two places where weaving is *not* a guitar, both of which shaped the design:
   you stopped.
 - **Share** designs as plain JSON files or as a link, with no account and no
   server.
+- **Read it in Polish or English.** The toggle is in the header, it remembers
+  your choice, and a browser set to Polish starts there.
 - **Work offline.** Looms are rarely near wifi.
 
 Out of scope for v1, in likely order of arrival afterwards: importing legacy
@@ -229,8 +231,7 @@ brokat i wzory blokowe to inne struktury splotu i celowo ich tu nie ma.
 ### Jak uruchomić
 
 Polecenia są takie same jak w angielskiej części — patrz
-[Development](#development). W skrócie: `pnpm install`, a potem
-`pnpm --filter @weavesmith/web dev`.
+[Development](#development). W skrócie: `make install`, a potem `make dev`.
 
 ### Słownictwo
 

@@ -289,6 +289,11 @@ export const useStore = create<StoreState>((set, get) => ({
   // board lands on whatever the viewport last asked for. `suggestedOrientation`
   // itself is deliberately *not* reset — it describes the screen, which a
   // "start over" does not change.
+  //
+  // `locale` is deliberately *not* in the list either, and for a different
+  // reason than orientation: a language choice belongs to the reader, not to
+  // the document. Starting a new band does not make someone stop speaking
+  // Polish, and having the UI switch out from under them would be startling.
   reset: () =>
     set({
       pattern: freezePattern(defaultPattern()),
