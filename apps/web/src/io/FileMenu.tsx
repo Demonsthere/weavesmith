@@ -73,6 +73,15 @@ function resolveMessage(t: ReturnType<typeof useT>, message: ReportMessage): str
       return t('file.noClipboard');
     case 'linkCopied':
       return t('file.linkCopied');
+    default: {
+      // Compiler-enforced exhaustiveness: if a future `ReportMessage` kind
+      // is added without a matching `case` above, `message` is no longer
+      // `never` here and this line fails to typecheck — `noImplicitReturns`
+      // is not set in tsconfig.base.json, so an omitted case would otherwise
+      // compile fine and silently render `undefined`.
+      const exhaustive: never = message;
+      return exhaustive;
+    }
   }
 }
 

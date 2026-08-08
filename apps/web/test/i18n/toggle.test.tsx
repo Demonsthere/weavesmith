@@ -140,11 +140,53 @@ describe('language toggle', () => {
     expect(screen.getByLabelText('Nazwa wzoru')).toBeInTheDocument();
   });
 
-  it('translates a report sentence but not core problems', async () => {
+  // The reset path never has any `problems` (see FileMenu.tsx's `reset`),
+  // so this only proves the message sentence is translated — the
+  // verbatim-problems rule is proved by the two tests below instead, which
+  // is why this one no longer claims to cover it in its name.
+  it('translates the reset confirmation sentence', async () => {
     render(<App />);
     await userEvent.click(screen.getByRole('button', { name: 'Polski' }));
     await userEvent.click(screen.getByRole('button', { name: 'Przywróć domyślną' }));
     await userEvent.click(screen.getByRole('button', { name: 'Odrzuć i zacznij od nowa' }));
     expect(screen.getByRole('alert')).toHaveTextContent('Powrót do domyślnej krajki.');
+  });
+
+  // The actual invariant: in the same alert, the app's own sentence is in
+  // Polish while core's PatternError.problems items — FileMenu's docstring
+  // explains why: core writes them for a weaver, not for a log, and
+  // rewording them here would mean two places to keep honest — stay in
+  // whatever wording core produced, untranslated, in either locale.
+  it('translates the report sentence but leaves core problems in their original wording', async () => {
+    render(<App />);
+    await userEvent.click(screen.getByRole('button', { name: 'Polski' }));
+
+    await userEvent.upload(
+      screen.getByLabelText('Otwórz plik wzoru'),
+      new File(['{ "nonsense": true }'], 'bad.json', { type: 'application/json' }),
+    );
+
+    const alert = await screen.findByRole('alert');
+    expect(within(alert).getByText('bad.json nie jest wzorem WeaveSmith:')).toBeInTheDocument();
+    // Core's own wording (validate.ts), never translated by this app.
+    expect(within(alert).getByText('meta must be an object')).toBeInTheDocument();
+    expect(within(alert).queryByText(/musi być obiektem/)).not.toBeInTheDocument();
+  });
+
+  // Mirror image of the test above: when the thrown error is *not* a
+  // PatternError, the fallback item ('this file could not be read') is this
+  // app's own sentence, not core's, and so — unlike a real PatternError's
+  // problems — it IS translated.
+  it("translates the report's own fallback problem, unlike a PatternError's", async () => {
+    render(<App />);
+    await userEvent.click(screen.getByRole('button', { name: 'Polski' }));
+    const file = new File(['irrelevant'], 'bad.json', { type: 'application/json' });
+    vi.spyOn(file, 'text').mockRejectedValue(new Error('disk read failed'));
+
+    await userEvent.upload(screen.getByLabelText('Otwórz plik wzoru'), file);
+
+    const alert = await screen.findByRole('alert');
+    expect(within(alert).getByText('nie udało się odczytać tego pliku')).toBeInTheDocument();
+    expect(within(alert).queryByText('this file could not be read')).not.toBeInTheDocument();
   });
 });
