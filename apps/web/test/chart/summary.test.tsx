@@ -18,6 +18,36 @@ describe('Summary', () => {
     expect(screen.getByText('32 warp ends', { selector: 'strong' })).toBeInTheDocument();
   });
 
+  // The twist figure is a number of turns, and the sentence has to say so —
+  // the Polish rendering had no word for it at all, because the noun was
+  // hard-coded into the English sentence and `summary.turns`, which carries
+  // the three Polish forms, was used nowhere.
+  it('names what the twist figure counts', () => {
+    useStore.getState().reset();
+    render(<Summary />);
+    // The default band turns forward on all 24 picks: every card is at +24.
+    expect(screen.getByText('Every card ends at +24 turns after 24 picks.')).toBeInTheDocument();
+  });
+
+  it('keeps the sign and still inflects the noun when the twist is negative', () => {
+    useStore.getState().reset();
+    useStore.getState().apply((draft) => {
+      draft.picks = [draft.cards.map(() => -1 as const), draft.cards.map(() => -1 as const)];
+    }, 'test');
+    render(<Summary />);
+    expect(screen.getByText('Every card ends at -2 turns after 2 picks.')).toBeInTheDocument();
+  });
+
+  it('counts the turns on each card when the twist is not uniform', () => {
+    useStore.getState().reset();
+    useStore.getState().apply((draft) => {
+      draft.picks = [draft.cards.map((_, card) => (card === 0 ? -1 : 1) as -1 | 1)];
+    }, 'test');
+    render(<Summary />);
+    expect(screen.getByText('Card 1: -1 turn')).toBeInTheDocument();
+    expect(screen.getByText('Card 2: +1 turn')).toBeInTheDocument();
+  });
+
   it('counts unreachable and unmet cells when a target exists', () => {
     useStore.getState().reset();
     // Madder on card 0, which is threaded all-walnut: unreachable by

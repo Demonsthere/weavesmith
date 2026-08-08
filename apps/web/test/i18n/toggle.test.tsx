@@ -197,12 +197,16 @@ describe('language toggle', () => {
     expect(screen.getByRole('heading', { name: 'Podsumowanie' })).toBeInTheDocument();
     expect(screen.getByRole('table', { name: 'Tabela obrotów' })).toBeInTheDocument();
     // The default band is 8 cards, 32 warp ends, 24 picks. 8 is Polish's
-    // `many` category; 32 and 24 both land in `few` but take different
-    // nouns ("nitki osnowy" vs "przeploty"), so this still exercises two
-    // distinct categories and three distinct inflected nouns.
+    // `many` category; 32 and 24 both land in `few`. 24 picks appear inside
+    // `summary.afterPicks`, which inflects them for the locative "po" governs
+    // ("po 24 przeplotach"), so this exercises two categories, two cases and
+    // three distinct inflected nouns.
     const summary = screen.getByTestId('chart-summary');
     expect(summary).toHaveTextContent('8 tabliczek');
     expect(summary).toHaveTextContent('32 nitki osnowy');
-    expect(summary).toHaveTextContent('24 przeploty');
+    expect(summary).toHaveTextContent('po 24 przeplotach');
+    // The twist line had no word for its own number in Polish at all: it read
+    // "Każda tabliczka kończy na +24 po ...". +24 is `few`, so "obroty".
+    expect(summary).toHaveTextContent('Każda tabliczka ma +24 obroty po 24 przeplotach.');
   });
 });

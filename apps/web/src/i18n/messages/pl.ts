@@ -26,13 +26,23 @@ interface Forms {
   many: string;
 }
 
-const plural = (n: number, forms: Forms): string => {
-  const category = RULES.select(n);
+/**
+ * Which of the three forms a count takes, without the number in front of it —
+ * for the places where the number is drawn separately (the card stepper) or
+ * carries a sign (accumulated twist).
+ *
+ * Selected on the *magnitude*: `RULES.select(-3)` answers `other`, which would
+ * give "−3 obrotów", while correct Polish is "−3 obroty" — a negative inflects
+ * exactly like its positive counterpart.
+ */
+const form = (n: number, forms: Forms): string => {
+  const category = RULES.select(Math.abs(n));
   // `other` only arises for fractions, which no count here can be — but it
   // is in the type of `select`, and `many` is the right form if one ever is.
-  const form = category === 'one' ? forms.one : category === 'few' ? forms.few : forms.many;
-  return `${n} ${form}`;
+  return category === 'one' ? forms.one : category === 'few' ? forms.few : forms.many;
 };
+
+const plural = (n: number, forms: Forms): string => `${n} ${form(n, forms)}`;
 
 export const pl: Messages = {
   'app.nav.screens': 'Ekrany',
@@ -61,10 +71,16 @@ export const pl: Messages = {
     plural(a.count, { one: 'nitka osnowy', few: 'nitki osnowy', many: 'nitek osnowy' }),
   'summary.ends': (a: { count: number }) =>
     plural(a.count, { one: 'nitka', few: 'nitki', many: 'nitek' }),
-  'summary.picks': (a: { count: number }) =>
-    plural(a.count, { one: 'przeplot', few: 'przeploty', many: 'przeplotów' }),
-  'summary.turns': (a: { count: number }) =>
-    plural(a.count, { one: 'obrót', few: 'obroty', many: 'obrotów' }),
+  // "po" governs the locative, so this is not the nominative "24 przeploty"
+  // with a preposition in front of it: it is "po 24 przeplotach". The locative
+  // plural is a single form, so `few` and `many` coincide here — that is the
+  // language, not a missing case.
+  'summary.afterPicks': (a: { count: number }) =>
+    `po ${plural(a.count, { one: 'przeplocie', few: 'przeplotach', many: 'przeplotach' })}`,
+  // Signed, so the form comes from `count` (via `form`'s magnitude rule) and
+  // the sign from `display`. "+8 obrotów", "−3 obroty", "+1 obrót".
+  'summary.turns': (a: { display: string; count: number }) =>
+    `${a.display} ${form(a.count, { one: 'obrót', few: 'obroty', many: 'obrotów' })}`,
   // The adjective agrees with the noun, so it cannot be appended outside the
   // plural call the way English appends "unreachable".
   'summary.cellsUnreachable': (a: { count: number }) =>
@@ -86,7 +102,11 @@ export const pl: Messages = {
   // user with one name for two different destructive actions. This one removes
   // *a* card, chosen by `removalIndex`; the editor's deletes *this* card.
   'stepper.remove': 'Usuń jedną tabliczkę',
-  'stepper.cards': 'tabliczek',
+  // The noun beside the stepper's number. An invariant 'tabliczek' was wrong
+  // for every `few` count the stepper can reach — 4, 22, 23, 24, 32… — which
+  // is about nine of the 37 counts between MIN_CARDS and MAX_CARDS.
+  'stepper.cards': (a: { count: number }) =>
+    form(a.count, { one: 'tabliczka', few: 'tabliczki', many: 'tabliczek' }),
   'stepper.addS': 'Dodaj tabliczkę przewleczoną S',
   'stepper.addZ': 'Dodaj tabliczkę przewleczoną Z',
   'chip.label': (a: { index: number; threading: string }) =>
@@ -164,10 +184,15 @@ export const pl: Messages = {
   'summary.perCard': '(cztery na tabliczkę).',
   'summary.warpThreads': 'Nitki osnowy',
   'summary.twistHeading': 'Skumulowany skręt',
-  'summary.twistUniform': (a: { turns: string; picks: string }) =>
-    `Każda tabliczka kończy na ${a.turns} po ${a.picks}.`,
-  'summary.twistVaries': (a: { picks: string }) =>
-    `Tabliczki kończą z różnym skrętem po ${a.picks}:`,
+  // "ma" takes the accusative, which for these numerals is the very form
+  // `summary.turns` produces ("ma +1 obrót", "ma +3 obroty", "ma +8
+  // obrotów") — where the previous "kończy na …" would have needed a locative
+  // ("na +8 obrotach") and so could not reuse the counted noun at all. The
+  // sentence used to have no word for its own number: "kończy na +8 po …".
+  'summary.twistUniform': (a: { turns: string; after: string }) =>
+    `Każda tabliczka ma ${a.turns} ${a.after}.`,
+  'summary.twistVaries': (a: { after: string }) =>
+    `Tabliczki kończą z różnym skrętem ${a.after}:`,
   'summary.twistCard': (a: { index: number; turns: string }) =>
     `Tabliczka ${a.index}: ${a.turns}`,
   'summary.againstTarget': 'Wobec wzorca',

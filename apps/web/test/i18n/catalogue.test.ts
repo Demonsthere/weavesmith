@@ -50,11 +50,41 @@ describe('Polish plurals', () => {
     expect(pl['summary.cards']({ count: 12 })).toBe('12 tabliczek');
   });
 
-  it('uses one/few/many for picks', () => {
-    expect(pl['summary.picks']({ count: 1 })).toBe('1 przeplot');
-    expect(pl['summary.picks']({ count: 2 })).toBe('2 przeploty');
-    expect(pl['summary.picks']({ count: 24 })).toBe('24 przeploty');
-    expect(pl['summary.picks']({ count: 25 })).toBe('25 przeplotów');
+  // `summary.afterPicks` carries its own preposition, because "po" governs the
+  // locative and the counted phrase has to be inflected for the slot it lands
+  // in — a nominative "24 przeploty" dropped after "po" is wrong Polish. The
+  // locative plural is one form for both `few` and `many` ("przeplotach"), so
+  // this key only ever shows two: that is the language, not a lost case.
+  it('puts picks in the locative the preposition takes', () => {
+    expect(pl['summary.afterPicks']({ count: 1 })).toBe('po 1 przeplocie');
+    expect(pl['summary.afterPicks']({ count: 2 })).toBe('po 2 przeplotach');
+    expect(pl['summary.afterPicks']({ count: 24 })).toBe('po 24 przeplotach');
+    expect(pl['summary.afterPicks']({ count: 25 })).toBe('po 25 przeplotach');
+  });
+
+  // Accumulated twist is the one counted thing here that can be negative or
+  // zero. `Intl.PluralRules('pl').select(-3)` answers `other`, which would
+  // give "−3 obrotów"; correct Polish is "−3 obroty", the same form as +3. So
+  // the form is chosen on the magnitude while the sign stays in the display.
+  it('inflects a signed turn count on its magnitude', () => {
+    expect(pl['summary.turns']({ display: '+1', count: 1 })).toBe('+1 obrót');
+    expect(pl['summary.turns']({ display: '+3', count: 3 })).toBe('+3 obroty');
+    expect(pl['summary.turns']({ display: '+8', count: 8 })).toBe('+8 obrotów');
+    expect(pl['summary.turns']({ display: '-1', count: -1 })).toBe('-1 obrót');
+    expect(pl['summary.turns']({ display: '-3', count: -3 })).toBe('-3 obroty');
+    expect(pl['summary.turns']({ display: '-8', count: -8 })).toBe('-8 obrotów');
+    expect(pl['summary.turns']({ display: '0', count: 0 })).toBe('0 obrotów');
+  });
+
+  // Just the noun: the stepper renders the number in its own element, so a
+  // counted phrase would print the count twice. 4 and 22 are `few`, 5 and 25
+  // are `many` — and card counts run 4–40, so a fixed "tabliczek" is wrong for
+  // about nine of the counts a weaver can reach.
+  it('inflects the bare stepper noun for its neighbouring count', () => {
+    expect(pl['stepper.cards']({ count: 4 })).toBe('tabliczki');
+    expect(pl['stepper.cards']({ count: 5 })).toBe('tabliczek');
+    expect(pl['stepper.cards']({ count: 22 })).toBe('tabliczki');
+    expect(pl['stepper.cards']({ count: 25 })).toBe('tabliczek');
   });
 });
 
@@ -62,5 +92,18 @@ describe('English plurals', () => {
   it('adds s past one', () => {
     expect(en['summary.cards']({ count: 1 })).toBe('1 card');
     expect(en['summary.cards']({ count: 3 })).toBe('3 cards');
+  });
+
+  // Same rule as Polish, for the same reason: −1 inflects like 1.
+  it('inflects a signed turn count on its magnitude', () => {
+    expect(en['summary.turns']({ display: '+1', count: 1 })).toBe('+1 turn');
+    expect(en['summary.turns']({ display: '-1', count: -1 })).toBe('-1 turn');
+    expect(en['summary.turns']({ display: '-3', count: -3 })).toBe('-3 turns');
+    expect(en['summary.turns']({ display: '0', count: 0 })).toBe('0 turns');
+  });
+
+  it('keeps the bare stepper noun plural for every reachable count', () => {
+    expect(en['stepper.cards']({ count: 4 })).toBe('cards');
+    expect(en['stepper.cards']({ count: 40 })).toBe('cards');
   });
 });

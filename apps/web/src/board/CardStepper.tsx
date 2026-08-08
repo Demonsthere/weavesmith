@@ -61,7 +61,10 @@ export function CardStepper({ onAdded }: CardStepperProps) {
       </button>
       <span className="count">
         <span>{cardCount}</span>
-        <small>{t('stepper.cards')}</small>
+        {/* The noun agrees with the number beside it, so it takes the count
+            even though the number is drawn separately — Polish inflects it
+            (4 tabliczki, 5 tabliczek) across the range this stepper allows. */}
+        <small>{t('stepper.cards', { count: cardCount })}</small>
       </span>
       <button
         type="button"

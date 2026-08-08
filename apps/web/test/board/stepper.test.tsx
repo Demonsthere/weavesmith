@@ -37,6 +37,24 @@ describe('CardStepper', () => {
     expect(remove).toBeDisabled();
   });
 
+  // The count and its noun sit in separate elements for styling, but they read
+  // as one phrase — and Polish inflects the noun across the range this control
+  // covers. 8 is `many` ('tabliczek'), 4 is `few` ('tabliczki'), and the
+  // invariant genitive plural this used to render was wrong for the second.
+  it('inflects the Polish noun for the count beside it', async () => {
+    const user = userEvent.setup();
+    useStore.getState().setLocale('pl');
+    render(<CardStepper onAdded={() => {}} />);
+    expect(screen.getByText('tabliczek')).toBeInTheDocument();
+
+    const remove = screen.getByRole('button', { name: 'Usuń jedną tabliczkę' });
+    for (let i = 0; i < 4; i++) await user.click(remove);
+
+    expect(useStore.getState().pattern.cards).toHaveLength(4);
+    expect(screen.getByText('tabliczki')).toBeInTheDocument();
+    useStore.getState().setLocale('en');
+  });
+
   it('disables adding at forty cards', async () => {
     const user = userEvent.setup();
     render(<CardStepper onAdded={() => {}} />);

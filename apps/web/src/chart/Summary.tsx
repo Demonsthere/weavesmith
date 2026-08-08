@@ -33,6 +33,14 @@ export function Summary() {
   const distinctTwist = [...new Set(twist)];
   const uniform = distinctTwist.length === 1;
 
+  // Both halves of a counted phrase go to the catalogue together: the signed
+  // number the reader sees, and the plain count the noun's form is chosen on.
+  // A pre-formatted "+8" alone is what left the Polish sentence with no word
+  // for its own figure.
+  const turnsPhrase = (turns: number) =>
+    t('summary.turns', { display: signed(turns), count: turns });
+  const afterPicks = t('summary.afterPicks', { count: pattern.picks.length });
+
   return (
     <section className="summary" data-testid="chart-summary" aria-labelledby="summary-heading">
       <h2 id="summary-heading">{t('summary.heading')}</h2>
@@ -64,22 +72,15 @@ export function Summary() {
       <h3>{t('summary.twistHeading')}</h3>
       {uniform ? (
         <p className="summary-line">
-          {t('summary.twistUniform', {
-            turns: signed(distinctTwist[0]!),
-            picks: t('summary.picks', { count: pattern.picks.length }),
-          })}
+          {t('summary.twistUniform', { turns: turnsPhrase(distinctTwist[0]!), after: afterPicks })}
         </p>
       ) : (
         <>
-          <p className="summary-line">
-            {t('summary.twistVaries', {
-              picks: t('summary.picks', { count: pattern.picks.length }),
-            })}
-          </p>
+          <p className="summary-line">{t('summary.twistVaries', { after: afterPicks })}</p>
           <ul className="twist-list">
             {twist.map((turns, cardIndex) => (
               <li key={cardIndex}>
-                {t('summary.twistCard', { index: cardIndex + 1, turns: signed(turns) })}
+                {t('summary.twistCard', { index: cardIndex + 1, turns: turnsPhrase(turns) })}
               </li>
             ))}
           </ul>

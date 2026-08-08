@@ -13,8 +13,14 @@
  * needs, while `keyof` keeps the keys literal.
  */
 
-/** English has two forms, and `n === 1` is the whole rule. */
-const plural = (n: number, one: string, other: string) => `${n} ${n === 1 ? one : other}`;
+/**
+ * English has two forms, and `n === 1` is the whole rule — except that the
+ * rule is about magnitude, not value: "−1 turn", not "−1 turns". Accumulated
+ * twist is the one count here that can be negative.
+ */
+const form = (n: number, one: string, other: string) => (Math.abs(n) === 1 ? one : other);
+
+const plural = (n: number, one: string, other: string) => `${n} ${form(n, one, other)}`;
 
 export const en = {
   'app.nav.screens': 'Screens',
@@ -40,15 +46,28 @@ export const en = {
   'summary.cards': (a: { count: number }) => plural(a.count, 'card', 'cards'),
   'summary.warpEnds': (a: { count: number }) => plural(a.count, 'warp end', 'warp ends'),
   'summary.ends': (a: { count: number }) => plural(a.count, 'end', 'ends'),
-  'summary.picks': (a: { count: number }) => plural(a.count, 'pick', 'picks'),
-  'summary.turns': (a: { count: number }) => plural(a.count, 'turn', 'turns'),
+  // Carries its own preposition. Polish "po" governs the locative, so the
+  // counted phrase has to be inflected for the slot it lands in — a
+  // nominative one dropped in after the preposition is wrong there. Keeping
+  // the preposition inside the key is what lets each language do that.
+  'summary.afterPicks': (a: { count: number }) => `after ${plural(a.count, 'pick', 'picks')}`,
+  // Accumulated twist, which is signed: `display` is what the reader sees
+  // ('+8', '-3', '0') and `count` is only what the noun's form is chosen on.
+  // Passing the sign through the number would inflect it wrongly — see the
+  // Polish catalogue, where `Intl.PluralRules` puts −3 in `other`.
+  'summary.turns': (a: { display: string; count: number }) =>
+    `${a.display} ${form(a.count, 'turn', 'turns')}`,
   'summary.cellsUnreachable': (a: { count: number }) =>
     `${plural(a.count, 'cell', 'cells')} unreachable`,
   'summary.cellsUnmet': (a: { count: number }) => `${plural(a.count, 'cell', 'cells')} unmet`,
   'board.label': 'Weaving board',
   'stepper.group': 'Number of cards',
   'stepper.remove': 'Remove a card',
-  'stepper.cards': 'cards',
+  // The noun alone: the stepper draws the number in its own element, so a
+  // counted phrase here would print the count twice. English only ever needs
+  // the plural (card counts run 4–40) but takes the count anyway, because
+  // Polish does need it — 4 tabliczki, 5 tabliczek.
+  'stepper.cards': (a: { count: number }) => form(a.count, 'card', 'cards'),
   'stepper.addS': 'Add an S-threaded card',
   'stepper.addZ': 'Add a Z-threaded card',
   'chip.label': (a: { index: number; threading: string }) =>
@@ -128,10 +147,13 @@ export const en = {
   'summary.perCard': '(four per card).',
   'summary.warpThreads': 'Warp threads',
   'summary.twistHeading': 'Accumulated twist',
-  'summary.twistUniform': (a: { turns: string; picks: string }) =>
-    `Every card ends at ${a.turns} turns after ${a.picks}.`,
-  'summary.twistVaries': (a: { picks: string }) =>
-    `Cards end at different twists after ${a.picks}:`,
+  // `turns` arrives already counted (`summary.turns`) and `after` already
+  // inflected (`summary.afterPicks`) — the noun is not repeated here, because
+  // a sentence that hard-codes "turns" cannot be translated into a language
+  // that has three forms of the word.
+  'summary.twistUniform': (a: { turns: string; after: string }) =>
+    `Every card ends at ${a.turns} ${a.after}.`,
+  'summary.twistVaries': (a: { after: string }) => `Cards end at different twists ${a.after}:`,
   'summary.twistCard': (a: { index: number; turns: string }) => `Card ${a.index}: ${a.turns}`,
   'summary.againstTarget': 'Against the target',
   'summary.targetLine': (a: { unreachable: string; unmet: string }) =>
