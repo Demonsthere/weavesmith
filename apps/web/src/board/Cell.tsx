@@ -1,5 +1,6 @@
 import type { CSSProperties } from 'react';
 import type { Cell as WovenCell, Turn } from '@weavesmith/core';
+import type { useT } from '../i18n/useT.js';
 
 interface Props {
   pick: number;
@@ -25,11 +26,12 @@ interface Props {
   /** Set when band and target disagree here. */
   unmet: { hex: string; reachable: boolean } | null;
   style: CSSProperties;
+  t: ReturnType<typeof useT>;
 }
 
 export function Cell({
   pick, card, cell, hex, turn, selected, focused, weaveState, ghost, willChange,
-  rippleDelay, targetHex, unmet, style,
+  rippleDelay, targetHex, unmet, style, t,
 }: Props) {
   const classes = [
     'cell',
@@ -46,7 +48,7 @@ export function Cell({
 
   // The mark is never the only channel: the same fact reads aloud here.
   const wanted = unmet
-    ? `, wanted ${unmet.hex}${unmet.reachable ? ' — press Solve' : ' — unreachable'}`
+    ? t(unmet.reachable ? 'cell.wantedSolve' : 'cell.wantedUnreachable', { hex: unmet.hex })
     : '';
 
   const noteStyle: CSSProperties = { background: targetHex ?? hex };
@@ -62,8 +64,7 @@ export function Cell({
       data-pick={pick}
       data-card={card}
       aria-label={
-        `Card ${card + 1}, pick ${pick + 1}, turning ` +
-        `${turn === 1 ? 'forward' : 'backward'}${wanted}`
+        t('cell.label', { card: card + 1, pick: pick + 1, forward: turn === 1 }) + wanted
       }
     >
       <span className="note" style={noteStyle} />

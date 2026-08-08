@@ -1,13 +1,9 @@
 import { netTwist, reportTarget, threadCounts } from '@weavesmith/core';
 import { useStore } from '../state/store.js';
-import { WOOL_NAMES } from '../editor/palette.js';
+import { useT } from '../i18n/useT.js';
+import { useColorName } from '../i18n/useColorName.js';
 
 const signed = (turns: number): string => (turns > 0 ? `+${turns}` : `${turns}`);
-
-const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
-
-/** A palette entry's name if it is one of the dyed-wool presets, else its hex. */
-const colorName = (hex: string): string => WOOL_NAMES[hex] ?? hex;
 
 /**
  * What to measure out before warping the loom, plus how far the warp will
@@ -19,7 +15,9 @@ const colorName = (hex: string): string => WOOL_NAMES[hex] ?? hex;
  * honest version — the weaver knows their warp.
  */
 export function Summary() {
+  const t = useT();
   const pattern = useStore((state) => state.pattern);
+  const colorName = useColorName();
   const counts = threadCounts(pattern);
   const twist = netTwist(pattern);
   const report = reportTarget(pattern);
@@ -35,16 +33,25 @@ export function Summary() {
   const distinctTwist = [...new Set(twist)];
   const uniform = distinctTwist.length === 1;
 
+  // Both halves of a counted phrase go to the catalogue together: the signed
+  // number the reader sees, and the plain count the noun's form is chosen on.
+  // A pre-formatted "+8" alone is what left the Polish sentence with no word
+  // for its own figure.
+  const turnsPhrase = (turns: number) =>
+    t('summary.turns', { display: signed(turns), count: turns });
+  const afterPicks = t('summary.afterPicks', { count: pattern.picks.length });
+
   return (
     <section className="summary" data-testid="chart-summary" aria-labelledby="summary-heading">
-      <h2 id="summary-heading">Summary</h2>
+      <h2 id="summary-heading">{t('summary.heading')}</h2>
 
       <p className="summary-line">
-        <strong>{counts.cards} cards</strong>, <strong>{counts.warpEnds} warp ends</strong>{' '}
-        (four per card).
+        <strong>{t('summary.cards', { count: counts.cards })}</strong>,{' '}
+        <strong>{t('summary.warpEnds', { count: counts.warpEnds })}</strong>{' '}
+        {t('summary.perCard')}
       </p>
 
-      <h3>Warp threads</h3>
+      <h3>{t('summary.warpThreads')}</h3>
       <ul className="thread-counts">
         {Object.entries(counts.perColor)
           .map(([index, ends]) => [Number(index), ends] as const)
@@ -56,26 +63,24 @@ export function Summary() {
                 style={{ background: pattern.palette[index] }}
                 aria-hidden="true"
               />
-              {colorName(pattern.palette[index] ?? String(index))}: {ends} ends
+              {colorName(pattern.palette[index] ?? String(index))}:{' '}
+              {t('summary.ends', { count: ends })}
             </li>
           ))}
       </ul>
 
-      <h3>Accumulated twist</h3>
+      <h3>{t('summary.twistHeading')}</h3>
       {uniform ? (
         <p className="summary-line">
-          Every card ends at {signed(distinctTwist[0]!)} turns after{' '}
-          {pattern.picks.length} picks.
+          {t('summary.twistUniform', { turns: turnsPhrase(distinctTwist[0]!), after: afterPicks })}
         </p>
       ) : (
         <>
-          <p className="summary-line">
-            Cards end at different twists after {pattern.picks.length} picks:
-          </p>
+          <p className="summary-line">{t('summary.twistVaries', { after: afterPicks })}</p>
           <ul className="twist-list">
             {twist.map((turns, cardIndex) => (
               <li key={cardIndex}>
-                Card {cardIndex + 1}: {signed(turns)}
+                {t('summary.twistCard', { index: cardIndex + 1, turns: turnsPhrase(turns) })}
               </li>
             ))}
           </ul>
@@ -84,10 +89,12 @@ export function Summary() {
 
       {painted && (
         <>
-          <h3>Against the target</h3>
+          <h3>{t('summary.againstTarget')}</h3>
           <p className="summary-line">
-            {plural(report.unreachable.length, 'cell')} unreachable,{' '}
-            {plural(report.unmet.length, 'cell')} unmet.
+            {t('summary.targetLine', {
+              unreachable: t('summary.cellsUnreachable', { count: report.unreachable.length }),
+              unmet: t('summary.cellsUnmet', { count: report.unmet.length }),
+            })}
           </p>
         </>
       )}

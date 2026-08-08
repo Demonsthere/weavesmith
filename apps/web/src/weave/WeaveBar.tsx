@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import type { CSSProperties } from 'react';
 import { useStore } from '../state/store.js';
 import { identityColor } from '../board/identity.js';
+import { useT } from '../i18n/useT.js';
 import { hasSavedPosition, loadPosition, savePosition } from './position.js';
 import '../styles/controls.css';
 import './weaveBar.css';
@@ -23,6 +24,7 @@ import './weaveBar.css';
  * there is no clamping to duplicate here.
  */
 export function WeaveBar() {
+  const t = useT();
   const currentPick = useStore((state) => state.currentPick);
   const setCurrentPick = useStore((state) => state.setCurrentPick);
   const pattern = useStore((state) => state.pattern);
@@ -49,10 +51,10 @@ export function WeaveBar() {
   return (
     <div className="weavebar">
       <div className="pick">
-        <small>Pick</small>
+        <small>{t('weave.pick')}</small>
         <span>{currentPick + 1}</span>
       </div>
-      <div className="turns" aria-label="Turn direction per card for this pick">
+      <div className="turns" aria-label={t('weave.turnsLabel')}>
         {pattern.cards.map((card, c) => {
           const forward = pattern.picks[currentPick]![c]! === 1;
           const style = {
@@ -64,7 +66,7 @@ export function WeaveBar() {
               className={forward ? 'fwd' : 'bwd'}
               style={style}
               role="img"
-              aria-label={`Card ${c + 1} turning ${forward ? 'forward' : 'backward'}`}
+              aria-label={t('weave.cardTurning', { index: c + 1, forward })}
             >
               {forward ? '↑' : '↓'}
             </span>
@@ -74,18 +76,18 @@ export function WeaveBar() {
       <button
         type="button"
         className="btn ghost"
-        aria-label="Back"
+        aria-label={t('weave.back')}
         onClick={() => step(currentPick - 1)}
       >
-        Back
+        {t('weave.back')}
       </button>
       <button
         type="button"
         className="btn"
-        aria-label="Next pick"
+        aria-label={t('weave.nextPick')}
         onClick={() => step(currentPick + 1)}
       >
-        Next pick
+        {t('weave.nextPick')}
       </button>
     </div>
   );

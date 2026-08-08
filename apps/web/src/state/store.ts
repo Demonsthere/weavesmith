@@ -1,5 +1,7 @@
 import { create } from 'zustand';
 import type { Pattern } from '@weavesmith/core';
+import { DEFAULT_LOCALE } from '../i18n/catalogues.js';
+import type { Locale } from '../i18n/catalogues.js';
 import type { Selection } from './selection.js';
 import { defaultPattern } from './defaultPattern.js';
 
@@ -64,6 +66,14 @@ interface StoreState {
   // back to. Without it, "start over" on a phone leaves the board vertical
   // until the weaver resizes a window they do not have.
   suggestedOrientation: Orientation;
+  // Which language the UI reads in. Display state like `orientation` and
+  // `render`: how you are looking at the band, not what the band is. The
+  // initial value is the plain default — `App` resolves the stored override
+  // and browser detection in an effect, for the same reason the pattern is
+  // booted there: the store is a module singleton shared by every test, and
+  // reading `localStorage` at module-eval time would make importing it a
+  // side effect.
+  locale: Locale;
   render: RenderMode;
   // Which palette entry the paint brush lays down, or null for erase. UI
   // state like `orientation`/`render`/`mode` — the painting itself lives on
@@ -116,6 +126,7 @@ interface StoreState {
   // The viewport suggesting: always recorded, applied only while nothing has
   // been pinned.
   suggestOrientation: (orientation: Orientation) => void;
+  setLocale: (locale: Locale) => void;
   setRender: (render: RenderMode) => void;
   setBrush: (brush: number | null) => void;
   setMode: (mode: ScreenMode) => void;
@@ -134,6 +145,7 @@ export const useStore = create<StoreState>((set, get) => ({
   orientation: 'vertical',
   orientationPinned: false,
   suggestedOrientation: 'vertical',
+  locale: DEFAULT_LOCALE,
   render: 'woven',
   brush: 0,
   mode: 'design',
@@ -241,6 +253,7 @@ export const useStore = create<StoreState>((set, get) => ({
     if (suggestedOrientation === current && nextOrientation === orientation) return;
     set({ suggestedOrientation, orientation: nextOrientation });
   },
+  setLocale: (locale) => set({ locale }),
   setRender: (render) => set({ render }),
   setBrush: (brush) => set({ brush }),
   setMode: (mode) => set({ mode }),
@@ -276,6 +289,11 @@ export const useStore = create<StoreState>((set, get) => ({
   // board lands on whatever the viewport last asked for. `suggestedOrientation`
   // itself is deliberately *not* reset — it describes the screen, which a
   // "start over" does not change.
+  //
+  // `locale` is deliberately *not* in the list either, and for a different
+  // reason than orientation: a language choice belongs to the reader, not to
+  // the document. Starting a new band does not make someone stop speaking
+  // Polish, and having the UI switch out from under them would be startling.
   reset: () =>
     set({
       pattern: freezePattern(defaultPattern()),

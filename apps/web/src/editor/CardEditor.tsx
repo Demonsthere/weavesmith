@@ -5,18 +5,11 @@ import type { Hole, Threading } from '@weavesmith/core';
 import { removeCard, runCommand, setHoleColor, setThreading } from '../state/commands.js';
 import { useStore } from '../state/store.js';
 import type { GestureToken } from '../state/store.js';
-import { WOOL_NAMES, WOOL_PRESETS } from './palette.js';
+import { useT } from '../i18n/useT.js';
+import { useDescribeColor } from '../i18n/useColorName.js';
+import { WOOL_PRESETS } from './palette.js';
 import '../styles/controls.css';
 import './cardEditor.css';
-
-/** A wool name plus its hex where one is known (the dyed presets and
- *  anything else that happens to match one), otherwise just the hex —
- *  used for swatch accessible names so a screen-reader user hears "woad
- *  #2F5F8F" rather than a bare, indistinguishable colour code. */
-function describeColor(hex: string): string {
-  const name = WOOL_NAMES[hex];
-  return name ? `${name} ${hex}` : hex;
-}
 
 export interface CardEditorProps {
   /** The card this dialog is open for, or null to render nothing. */
@@ -38,6 +31,8 @@ export interface CardEditorProps {
  * go through `setThreading`/`removeCard` the same way.
  */
 export function CardEditor({ cardIndex, onClose }: CardEditorProps) {
+  const t = useT();
+  const describeColor = useDescribeColor();
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [selectedHole, setSelectedHole] = useState<Hole>(0);
   const pattern = useStore((state) => state.pattern);
@@ -164,13 +159,13 @@ export function CardEditor({ cardIndex, onClose }: CardEditorProps) {
 
   return (
     <dialog ref={dialogRef} aria-labelledby="editor-title" onClose={onClose}>
-      <h2 id="editor-title">Card {cardIndex + 1}</h2>
-      <p className="dsub">Threading and hole colours</p>
+      <h2 id="editor-title">{t('editor.title', { index: cardIndex + 1 })}</h2>
+      <p className="dsub">{t('editor.subtitle')}</p>
 
       <div
         className="segmented"
         role="group"
-        aria-label="Threading direction"
+        aria-label={t('editor.threadingGroup')}
         style={{ marginBottom: '1rem' }}
       >
         <button
@@ -178,18 +173,18 @@ export function CardEditor({ cardIndex, onClose }: CardEditorProps) {
           aria-pressed={card.threading === 'S'}
           onClick={() => setCardThreading('S')}
         >
-          S threaded
+          {t('editor.threadedS')}
         </button>
         <button
           type="button"
           aria-pressed={card.threading === 'Z'}
           onClick={() => setCardThreading('Z')}
         >
-          Z threaded
+          {t('editor.threadedZ')}
         </button>
       </div>
 
-      <h3 className="dlabel">Holes</h3>
+      <h3 className="dlabel">{t('editor.holes')}</h3>
       <div className="holes-edit">
         {card.colors.map((paletteIndex, hole) => {
           const label = HOLE_LABELS[hole as Hole];
@@ -201,7 +196,7 @@ export function CardEditor({ cardIndex, onClose }: CardEditorProps) {
               role="button"
               tabIndex={0}
               aria-selected={hole === selectedHole}
-              aria-label={`Hole ${label}: ${hex}`}
+              aria-label={t('editor.holeLabel', { hole: label, hex })}
               onClick={() => setSelectedHole(hole as Hole)}
               onKeyDown={(event) => {
                 if (event.key === 'Enter' || event.key === ' ') {
@@ -218,14 +213,14 @@ export function CardEditor({ cardIndex, onClose }: CardEditorProps) {
         })}
       </div>
 
-      <h3 className="dlabel">Dyed wool</h3>
+      <h3 className="dlabel">{t('editor.dyedWool')}</h3>
       <div className="swatches">
         {WOOL_PRESETS.map((hex) => (
           <button
             key={hex}
             type="button"
             style={{ background: hex }}
-            aria-label={`Set the selected hole to ${describeColor(hex)}`}
+            aria-label={t('editor.setHoleTo', { color: describeColor(hex) })}
             onClick={() => applyColor(hex)}
           />
         ))}
@@ -233,14 +228,14 @@ export function CardEditor({ cardIndex, onClose }: CardEditorProps) {
 
       {usedInBand.length > 0 && (
         <>
-          <h3 className="dlabel">In this band</h3>
+          <h3 className="dlabel">{t('editor.inThisBand')}</h3>
           <div className="swatches">
             {usedInBand.map((hex) => (
               <button
                 key={hex}
                 type="button"
                 style={{ background: hex }}
-                aria-label={`Set the selected hole to ${describeColor(hex)}`}
+                aria-label={t('editor.setHoleTo', { color: describeColor(hex) })}
                 onClick={() => applyColor(hex)}
               />
             ))}
@@ -252,19 +247,19 @@ export function CardEditor({ cardIndex, onClose }: CardEditorProps) {
         <input
           ref={wheelInputRef}
           type="color"
-          aria-label="Custom colour"
+          aria-label={t('editor.customColour')}
           value={pattern.palette[card.colors[selectedHole]]!}
           onChange={handleWheelChange}
         />
-        <label>Custom — applies to the selected hole</label>
+        <label>{t('editor.customHint')}</label>
       </div>
 
       <div className="dialog-actions">
         <button type="button" className="btn ghost" disabled={!canDelete} onClick={handleDelete}>
-          Delete card
+          {t('editor.deleteCard')}
         </button>
         <button type="button" className="btn" onClick={() => dialogRef.current?.close()}>
-          Done
+          {t('editor.done')}
         </button>
       </div>
     </dialog>

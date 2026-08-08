@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
+  ExportImageError,
   MAX_PNG_SCALE,
   PNG_TARGET_EDGE,
   PNG_TIMEOUT,
@@ -85,7 +86,7 @@ describe('svgToPNG dimension parsing', () => {
     // Getting as far as decoding is the assertion: before this, a fractional
     // cell was refused outright as "not an SVG document".
     stubFailingImage();
-    await expect(svgToPNG(svg)).rejects.toThrow(/could not be drawn/i);
+    await expect(svgToPNG(svg)).rejects.toMatchObject({ kind: 'notDrawable' });
     vi.unstubAllGlobals();
   });
 
@@ -94,14 +95,14 @@ describe('svgToPNG dimension parsing', () => {
     const svg =
       '<svg xmlns="http://www.w3.org/2000/svg" height="40" viewBox="0 0 20 40" width="20"></svg>';
     stubFailingImage();
-    await expect(svgToPNG(svg)).rejects.toThrow(/could not be drawn/i);
+    await expect(svgToPNG(svg)).rejects.toMatchObject({ kind: 'notDrawable' });
     vi.unstubAllGlobals();
   });
 
   it('still refuses a document with no dimensions at all', () => {
-    return expect(svgToPNG('<svg xmlns="http://www.w3.org/2000/svg"></svg>')).rejects.toThrow(
-      /does not look like an SVG/i,
-    );
+    return expect(
+      svgToPNG('<svg xmlns="http://www.w3.org/2000/svg"></svg>'),
+    ).rejects.toMatchObject({ kind: 'notAnSVG' });
   });
 });
 
@@ -110,12 +111,25 @@ describe('svgToPNG', () => {
     // Interface only: rasterising needs a real browser. What is worth
     // pinning here is that a failure surfaces as a rejection, so a caller
     // can report it, instead of a promise that never settles.
-    await expect(svgToPNG('not an svg at all')).rejects.toThrow(/does not look like an SVG/i);
+    await expect(svgToPNG('not an svg at all')).rejects.toMatchObject({ kind: 'notAnSVG' });
+  });
+
+  // The whole point of the `kind`: this module cannot call `useT` (it is not a
+  // component), so a sentence written here would reach a Polish weaver in
+  // English. It reports the FACT and `FileMenu` resolves the words — the same
+  // rule the report messages follow.
+  it('rejects with a fact the caller can translate, not a finished sentence', async () => {
+    stubFailingImage();
+    await expect(svgToPNG(bandToSVG(defaultPattern()))).rejects.toBeInstanceOf(ExportImageError);
+    await expect(svgToPNG('not an svg at all')).rejects.toBeInstanceOf(ExportImageError);
+    vi.unstubAllGlobals();
   });
 
   it('rejects when the image will not decode', async () => {
     stubFailingImage();
-    await expect(svgToPNG(bandToSVG(defaultPattern()))).rejects.toThrow(/could not be drawn/i);
+    await expect(svgToPNG(bandToSVG(defaultPattern()))).rejects.toMatchObject({
+      kind: 'notDrawable',
+    });
     vi.unstubAllGlobals();
   });
 
@@ -138,7 +152,7 @@ describe('svgToPNG', () => {
     expect(settled).not.toHaveBeenCalled();
 
     await vi.advanceTimersByTimeAsync(2);
-    await expect(pending).rejects.toThrow(/too long/i);
+    await expect(pending).rejects.toMatchObject({ kind: 'tooSlow' });
 
     vi.unstubAllGlobals();
     vi.useRealTimers();

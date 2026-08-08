@@ -1,7 +1,9 @@
 import { HOLE_LABELS } from '@weavesmith/core';
 import { useStore } from '../state/store.js';
 import { Summary } from './Summary.js';
-import { WOOL_NAMES } from '../editor/palette.js';
+import { useT } from '../i18n/useT.js';
+import { useColorName } from '../i18n/useColorName.js';
+import type { MessageKey } from '../i18n/messages/en.js';
 import '../styles/controls.css';
 import './chart.css';
 
@@ -12,9 +14,7 @@ import './chart.css';
  * to a screen reader and marginal in a photocopy.
  */
 const GLYPH = { 1: '↑', '-1': '↓' } as const;
-const DIRECTION = { 1: 'Forward', '-1': 'Backward' } as const;
-
-const colorName = (hex: string): string => WOOL_NAMES[hex] ?? hex;
+const DIRECTION_KEY: Record<1 | -1, MessageKey> = { 1: 'chart.forward', '-1': 'chart.backward' };
 
 const COFFEE = 'buycoffee.to/demonsthere';
 /*
@@ -35,8 +35,10 @@ const COFFEE_QR = { src: './buycoffee-qr.png', size: 84 };
  * decides layout, never weaving.
  */
 export function Chart() {
+  const t = useT();
   const pattern = useStore((state) => state.pattern);
   const { cards, picks } = pattern;
+  const colorName = useColorName();
 
   return (
     <div className="chart-sheet" data-testid="chart-sheet">
@@ -52,7 +54,7 @@ export function Chart() {
           stylesheet already decides what a page looks like. */}
       <div className="chart-actions screen-only">
         <button type="button" className="btn" onClick={() => window.print()}>
-          Print or save as PDF
+          {t('chart.print')}
         </button>
       </div>
 
@@ -71,7 +73,7 @@ export function Chart() {
             src={COFFEE_QR.src}
             width={COFFEE_QR.size}
             height={COFFEE_QR.size}
-            alt={`QR code linking to ${COFFEE}`}
+            alt={t('chart.qrAlt', { url: COFFEE })}
           />
           <span>{COFFEE}</span>
         </div>
@@ -83,10 +85,10 @@ export function Chart() {
           grid — without it the sheet says how to turn the cards but not how
           to warp them, which is the half you need first. */}
       <table className="threading" data-testid="chart-threading">
-        <caption>Threading</caption>
+        <caption>{t('chart.threading')}</caption>
         <thead>
           <tr>
-            <th scope="col">Hole</th>
+            <th scope="col">{t('chart.hole')}</th>
             {cards.map((card, cardIndex) => (
               <th key={cardIndex} scope="col">
                 {cardIndex + 1}
@@ -120,10 +122,10 @@ export function Chart() {
       </table>
 
       <table className="chart" data-testid="chart-turning">
-        <caption>Turning chart</caption>
+        <caption>{t('chart.turningChart')}</caption>
         <thead>
           <tr>
-            <th scope="col">Pick</th>
+            <th scope="col">{t('chart.pick')}</th>
             {cards.map((card, cardIndex) => (
               <th key={cardIndex} scope="col">
                 {cardIndex + 1}
@@ -140,7 +142,7 @@ export function Chart() {
                   row's cells. */}
               <td className="pick-no">{pickIndex + 1}</td>
               {turns.map((turn, cardIndex) => (
-                <td key={cardIndex} className="turn" title={DIRECTION[turn]}>
+                <td key={cardIndex} className="turn" title={t(DIRECTION_KEY[turn])}>
                   <span aria-hidden="true">{GLYPH[turn]}</span>
                 </td>
               ))}

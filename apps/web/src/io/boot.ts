@@ -6,8 +6,22 @@ import { defaultPattern } from '../state/defaultPattern.js';
 
 export interface Booted {
   pattern: Pattern;
-  /** What was wrong with the share link, if there was one and it failed. */
+  /**
+   * What core reported wrong with the share link, verbatim — `null` when
+   * there was nothing to report, including when the failure was total (see
+   * `unreadable`).
+   */
   problems: string[] | null;
+  /**
+   * True when the link could not be decoded at all, rather than decoding far
+   * enough for core to say what was wrong with it. This is our own fact, not
+   * core's, and `bootPattern` is not a component and cannot resolve a
+   * locale — it reports the fact and leaves the caller to render it through
+   * its own catalogue, at render time, rather than baking a translated
+   * sentence into this result (which would freeze it in whatever locale was
+   * active before the boot effect's own `setLocale` call has run).
+   */
+  unreadable: boolean;
 }
 
 const SHARE_PREFIX = '#p=';
@@ -25,13 +39,24 @@ const SHARE_PREFIX = '#p=';
 export function bootPattern(hash: string): Booted {
   const fallback = (): Pattern => restore() ?? defaultPattern();
 
-  if (!hash.startsWith(SHARE_PREFIX)) return { pattern: fallback(), problems: null };
+  if (!hash.startsWith(SHARE_PREFIX)) {
+    return { pattern: fallback(), problems: null, unreadable: false };
+  }
 
   try {
-    return { pattern: decodePattern(hash.slice(SHARE_PREFIX.length)), problems: null };
+    return {
+      pattern: decodePattern(hash.slice(SHARE_PREFIX.length)),
+      problems: null,
+      unreadable: false,
+    };
   } catch (error) {
-    const problems =
-      error instanceof PatternError ? error.problems : ['this link could not be read'];
-    return { pattern: fallback(), problems };
+    // decodePattern's own catch already converts every failure it can
+    // produce into a PatternError, so this else arm guards a shape it
+    // cannot currently throw — but `catch (error)` is typed `unknown`, and
+    // bootPattern's contract has to be total for whatever it receives.
+    if (error instanceof PatternError) {
+      return { pattern: fallback(), problems: error.problems, unreadable: false };
+    }
+    return { pattern: fallback(), problems: null, unreadable: true };
   }
 }

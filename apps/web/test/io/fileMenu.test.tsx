@@ -233,4 +233,54 @@ describe('FileMenu image export', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent(/png could not be made/i);
     vi.unstubAllGlobals();
   });
+
+  // The reason under the wrapper sentence is one of this app's OWN sentences,
+  // not core's words and not the browser's, so it has to follow the language
+  // like every other string the app writes. It used to arrive as English
+  // prose baked into `exportImage.ts`: a Polish header over an English line.
+  it('says why the PNG failed in the reader’s language', async () => {
+    const user = userEvent.setup();
+    useStore.getState().setLocale('pl');
+    vi.stubGlobal(
+      'Image',
+      class {
+        onerror: (() => void) | null = null;
+        set src(_value: string) {
+          queueMicrotask(() => this.onerror?.());
+        }
+      },
+    );
+    render(<FileMenu />);
+
+    await user.click(screen.getByRole('button', { name: /png/i }));
+
+    const alert = await screen.findByRole('alert');
+    expect(alert).toHaveTextContent('Nie udało się utworzyć PNG.');
+    expect(alert).toHaveTextContent('Nie udało się narysować krajki jako obrazu.');
+    expect(alert).not.toHaveTextContent(/could not be drawn/i);
+    vi.unstubAllGlobals();
+    useStore.getState().setLocale('en');
+  });
+
+  // A message this app did NOT write stays verbatim: translating a browser's
+  // own words would mean inventing them.
+  it('passes a browser’s own error message through untranslated', async () => {
+    const user = userEvent.setup();
+    useStore.getState().setLocale('pl');
+    vi.stubGlobal(
+      'Image',
+      class {
+        set src(_value: string) {
+          throw new Error('SecurityError: tainted canvas');
+        }
+      },
+    );
+    render(<FileMenu />);
+
+    await user.click(screen.getByRole('button', { name: /png/i }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('SecurityError: tainted canvas');
+    vi.unstubAllGlobals();
+    useStore.getState().setLocale('en');
+  });
 });

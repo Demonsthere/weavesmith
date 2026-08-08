@@ -7,19 +7,125 @@ import { PatternName } from './PatternName.js';
 import { SHARE_LIMIT, encodePattern, linkFor } from './share.js';
 import { clearAutosave } from './storage.js';
 import { downloadBlob, fileNameFor } from './download.js';
-import { SVG_TYPE, bandToSVG, svgToPNG } from './exportImage.js';
+import { ExportImageError, SVG_TYPE, bandToSVG, svgToPNG } from './exportImage.js';
+import type { ExportFailure } from './exportImage.js';
+import { useT } from '../i18n/useT.js';
 import '../styles/controls.css';
 import './fileMenu.css';
 
+/**
+ * A message the app itself writes, kept as the FACT of which sentence and
+ * (where one applies) its interpolation argument — never as already-resolved
+ * text. `resolveMessage` below is what turns this into words, at render
+ * time, so a language switch while a report is on screen re-renders it
+ * rather than leaving it frozen in whichever locale was active when the
+ * report was created (the bug Task 6 fixed for the boot alert).
+ */
+type ReportMessage =
+  | { kind: 'pngFailed' }
+  | { kind: 'notAPattern'; name: string }
+  | { kind: 'backToDefault' }
+  | { kind: 'cannotShare' }
+  | { kind: 'tooLargeToShare' }
+  | { kind: 'noClipboard' }
+  | { kind: 'linkCopied' };
+
+/**
+ * The message keys a problem line can name: one of this app's *own* sentences
+ * about a failure. Every one of these is a `MessageKey`, which `t(problem.key)`
+ * in the render enforces at compile time.
+ */
+type ProblemKey =
+  | 'file.unreadable'
+  | 'file.unknownReason'
+  | 'export.notAnSVG'
+  | 'export.noCanvas'
+  | 'export.tooSlow'
+  | 'export.noPNG'
+  | 'export.notDrawable';
+
+/**
+ * One `report.problems` entry. `{ text }` is rendered verbatim — either
+ * `PatternError.problems` (core's own words) or a raw `Error.message` thrown
+ * by the browser itself — and is never translated. `{ key }` marks one of this
+ * app's *own* sentences, which are translated like any other of our words;
+ * storing the key rather than calling `t` here is what keeps it out of the
+ * frozen-string trap above.
+ *
+ * The export failures are in the second arm, not the first: they read like
+ * browser messages but the app wrote them, so `exportImage.ts` rejects with an
+ * `ExportImageError` naming the failure and the words are chosen here.
+ */
+type Problem = { text: string } | { key: ProblemKey };
+
+/** Which of our sentences goes with each export failure. A `Record` over the
+ *  union, so a new `ExportFailure` kind fails to typecheck until it has one. */
+const EXPORT_PROBLEM: Record<ExportFailure, ProblemKey> = {
+  notAnSVG: 'export.notAnSVG',
+  noCanvas: 'export.noCanvas',
+  tooSlow: 'export.tooSlow',
+  noPNG: 'export.noPNG',
+  notDrawable: 'export.notDrawable',
+};
+
+/**
+ * The one problem line an image export produces. Three sources, kept apart:
+ * our own failure (a key), anything else that threw with a message (verbatim —
+ * the browser's words, or core's from `bandToSVG`'s `simulate`), and a throw
+ * with no message at all.
+ */
+const exportProblem = (error: unknown): Problem =>
+  error instanceof ExportImageError
+    ? { key: EXPORT_PROBLEM[error.kind] }
+    : error instanceof Error
+      ? { text: error.message }
+      : { key: 'file.unknownReason' };
+
 interface Report {
-  message: string;
-  problems: string[];
+  message: ReportMessage;
+  problems: Problem[];
   /** Something to read or copy by hand, rather than a fault to fix. */
   detail?: string;
 }
 
-const problemsOf = (error: unknown): string[] =>
-  error instanceof PatternError ? error.problems : ['this file could not be read'];
+// `problemsOf` is module-scope, not a component, so it cannot call `useT` —
+// it returns the FACT of which problems to show (core's verbatim list, or
+// our own fallback's key) and leaves resolving the fallback's words to
+// `resolveMessage`/render, exactly as `bootPattern` (io/boot.ts) defers its
+// own "unreadable" fact to the caller instead of translating it up front.
+const problemsOf = (error: unknown): Problem[] =>
+  error instanceof PatternError
+    ? error.problems.map((text) => ({ text }))
+    : [{ key: 'file.unreadable' }];
+
+/** Turns a `ReportMessage` fact into words, at render time. */
+function resolveMessage(t: ReturnType<typeof useT>, message: ReportMessage): string {
+  switch (message.kind) {
+    case 'pngFailed':
+      return t('file.pngFailed');
+    case 'notAPattern':
+      return t('file.notAPattern', { name: message.name });
+    case 'backToDefault':
+      return t('file.backToDefault');
+    case 'cannotShare':
+      return t('file.cannotShare');
+    case 'tooLargeToShare':
+      return t('file.tooLargeToShare');
+    case 'noClipboard':
+      return t('file.noClipboard');
+    case 'linkCopied':
+      return t('file.linkCopied');
+    default: {
+      // Compiler-enforced exhaustiveness: if a future `ReportMessage` kind
+      // is added without a matching `case` above, `message` is no longer
+      // `never` here and this line fails to typecheck — `noImplicitReturns`
+      // is not set in tsconfig.base.json, so an omitted case would otherwise
+      // compile fine and silently render `undefined`.
+      const exhaustive: never = message;
+      return exhaustive;
+    }
+  }
+}
 
 /**
  * Save, open and share. Every failure path here ends in the same place: a
@@ -28,6 +134,7 @@ const problemsOf = (error: unknown): string[] =>
  * the UI would mean two places to keep honest.
  */
 export function FileMenu() {
+  const t = useT();
   const pattern = useStore((state) => state.pattern);
   const load = useStore((state) => state.load);
   const resetStore = useStore((state) => state.reset);
@@ -62,10 +169,7 @@ export function FileMenu() {
       downloadBlob(await svgToPNG(bandToSVG(pattern)), fileNameFor(pattern.meta.name, 'png'));
       setReport(null);
     } catch (error) {
-      setReport({
-        message: 'The PNG could not be made. The SVG export works everywhere and prints better:',
-        problems: [error instanceof Error ? error.message : 'unknown reason'],
-      });
+      setReport({ message: { kind: 'pngFailed' }, problems: [exportProblem(error)] });
     }
   };
 
@@ -74,7 +178,7 @@ export function FileMenu() {
       load(fromJSON(await file.text()));
       setReport(null);
     } catch (error) {
-      setReport({ message: `${file.name} is not a WeaveSmith pattern:`, problems: problemsOf(error) });
+      setReport({ message: { kind: 'notAPattern', name: file.name }, problems: problemsOf(error) });
     }
     // Clear the input so choosing the *same* file again still fires a change
     // event — otherwise a failed import cannot be retried after fixing it.
@@ -102,7 +206,7 @@ export function FileMenu() {
       window.history.replaceState(null, '', window.location.pathname + window.location.search);
     }
     setConfirmingReset(false);
-    setReport({ message: 'Back to the default band.', problems: [] });
+    setReport({ message: { kind: 'backToDefault' }, problems: [] });
   };
 
   const copyLink = async () => {
@@ -113,16 +217,12 @@ export function FileMenu() {
       // button instead of saying what is wrong with the band.
       encoded = encodePattern(pattern);
     } catch (error) {
-      setReport({ message: 'This band cannot be shared yet:', problems: problemsOf(error) });
+      setReport({ message: { kind: 'cannotShare' }, problems: problemsOf(error) });
       return;
     }
 
     if (encoded.length > SHARE_LIMIT) {
-      setReport({
-        message:
-          'This band is too large to put in a link. Use Download and send the file instead.',
-        problems: [],
-      });
+      setReport({ message: { kind: 'tooLargeToShare' }, problems: [] });
       return;
     }
 
@@ -134,14 +234,10 @@ export function FileMenu() {
       // far better one than a button that silently does nothing.
       await navigator.clipboard.writeText(link);
     } catch {
-      setReport({
-        message: 'The clipboard is not available here. Copy this link by hand:',
-        problems: [],
-        detail: link,
-      });
+      setReport({ message: { kind: 'noClipboard' }, problems: [], detail: link });
       return;
     }
-    setReport({ message: 'Share link copied.', problems: [] });
+    setReport({ message: { kind: 'linkCopied' }, problems: [] });
   };
 
   return (
@@ -149,7 +245,7 @@ export function FileMenu() {
       <PatternName />
 
       <button type="button" className="btn ghost" onClick={download}>
-        Download
+        {t('file.download')}
       </button>
 
       {/* Input before label so the label can carry the input's focus ring
@@ -166,28 +262,28 @@ export function FileMenu() {
         }}
       />
       <label className="btn ghost file-open" htmlFor={inputId}>
-        Open a pattern file
+        {t('file.open')}
       </label>
 
       <button type="button" className="btn ghost" onClick={exportSVG}>
-        Export SVG
+        {t('file.exportSVG')}
       </button>
 
       <button type="button" className="btn ghost" onClick={() => void exportPNG()}>
-        Export PNG
+        {t('file.exportPNG')}
       </button>
 
       <button type="button" className="btn ghost" onClick={() => void copyLink()}>
-        Copy link
+        {t('file.copyLink')}
       </button>
 
       {confirmingReset ? (
-        <span className="reset-confirm" role="group" aria-label="Confirm reset">
+        <span className="reset-confirm" role="group" aria-label={t('file.confirmResetGroup')}>
           <button type="button" className="btn" onClick={reset}>
-            Discard and reset
+            {t('file.discardAndReset')}
           </button>
           <button type="button" className="btn ghost" onClick={() => setConfirmingReset(false)}>
-            Cancel
+            {t('file.cancel')}
           </button>
         </span>
       ) : (
@@ -199,17 +295,21 @@ export function FileMenu() {
             setConfirmingReset(true);
           }}
         >
-          Reset to default
+          {t('file.resetToDefault')}
         </button>
       )}
 
       {report && (
         <div role="alert" className="filemenu-report">
-          <p>{report.message}</p>
+          <p>{resolveMessage(t, report.message)}</p>
           {report.problems.length > 0 && (
             <ul>
-              {report.problems.map((problem) => (
-                <li key={problem}>{problem}</li>
+              {/* `problem.text` is rendered verbatim — core's own words, or a
+                  raw browser Error.message — never translated. `problem.key`
+                  is one of our own fallback sentences, resolved here so it
+                  follows a language switch. */}
+              {report.problems.map((problem, index) => (
+                <li key={index}>{'text' in problem ? problem.text : t(problem.key)}</li>
               ))}
             </ul>
           )}
