@@ -215,11 +215,11 @@ niezależnie od tego, czy skorzystasz z tego programu:
 
 ### Co potrafi
 
-- Projektowanie wzoru tabliczka po tabliczce: przewleczenie S/Z, kolory
+- **Projektowanie wzoru** tabliczka po tabliczce: przewleczenie S/Z, kolory
   czterech otworów, kierunek obrotu w każdym przeplocie.
 - **Malowanie wzorca** i automatyczne wyliczenie obrotów, które go dają —
   wraz z uczciwą informacją o komórkach, których nie da się osiągnąć.
-- Tryb tkania: licznik przeplotów przy krośnie, który pamięta, gdzie
+- **Tryb tkania**: licznik przeplotów przy krośnie, który pamięta, gdzie
   skończyłaś.
 - Schemat do druku (tabela obrotów, przewleczenie, podsumowanie osnowy),
   zapis do pliku, eksport SVG/PNG i link do udostępnienia.
@@ -232,9 +232,3 @@ brokat i wzory blokowe to inne struktury splotu i celowo ich tu nie ma.
 
 Polecenia są takie same jak w angielskiej części — patrz
 [Development](#development). W skrócie: `make install`, a potem `make dev`.
-
-### Słownictwo
-
-Katalog projektu nazywa się `krajki` — po polsku tak nazywa się tkane pasy,
-i to jest właściwe słowo na to, co ten program pomaga zaprojektować.
-Repozytorium nosi nazwę `weavesmith`; to ten sam projekt.
