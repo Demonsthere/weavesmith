@@ -9,6 +9,11 @@ import { BrushStrip } from './paint/BrushStrip.js';
 import { FileMenu } from './io/FileMenu.js';
 import { bootPattern } from './io/boot.js';
 import { autosaveSoon } from './io/storage.js';
+import { detectLocale } from './i18n/detect.js';
+import { LanguageToggle } from './i18n/LanguageToggle.js';
+import type { MessageKey } from './i18n/messages/en.js';
+import { useT } from './i18n/useT.js';
+import { readLocale } from './io/preferences.js';
 import { useStore } from './state/store.js';
 import { useRoute } from './state/route.js';
 import { useOrientationPreference } from './state/useOrientationPreference.js';
@@ -40,14 +45,15 @@ const RENDER_MODES: { value: RenderMode; label: string }[] = [
 // Real anchors, not buttons: they are navigation, so they get the browser's
 // history, middle-click and "copy link" for free, and satisfy the
 // keyboard-reachability constraint without a binding of their own.
-const SCREENS: { hash: string; label: string }[] = [
-  { hash: '#/board', label: 'Board' },
-  { hash: '#/chart', label: 'Chart' },
+const SCREENS: { hash: string; key: MessageKey }[] = [
+  { hash: '#/board', key: 'app.nav.board' },
+  { hash: '#/chart', key: 'app.nav.chart' },
 ];
 
 export function App() {
   const route = useRoute();
   const bootProblems = useBoot();
+  const t = useT();
 
   return (
     <>
@@ -55,13 +61,14 @@ export function App() {
         <h1>
           Weave<em>Smith</em>
         </h1>
-        <nav className="screen-nav" aria-label="Screens">
-          {SCREENS.map(({ hash, label }) => (
+        <nav className="screen-nav" aria-label={t('app.nav.screens')}>
+          {SCREENS.map(({ hash, key }) => (
             <a key={hash} href={hash} aria-current={hash === `#/${route}` ? 'page' : undefined}>
-              {label}
+              {t(key)}
             </a>
           ))}
         </nav>
+        <LanguageToggle />
       </header>
       <main>
         {bootProblems && (
@@ -98,6 +105,13 @@ function useBoot(): string[] | null {
     const booted = bootPattern(window.location.hash);
     useStore.getState().load(booted.pattern);
     setProblems(booted.problems);
+
+    // Stored override first, then the browser's own preference, then
+    // English. A stored value naming no catalogue reads as null (validated
+    // in preferences.ts), so detection decides rather than the app
+    // rendering in a language it has no strings for.
+    const stored = readLocale();
+    useStore.getState().setLocale(stored ?? detectLocale(navigator.languages));
 
     // Autosave every subsequent change. Debounced in `autosaveSoon`, so a
     // drag across the board costs one write rather than one per pointermove.
