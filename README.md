@@ -2,6 +2,8 @@
 
 [![Buy me a coffee](https://img.shields.io/badge/buycoffee.to-demonsthere-00874F?style=flat-square)](https://buycoffee.to/demonsthere)
 
+**English** · [Polski](#polski)
+
 A browser-based pattern designer for **tablet weaving** — the ancient craft of
 weaving narrow decorative bands on square cards. Design a band, see it woven as
 you work, and get the turning chart you follow at the loom.
@@ -190,3 +192,48 @@ give away:
 - **Third-party marks** — the buycoffee.to logo and QR code in
   `apps/web/public/` are their trademarks, used with their own share
   material. Trademarks travel on permission, not on this licence.
+
+## Polski
+
+**WeaveSmith** to przeglądarkowy projektant wzorów do **tkactwa
+tabliczkowego** — krajek tkanych na tabliczkach. Działa w przeglądarce,
+także bez internetu, więc można go otworzyć przy krośnie.
+
+Powstał jako prezent: moja żona uczy się tkactwa tabliczkowego, a ja gram na
+gitarze — dlatego interfejs wygląda jak gryf gitary. Dotychczasowe narzędzie,
+[GTT](https://www.guntram.co.za/tabletweaving/gtt.htm), działa tylko na
+Windowsie i nie jest rozwijane od około 20 lat.
+
+Projekt wyrósł z polskiego przewodnika, który wart jest przeczytania
+niezależnie od tego, czy skorzystasz z tego programu:
+
+> 📖 **[WICI — Tkactwo tabliczkowe: przewodnik, cz. 3 (darmowe materiały do
+> nauki)](https://wici.org.pl/2020/04/tkactwo-tabliczkowe-przewodnik-cz-3-darmowe-materialy-do-nauki/)**
+> — najlepszy polski punkt wyjścia i indeks darmowych materiałów.
+
+### Co potrafi
+
+- Projektowanie wzoru tabliczka po tabliczce: przewleczenie S/Z, kolory
+  czterech otworów, kierunek obrotu w każdym przeplocie.
+- **Malowanie wzorca** i automatyczne wyliczenie obrotów, które go dają —
+  wraz z uczciwą informacją o komórkach, których nie da się osiągnąć.
+- Tryb tkania: licznik przeplotów przy krośnie, który pamięta, gdzie
+  skończyłaś.
+- Schemat do druku (tabela obrotów, przewleczenie, podsumowanie osnowy),
+  zapis do pliku, eksport SVG/PNG i link do udostępnienia.
+- Polski i angielski interfejs — przełącznik języka jest w nagłówku.
+
+Zakres wersji 1 to wzory *threaded-in*. Double-face, 3/1 broken twill,
+brokat i wzory blokowe to inne struktury splotu i celowo ich tu nie ma.
+
+### Jak uruchomić
+
+Polecenia są takie same jak w angielskiej części — patrz
+[Development](#development). W skrócie: `pnpm install`, a potem
+`pnpm --filter @weavesmith/web dev`.
+
+### Słownictwo
+
+Katalog projektu nazywa się `krajki` — po polsku tak nazywa się tkane pasy,
+i to jest właściwe słowo na to, co ten program pomaga zaprojektować.
+Repozytorium nosi nazwę `weavesmith`; to ten sam projekt.

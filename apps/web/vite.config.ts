@@ -17,7 +17,8 @@ export default defineConfig({
       manifest: {
         name: 'WeaveSmith',
         short_name: 'WeaveSmith',
-        description: 'A pattern designer for tablet weaving.',
+        description:
+          'A pattern designer for tablet weaving — projektowanie wzorów krajek tkanych na tabliczkach.',
         display: 'standalone',
         // The app's own dyed-wool ground, so the splash and the status bar
         // match the board rather than flashing white before it paints.
