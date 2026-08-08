@@ -7,7 +7,8 @@ import { PatternName } from './PatternName.js';
 import { SHARE_LIMIT, encodePattern, linkFor } from './share.js';
 import { clearAutosave } from './storage.js';
 import { downloadBlob, fileNameFor } from './download.js';
-import { SVG_TYPE, bandToSVG, svgToPNG } from './exportImage.js';
+import { ExportImageError, SVG_TYPE, bandToSVG, svgToPNG } from './exportImage.js';
+import type { ExportFailure } from './exportImage.js';
 import { useT } from '../i18n/useT.js';
 import '../styles/controls.css';
 import './fileMenu.css';
@@ -30,14 +31,55 @@ type ReportMessage =
   | { kind: 'linkCopied' };
 
 /**
- * One `report.problems` entry. `{ text }` is rendered verbatim — either
- * `PatternError.problems` (core's own words) or a raw `Error.message` from
- * the browser — and is never translated. `{ key }` marks one of this app's
- * *own* fallback sentences, which are translated like any other of our
- * words; storing the key rather than calling `t` here is what keeps it out
- * of the frozen-string trap above.
+ * The message keys a problem line can name: one of this app's *own* sentences
+ * about a failure. Every one of these is a `MessageKey`, which `t(problem.key)`
+ * in the render enforces at compile time.
  */
-type Problem = { text: string } | { key: 'file.unreadable' | 'file.unknownReason' };
+type ProblemKey =
+  | 'file.unreadable'
+  | 'file.unknownReason'
+  | 'export.notAnSVG'
+  | 'export.noCanvas'
+  | 'export.tooSlow'
+  | 'export.noPNG'
+  | 'export.notDrawable';
+
+/**
+ * One `report.problems` entry. `{ text }` is rendered verbatim — either
+ * `PatternError.problems` (core's own words) or a raw `Error.message` thrown
+ * by the browser itself — and is never translated. `{ key }` marks one of this
+ * app's *own* sentences, which are translated like any other of our words;
+ * storing the key rather than calling `t` here is what keeps it out of the
+ * frozen-string trap above.
+ *
+ * The export failures are in the second arm, not the first: they read like
+ * browser messages but the app wrote them, so `exportImage.ts` rejects with an
+ * `ExportImageError` naming the failure and the words are chosen here.
+ */
+type Problem = { text: string } | { key: ProblemKey };
+
+/** Which of our sentences goes with each export failure. A `Record` over the
+ *  union, so a new `ExportFailure` kind fails to typecheck until it has one. */
+const EXPORT_PROBLEM: Record<ExportFailure, ProblemKey> = {
+  notAnSVG: 'export.notAnSVG',
+  noCanvas: 'export.noCanvas',
+  tooSlow: 'export.tooSlow',
+  noPNG: 'export.noPNG',
+  notDrawable: 'export.notDrawable',
+};
+
+/**
+ * The one problem line an image export produces. Three sources, kept apart:
+ * our own failure (a key), anything else that threw with a message (verbatim —
+ * the browser's words, or core's from `bandToSVG`'s `simulate`), and a throw
+ * with no message at all.
+ */
+const exportProblem = (error: unknown): Problem =>
+  error instanceof ExportImageError
+    ? { key: EXPORT_PROBLEM[error.kind] }
+    : error instanceof Error
+      ? { text: error.message }
+      : { key: 'file.unknownReason' };
 
 interface Report {
   message: ReportMessage;
@@ -127,12 +169,7 @@ export function FileMenu() {
       downloadBlob(await svgToPNG(bandToSVG(pattern)), fileNameFor(pattern.meta.name, 'png'));
       setReport(null);
     } catch (error) {
-      setReport({
-        message: { kind: 'pngFailed' },
-        problems: [
-          error instanceof Error ? { text: error.message } : { key: 'file.unknownReason' },
-        ],
-      });
+      setReport({ message: { kind: 'pngFailed' }, problems: [exportProblem(error)] });
     }
   };
 

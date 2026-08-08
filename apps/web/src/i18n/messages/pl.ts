@@ -134,6 +134,11 @@ export const pl: Messages = {
   'file.unknownReason': 'nieznany powód',
   'file.pngFailed':
     'Nie udało się utworzyć PNG. Eksport SVG działa wszędzie i lepiej się drukuje:',
+  'export.notAnSVG': 'To nie wygląda na dokument SVG.',
+  'export.noCanvas': 'Ta przeglądarka nie potrafi rysować na kanwie.',
+  'export.tooSlow': 'Rysowanie krajki trwało za długo. Spróbuj eksportu SVG.',
+  'export.noPNG': 'Ta przeglądarka nie potrafi zamienić krajki w PNG.',
+  'export.notDrawable': 'Nie udało się narysować krajki jako obrazu.',
   'file.notAPattern': (a: { name: string }) => `${a.name} nie jest wzorem WeaveSmith:`,
   'file.backToDefault': 'Powrót do domyślnej krajki.',
   'file.cannotShare': 'Tej krajki nie można jeszcze udostępnić:',

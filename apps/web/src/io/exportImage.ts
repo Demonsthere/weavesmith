@@ -132,6 +132,47 @@ export function bandToSVG(pattern: Pattern, options: SVGOptions = {}): string {
 export const SVG_TYPE = 'image/svg+xml;charset=utf-8';
 
 /**
+ * Why an export failed, as a fact rather than a sentence.
+ *
+ * Every one of these used to be English prose thrown from here and pasted
+ * straight into the report by `FileMenu.exportPNG` — so a Polish weaver on an
+ * older phone read a Polish heading above an English line. This module is not
+ * a component and cannot call `useT`, so it reports which failure happened and
+ * lets the component resolve the words at render time. Same rule as
+ * `FileMenu`'s `ReportMessage` and `io/boot.ts`: state the fact, render the
+ * words.
+ *
+ * A failure the app did NOT write — a browser's own `Error` — is deliberately
+ * not folded in here: it stays a plain `Error` and reaches the report
+ * verbatim, because translating a browser's words would mean inventing them.
+ */
+export type ExportFailure =
+  /** The string handed in carries no usable width/height. */
+  | 'notAnSVG'
+  /** `canvas.getContext('2d')` returned nothing. */
+  | 'noCanvas'
+  /** The decode did not finish inside `PNG_TIMEOUT`. */
+  | 'tooSlow'
+  /** No `canvas.toBlob`, or it produced nothing. */
+  | 'noPNG'
+  /** The image fired `error`: the band would not decode at all. */
+  | 'notDrawable';
+
+/**
+ * An export failure carrying its `kind`. `message` is for a developer reading
+ * a stack trace — it is never what the weaver is shown.
+ */
+export class ExportImageError extends Error {
+  readonly kind: ExportFailure;
+
+  constructor(kind: ExportFailure) {
+    super(`image export failed: ${kind}`);
+    this.name = 'ExportImageError';
+    this.kind = kind;
+  }
+}
+
+/**
  * Rasterises an SVG string to a PNG blob by drawing it into a canvas.
  *
  * Needs a real browser: jsdom has neither an image decoder nor a canvas
@@ -152,7 +193,7 @@ export function svgToPNG(svg: string, options: SVGOptions & { scale?: number } =
   const parsedWidth = dimension('width');
   const parsedHeight = dimension('height');
   if (parsedWidth === null || parsedHeight === null || parsedWidth <= 0 || parsedHeight <= 0) {
-    return Promise.reject(new Error('This does not look like an SVG document.'));
+    return Promise.reject(new ExportImageError('notAnSVG'));
   }
   const natural = { width: parsedWidth, height: parsedHeight };
   const scale = options.scale ?? pngScaleFor(natural.width, natural.height);
@@ -165,7 +206,7 @@ export function svgToPNG(svg: string, options: SVGOptions & { scale?: number } =
     let settled = false;
 
     const timer = setTimeout(() => {
-      fail('The band took too long to draw. Try the SVG export instead.');
+      fail('tooSlow');
     }, PNG_TIMEOUT);
 
     const finish = () => {
@@ -174,10 +215,10 @@ export function svgToPNG(svg: string, options: SVGOptions & { scale?: number } =
       URL.revokeObjectURL(url);
     };
 
-    function fail(reason: string) {
+    function fail(kind: ExportFailure) {
       if (settled) return;
       finish();
-      reject(new Error(reason));
+      reject(new ExportImageError(kind));
     }
 
     const succeed = (blob: Blob) => {
@@ -191,17 +232,17 @@ export function svgToPNG(svg: string, options: SVGOptions & { scale?: number } =
       canvas.width = width;
       canvas.height = height;
       const context = canvas.getContext('2d');
-      if (!context) return fail('This browser cannot draw to a canvas.');
+      if (!context) return fail('noCanvas');
       context.drawImage(image, 0, 0, width, height);
       if (typeof canvas.toBlob !== 'function') {
-        return fail('This browser cannot turn the band into a PNG.');
+        return fail('noPNG');
       }
       canvas.toBlob((blob) => {
         if (blob) succeed(blob);
-        else fail('This browser cannot turn the band into a PNG.');
+        else fail('noPNG');
       }, 'image/png');
     };
-    image.onerror = () => fail('The band could not be drawn as an image.');
+    image.onerror = () => fail('notDrawable');
     image.src = url;
   });
 }

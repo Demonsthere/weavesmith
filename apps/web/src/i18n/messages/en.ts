@@ -99,6 +99,15 @@ export const en = {
   'file.unknownReason': 'unknown reason',
   'file.pngFailed':
     'The PNG could not be made. The SVG export works everywhere and prints better:',
+  // The reasons a PNG export can fail. Sentences this app writes about the
+  // browser it is running in — not the browser's own words, which reach the
+  // report verbatim. `io/exportImage.ts` names the failure; these are the
+  // words for it (see `ExportFailure` there).
+  'export.notAnSVG': 'This does not look like an SVG document.',
+  'export.noCanvas': 'This browser cannot draw to a canvas.',
+  'export.tooSlow': 'The band took too long to draw. Try the SVG export instead.',
+  'export.noPNG': 'This browser cannot turn the band into a PNG.',
+  'export.notDrawable': 'The band could not be drawn as an image.',
   'file.notAPattern': (a: { name: string }) => `${a.name} is not a WeaveSmith pattern:`,
   'file.backToDefault': 'Back to the default band.',
   'file.cannotShare': 'This band cannot be shared yet:',
