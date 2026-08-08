@@ -2,6 +2,7 @@ import { useRef } from 'react';
 import type { CSSProperties, PointerEvent as ReactPointerEvent } from 'react';
 import type { Card } from '@weavesmith/core';
 import { useStore } from '../state/store.js';
+import type { useT } from '../i18n/useT.js';
 
 /** Long-press duration before a held chip opens the editor on its own,
  *  matching the mockup's touch affordance (a plain click also opens it,
@@ -17,6 +18,7 @@ interface Props {
   landmark: boolean;
   color: string;
   palette: string[];
+  t: ReturnType<typeof useT>;
 }
 
 /**
@@ -27,7 +29,7 @@ interface Props {
  * cards. Everything here is `--id` (identity colour, chrome only); no note
  * face is touched.
  */
-export function CardChip({ card, index, pickCount, vertical, landmark, color, palette }: Props) {
+export function CardChip({ card, index, pickCount, vertical, landmark, color, palette, t }: Props) {
   const idVar = { '--id': color } as CSSProperties;
   // A ref, not state: it drives no render, only whether a pending timeout
   // still needs cancelling.
@@ -72,7 +74,7 @@ export function CardChip({ card, index, pickCount, vertical, landmark, color, pa
         className="chip"
         style={chipStyle}
         data-card={index}
-        aria-label={`Card ${index + 1}, threaded ${card.threading}, edit`}
+        aria-label={t('chip.label', { index: index + 1, threading: card.threading })}
         onClick={openEditor}
         onPointerDown={handlePointerDown}
         onPointerMove={cancelPress}

@@ -45,6 +45,18 @@ export const en = {
   'summary.cellsUnreachable': (a: { count: number }) =>
     `${plural(a.count, 'cell', 'cells')} unreachable`,
   'summary.cellsUnmet': (a: { count: number }) => `${plural(a.count, 'cell', 'cells')} unmet`,
+  'board.label': 'Weaving board',
+  'stepper.group': 'Number of cards',
+  'stepper.remove': 'Remove a card',
+  'stepper.cards': 'cards',
+  'stepper.addS': 'Add an S-threaded card',
+  'stepper.addZ': 'Add a Z-threaded card',
+  'chip.label': (a: { index: number; threading: string }) =>
+    `Card ${a.index}, threaded ${a.threading}, edit`,
+  'cell.label': (a: { card: number; pick: number; forward: boolean }) =>
+    `Card ${a.card}, pick ${a.pick}, turning ${a.forward ? 'forward' : 'backward'}`,
+  'cell.wantedSolve': (a: { hex: string }) => `, wanted ${a.hex} — press Solve`,
+  'cell.wantedUnreachable': (a: { hex: string }) => `, wanted ${a.hex} — unreachable`,
 };
 
 export type Messages = typeof en;

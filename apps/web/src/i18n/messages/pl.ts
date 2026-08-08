@@ -79,4 +79,16 @@ export const pl: Messages = {
       few: 'komórki niezgodne',
       many: 'komórek niezgodnych',
     }),
+  'board.label': 'Plansza tkania',
+  'stepper.group': 'Liczba tabliczek',
+  'stepper.remove': 'Usuń tabliczkę',
+  'stepper.cards': 'tabliczek',
+  'stepper.addS': 'Dodaj tabliczkę przewleczoną S',
+  'stepper.addZ': 'Dodaj tabliczkę przewleczoną Z',
+  'chip.label': (a: { index: number; threading: string }) =>
+    `Tabliczka ${a.index}, przewleczona ${a.threading}, edytuj`,
+  'cell.label': (a: { card: number; pick: number; forward: boolean }) =>
+    `Tabliczka ${a.card}, przeplot ${a.pick}, obrót ${a.forward ? 'do przodu' : 'do tyłu'}`,
+  'cell.wantedSolve': (a: { hex: string }) => `, oczekiwano ${a.hex} — naciśnij Rozwiąż`,
+  'cell.wantedUnreachable': (a: { hex: string }) => `, oczekiwano ${a.hex} — nieosiągalne`,
 };

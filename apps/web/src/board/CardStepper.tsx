@@ -2,6 +2,7 @@ import { MAX_CARDS, MIN_CARDS } from '@weavesmith/core';
 import type { Threading } from '@weavesmith/core';
 import { addCard, removalIndex, removeCard, runCommand } from '../state/commands.js';
 import { useStore } from '../state/store.js';
+import { useT } from '../i18n/useT.js';
 import './cardStepper.css';
 
 export interface CardStepperProps {
@@ -22,6 +23,7 @@ export interface CardStepperProps {
  * never a border card. Nothing about *which* card moves is decided here.
  */
 export function CardStepper({ onAdded }: CardStepperProps) {
+  const t = useT();
   const cardCount = useStore((state) => state.pattern.cards.length);
   const apply = useStore((state) => state.apply);
 
@@ -48,19 +50,24 @@ export function CardStepper({ onAdded }: CardStepperProps) {
   };
 
   return (
-    <div className="stepper" role="group" aria-label="Number of cards">
-      <button type="button" disabled={!canRemove} aria-label="Remove a card" onClick={handleRemove}>
+    <div className="stepper" role="group" aria-label={t('stepper.group')}>
+      <button
+        type="button"
+        disabled={!canRemove}
+        aria-label={t('stepper.remove')}
+        onClick={handleRemove}
+      >
         −
       </button>
       <span className="count">
         <span>{cardCount}</span>
-        <small>cards</small>
+        <small>{t('stepper.cards')}</small>
       </span>
       <button
         type="button"
         className="add-s"
         disabled={!canAdd}
-        aria-label="Add an S-threaded card"
+        aria-label={t('stepper.addS')}
         onClick={() => handleAdd('S')}
       >
         +S
@@ -69,7 +76,7 @@ export function CardStepper({ onAdded }: CardStepperProps) {
         type="button"
         className="add-z"
         disabled={!canAdd}
-        aria-label="Add a Z-threaded card"
+        aria-label={t('stepper.addZ')}
         onClick={() => handleAdd('Z')}
       >
         +Z

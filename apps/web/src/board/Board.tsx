@@ -11,6 +11,7 @@ import { growthFactor } from './sizing.js';
 import { useAvailableWidth } from './useAvailableWidth.js';
 import { LiveRegion } from './LiveRegion.js';
 import { useRipple } from './useRipple.js';
+import { useT } from '../i18n/useT.js';
 import '../styles/board.css';
 
 /**
@@ -36,6 +37,7 @@ const GUTTER = 40;
 const CHIP = 58;
 
 export function Board() {
+  const t = useT();
   const { pattern, selection, orientation, render, mode, currentPick, documentId } = useStore();
   const band = useMemo(() => simulate(pattern), [pattern]);
   const ripple = useRipple(band, documentId);
@@ -136,7 +138,7 @@ export function Board() {
         ref={boardRef}
         className={`board ${vertical ? 'v' : 'h'} mode-${render}${mode === 'paint' ? ' paint' : ''}`}
         role="grid"
-        aria-label="Weaving board"
+        aria-label={t('board.label')}
         style={style}
         {...handlers}
         onKeyDown={onKeyDown}
@@ -152,49 +154,51 @@ export function Board() {
             landmark={isLandmark(c)}
             color={identityColor(card, c, cardCount, 'threading')}
             palette={pattern.palette}
+            t={t}
           />
         ))}
 
         {/* Row-major: one group per pick. display:contents keeps the cells as
             grid items while the DOM still reads the band in weaving order. */}
-        {pattern.picks.map((_, t) => (
-          <div className="row" role="row" key={t}>
+        {pattern.picks.map((_, p) => (
+          <div className="row" role="row" key={p}>
             <div
-              className={`tick${isLandmark(t) ? ' marked' : ''}`}
+              className={`tick${isLandmark(p) ? ' marked' : ''}`}
               style={vertical
-                ? { gridRow: t + 2, gridColumn: 1 }
-                : { gridRow: 1, gridColumn: t + 2 }}
+                ? { gridRow: p + 2, gridColumn: 1 }
+                : { gridRow: 1, gridColumn: p + 2 }}
             >
-              {isLandmark(t) && vertical ? <span className="inlay" /> : null}
-              <span>{t + 1}</span>
+              {isLandmark(p) && vertical ? <span className="inlay" /> : null}
+              <span>{p + 1}</span>
             </div>
             {pattern.cards.map((_card, c) => (
               <Cell
                 key={c}
-                pick={t}
+                pick={p}
                 card={c}
-                cell={band[t]![c]!}
-                hex={pattern.palette[band[t]![c]!.color]!}
-                turn={pattern.picks[t]![c]!}
-                selected={rectContains(rect, t, c)}
-                focused={selection.focus.pick === t && selection.focus.card === c}
-                ghost={hover !== null && hover.pick === t && hover.card === c}
-                willChange={preview.has(`${t}:${c}`)}
-                rippleDelay={ripple.get(`${t}:${c}`) ?? null}
-                unmet={marks.get(`${t}:${c}`) ?? null}
+                cell={band[p]![c]!}
+                hex={pattern.palette[band[p]![c]!.color]!}
+                turn={pattern.picks[p]![c]!}
+                selected={rectContains(rect, p, c)}
+                focused={selection.focus.pick === p && selection.focus.card === c}
+                ghost={hover !== null && hover.pick === p && hover.card === c}
+                willChange={preview.has(`${p}:${c}`)}
+                rippleDelay={ripple.get(`${p}:${c}`) ?? null}
+                unmet={marks.get(`${p}:${c}`) ?? null}
                 targetHex={
-                  mode === 'paint' && pattern.target?.[t]?.[c] != null
-                    ? pattern.palette[pattern.target[t]![c]!]!
+                  mode === 'paint' && pattern.target?.[p]?.[c] != null
+                    ? pattern.palette[pattern.target[p]![c]!]!
                     : null
                 }
                 weaveState={
                   mode === 'weave'
-                    ? t === currentPick ? 'current' : t < currentPick ? 'past' : 'ahead'
+                    ? p === currentPick ? 'current' : p < currentPick ? 'past' : 'ahead'
                     : 'none'
                 }
                 style={vertical
-                  ? { gridRow: t + 2, gridColumn: c + 2 }
-                  : { gridRow: c + 2, gridColumn: t + 2 }}
+                  ? { gridRow: p + 2, gridColumn: c + 2 }
+                  : { gridRow: c + 2, gridColumn: p + 2 }}
+                t={t}
               />
             ))}
           </div>

@@ -1,16 +1,27 @@
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { App } from '../../src/App.js';
 import * as boot from '../../src/io/boot.js';
 import { defaultPattern } from '../../src/state/defaultPattern.js';
 import { useStore } from '../../src/state/store.js';
 
 describe('language toggle', () => {
+  const originalHash = window.location.hash;
+
   beforeEach(() => {
     localStorage.clear();
     useStore.getState().setLocale('en');
     document.documentElement.lang = 'en';
+  });
+
+  // Carried-forward fix: the hash mutation and vi.spyOn mock below were
+  // previously restored only at the end of the test body, so an assertion
+  // failure above the restore would leak both into every later test in this
+  // file. Restoring here runs regardless of how the test body exits.
+  afterEach(() => {
+    vi.restoreAllMocks();
+    window.location.hash = originalHash;
   });
 
   it('switches the UI to Polish', async () => {
@@ -77,10 +88,9 @@ describe('language toggle', () => {
   // downstream — `useBoot`'s effect, `setLocale`, and the alert's render —
   // runs for real.
   it('shows an unreadable share link in the browser-preferred language, not frozen in the boot-time one', async () => {
-    const originalHash = window.location.hash;
     window.location.hash = '#p=corrupt-share-link';
     localStorage.setItem('weavesmith:locale', 'pl');
-    const bootPattern = vi.spyOn(boot, 'bootPattern').mockReturnValue({
+    vi.spyOn(boot, 'bootPattern').mockReturnValue({
       pattern: defaultPattern(),
       problems: null,
       unreadable: true,
@@ -92,8 +102,17 @@ describe('language toggle', () => {
     expect(within(alert).getByText('nie udało się odczytać tego linku')).toBeInTheDocument();
     expect(within(alert).queryByText('this link could not be read')).not.toBeInTheDocument();
     expect(within(alert).getByText('Nie udało się otworzyć tego linku:')).toBeInTheDocument();
+  });
 
-    bootPattern.mockRestore();
-    window.location.hash = originalHash;
+  it('translates the board and its cells', async () => {
+    render(<App />);
+    await userEvent.click(screen.getByRole('button', { name: 'Polski' }));
+    expect(screen.getByRole('grid', { name: 'Plansza tkania' })).toBeInTheDocument();
+    expect(screen.getByRole('group', { name: 'Liczba tabliczek' })).toBeInTheDocument();
+    // The default band ("Chevron", state/defaultPattern.ts) is 8 cards x 24
+    // picks with every turn forward, so this cell is deterministic.
+    expect(
+      screen.getByRole('gridcell', { name: 'Tabliczka 1, przeplot 1, obrót do przodu' }),
+    ).toBeInTheDocument();
   });
 });

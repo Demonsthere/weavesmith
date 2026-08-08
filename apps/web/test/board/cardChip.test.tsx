@@ -3,6 +3,12 @@ import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CardChip } from '../../src/board/CardChip.js';
 import { useStore } from '../../src/state/store.js';
+import type { useT } from '../../src/i18n/useT.js';
+
+// This suite exercises the editor-opening wiring, not translated text, so a
+// stub stands in for the real `useT()` — Board is what owns the one live
+// subscription; CardChip only ever receives `t` as a prop.
+const t = ((key: string) => key) as ReturnType<typeof useT>;
 
 describe('CardChip wiring to the card editor', () => {
   beforeEach(() => useStore.getState().reset());
@@ -20,6 +26,7 @@ describe('CardChip wiring to the card editor', () => {
         landmark={false}
         color="hsl(0 0% 0%)"
         palette={pattern.palette}
+        t={t}
       />,
     );
     await user.click(screen.getByRole('button'));
@@ -39,6 +46,7 @@ describe('CardChip wiring to the card editor', () => {
         landmark={false}
         color="hsl(0 0% 0%)"
         palette={pattern.palette}
+        t={t}
       />,
     );
     const chip = screen.getByRole('button');
@@ -62,6 +70,7 @@ describe('CardChip wiring to the card editor', () => {
         landmark={false}
         color="hsl(0 0% 0%)"
         palette={pattern.palette}
+        t={t}
       />,
     );
     const chip = screen.getByRole('button');
@@ -85,6 +94,7 @@ describe('CardChip wiring to the card editor', () => {
         landmark={false}
         color="hsl(0 0% 0%)"
         palette={pattern.palette}
+        t={t}
       />,
     );
     const chip = screen.getByRole('button');
