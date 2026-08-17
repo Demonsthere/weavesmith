@@ -31,7 +31,7 @@ importers:
         version: 19.2.8(react@19.2.8)
       zustand:
         specifier: ^5.0.0
-        version: 5.0.14(@types/react@19.2.18)(react@19.2.8)
+        version: 5.0.15(@types/react@19.2.18)(react@19.2.8)
     devDependencies:
       '@testing-library/jest-dom':
         specifier: 7.0.0
@@ -2458,8 +2458,8 @@ packages:
   yallist@3.1.1:
     resolution: {integrity: sha512-a4UGQaWPH59mOXUYnAG2ewncQS4i4F43Tv3JoAM+s2VDAmS9NsK8GpDMLrCHPksFT7h3K6TOoUNn2pb7RoXx4g==}
 
-  zustand@5.0.14:
-    resolution: {integrity: sha512-/8tAspM5LMPr28b3fwLYrtdj77ECpfZviaP75CMTnwO8ISyaE4GDIG/9rDDYq/cH9D2Xw2A2RXglLInmVBQB/g==}
+  zustand@5.0.15:
+    resolution: {integrity: sha512-MpSEjRiBkA9crSYeOUH32rJC7SVqAbm0Fqcqge/bUi2PPoLcBWKOsG+C8mevmpr8TwXHBVkChbbJiyvkE+i/3A==}
     engines: {node: '>=12.20.0'}
     peerDependencies:
       '@types/react': '>=18.0.0'
@@ -5029,7 +5029,7 @@ snapshots:
 
   yallist@3.1.1: {}
 
-  zustand@5.0.14(@types/react@19.2.18)(react@19.2.8):
+  zustand@5.0.15(@types/react@19.2.18)(react@19.2.8):
     optionalDependencies:
       '@types/react': 19.2.18
       react: 19.2.8
